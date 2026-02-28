@@ -1,0 +1,23 @@
+.panel-badge-green {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.25);
+  color: #34d399; padding: 6px 12px; border-radius: 20px;
+  font-size: 11px; font-weight: 700;
+}
+
+.appt-btn-green {
+  background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.22);
+  color: #34d399; border-radius: 8px;
+  padding: 6px 12px; font-size: 11px; font-weight: 600;
+  cursor: pointer; font-family: inherit; transition: all 0.15s;
+}
+.appt-btn-green:hover { background: rgba(16,185,129,0.22); }
+
+.btn-confirm-green {
+  flex: 2; padding: 11px; border-radius: 10px;
+  background: linear-gradient(135deg, #059669, #10b981);
+  border: none; color: #fff; font-size: 13px; font-weight: 700;
+  cursor: pointer; font-family: inherit;
+  box-shadow: 0 4px 14px rgba(16,185,129,0.3); transition: all 0.15s;
+}
+.btn-confirm-green:hover { opacity: 0.9; }
