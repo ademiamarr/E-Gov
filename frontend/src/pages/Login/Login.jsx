@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useSignIn } from '@clerk/clerk-react'
 import { useTranslation } from 'react-i18next'
-import LanguageSwitcher from '../components/LanguageSwitcher'
+import LanguageSwitcher from '../../components/LanguageSwitcher'
 import { Building2, Eye, EyeOff, AlertCircle, Lock, ChevronRight } from 'lucide-react'
 import './Login.css'
 
@@ -13,7 +13,6 @@ const Login = () => {
   const [loading, setLoading]       = useState(false)
   const { signIn, isLoaded, setActive } = useSignIn()
   const { t } = useTranslation()
-  const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -90,8 +89,8 @@ const Login = () => {
 
             <form onSubmit={handleSubmit} className="login-form">
               <div className="form-group">
-                <label>{t('email')}</label>
-                <input type="email" value={form.email} placeholder="email@shembull.com"
+                <label>Email</label>
+                <input type="email" value={form.email} placeholder="email@example.com"
                   onChange={e => setForm({ ...form, email: e.target.value })} required />
               </div>
 
@@ -99,7 +98,7 @@ const Login = () => {
                 <label>{t('password')}</label>
                 <div className="input-icon-wrap">
                   <input type={showPass ? 'text' : 'password'} value={form.password}
-                    placeholder="••••••••"
+                    placeholder="Password"
                     onChange={e => setForm({ ...form, password: e.target.value })} required />
                   <button type="button" className="input-icon-btn" onClick={() => setShowPass(!showPass)}>
                     {showPass ? <EyeOff size={15} /> : <Eye size={15} />}

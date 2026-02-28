@@ -15,8 +15,6 @@ body {
   font-family: 'DM Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #0d1b3e;
-  color: #f0f4ff;
 }
 
 ::-webkit-scrollbar { width: 4px; }

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSignUp } from '@clerk/clerk-react'
 import { Building2, AlertCircle, Mail } from 'lucide-react'
-import API from '../api/axios'
+import API from '../../api/axios'
 import './VerifyEmail.css'
 
 const VerifyEmail = () => {

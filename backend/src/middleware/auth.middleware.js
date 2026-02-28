@@ -16,4 +16,7 @@ const attachRole = async (req, res, next) => {
   }
 }
 
-module.exports = { requireAuth, attachRole }
+// SHTO KËTË - middleware i kombinuar
+const protect = [requireAuth, attachRole]
+
+module.exports = { requireAuth, attachRole, protect }
