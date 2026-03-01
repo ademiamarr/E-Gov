@@ -18,15 +18,19 @@ const register = async (req, res) => {
 
 const getMe = async (req, res) => {
   try {
+    // req.user është i kompletë nga attachRole middleware
+    // përfshin role, verification_status, etj. nga Supabase
     return success(res, {
       id: req.user.id,
       clerk_id: req.user.clerk_id,
       first_name: req.user.first_name,
       last_name: req.user.last_name,
       email: req.user.email,
+      personal_id: req.user.personal_id,
       role: req.user.role,
       verification_status: req.user.verification_status,
-      personal_id: req.user.personal_id,
+      id_photo_url: req.user.id_photo_url,
+      created_at: req.user.created_at,
     })
   } catch (err) {
     return error(res, err.message, 500)

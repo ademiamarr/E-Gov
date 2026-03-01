@@ -47,7 +47,7 @@ const Login = () => {
           <div className="login-logo-icon"><Building2 size={20} color="#fff" /></div>
           <div>
             <div className="login-logo-title">eGov Portal</div>
-            <div className="login-logo-sub">Republika e MV</div>
+            <div className="login-logo-sub">Republika e Maqedonisë</div>
           </div>
         </div>
 
@@ -66,21 +66,21 @@ const Login = () => {
       </div>
 
       <div className="login-right">
-        <div className="login-right-top">
-          <div className="login-hidden-logo">
-            <div className="login-logo-icon-sm"><Building2 size={16} color="#fff" /></div>
-            <span>eGov Portal</span>
-          </div>
+        <div className="login-right-header">
           <LanguageSwitcher />
         </div>
 
-        <div className="login-form-wrap">
-          <div className="login-heading">
-            <h1>{t('login')}</h1>
-            <p>{t('login_subtitle')}</p>
-          </div>
+        <div className="login-container">
+          <div className="login-box">
+            <div className="login-box-logo">
+              <Building2 size={24} color="#2563eb" />
+            </div>
 
-          <div className="login-card">
+            <div className="login-heading">
+              <h1>{t('login')}</h1>
+              <p>{t('login_subtitle')}</p>
+            </div>
+
             {error && (
               <div className="login-error">
                 <AlertCircle size={15} /> {error}
@@ -89,35 +89,56 @@ const Login = () => {
 
             <form onSubmit={handleSubmit} className="login-form">
               <div className="form-group">
-                <label>Email</label>
-                <input type="email" value={form.email} placeholder="email@example.com"
-                  onChange={e => setForm({ ...form, email: e.target.value })} required />
+                <label>{t('email')}</label>
+                <input 
+                  type="email" 
+                  value={form.email} 
+                  placeholder="email@shembull.com"
+                  onChange={e => setForm({ ...form, email: e.target.value })} 
+                  required 
+                />
               </div>
 
               <div className="form-group">
                 <label>{t('password')}</label>
                 <div className="input-icon-wrap">
-                  <input type={showPass ? 'text' : 'password'} value={form.password}
-                    placeholder="Password"
-                    onChange={e => setForm({ ...form, password: e.target.value })} required />
-                  <button type="button" className="input-icon-btn" onClick={() => setShowPass(!showPass)}>
+                  <input 
+                    type={showPass ? 'text' : 'password'} 
+                    value={form.password}
+                    placeholder="••••••••"
+                    onChange={e => setForm({ ...form, password: e.target.value })} 
+                    required 
+                  />
+                  <button 
+                    type="button" 
+                    className="input-icon-btn" 
+                    onClick={() => setShowPass(!showPass)}
+                  >
                     {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
                 </div>
               </div>
 
-              <button type="submit" className="btn-primary" disabled={loading || !isLoaded}>
-                {loading ? <><span className="btn-spinner" />{t('loading')}</> : <>{t('login')} <ChevronRight size={16} /></>}
+              <button 
+                type="submit" 
+                className="btn-primary" 
+                disabled={loading || !isLoaded}
+              >
+                {loading ? (
+                  <><span className="btn-spinner" />{t('loading')}</>
+                ) : (
+                  <>{t('login')} <ChevronRight size={16} /></>
+                )}
               </button>
             </form>
-          </div>
 
-          <p className="login-register-link">
-            {t('no_account')} <Link to="/register">{t('register')}</Link>
-          </p>
+            <p className="login-register-link">
+              {t('no_account')} <Link to="/register">{t('register')}</Link>
+            </p>
 
-          <div className="login-secure">
-            <Lock size={12} /> {t('security_note')}
+            <div className="login-secure">
+              <Lock size={12} /> {t('security_note')}
+            </div>
           </div>
         </div>
       </div>
