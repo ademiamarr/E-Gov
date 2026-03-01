@@ -9,7 +9,7 @@ const attachRole = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Nuk jeni të autorizuar' })
     }
 
-    // Merr user nga Supabase sipas clerk_id
+    // ✅ MERR USER NGA SUPABASE - NOT CLERK
     const { data: dbUser, error } = await supabase
       .from('users')
       .select('*')
@@ -32,7 +32,7 @@ const attachRole = async (req, res, next) => {
   }
 }
 
-// ✅ COMBINED MIDDLEWARE - protect array
+// ✅ EXPORT PROTECT AS ARRAY
 const protect = [requireAuth, attachRole]
 
 module.exports = { requireAuth, attachRole, protect }

@@ -26,8 +26,8 @@ const Login = () => {
       })
       if (result.status === 'complete') {
         await setActive({ session: result.createdSessionId })
-        await new Promise(r => setTimeout(r, 800))
-        window.location.href = '/dashboard'
+        // ✅ TANI - AuthContext do të handle redirect automatically
+        // Mos të harxhosh hardcoded window.location.href
       }
     } catch (err) {
       setError(err.errors?.[0]?.message || t('fill_required'))
