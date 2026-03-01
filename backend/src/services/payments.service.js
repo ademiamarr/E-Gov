@@ -1,4 +1,4 @@
-const supabase = require('../config/supabase')
+const { supabase } = require('../config/supabase')
 const { markFinePaid } = require('./fines.service')
 
 // Mock payment — placeholder për bankë lokale

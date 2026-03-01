@@ -1,4 +1,4 @@
-const supabase = require('../config/supabase')
+const { supabase } = require('../config/supabase')
 const resend = require('../config/resend')
 const finePaidEmail = require('../email/templates/fine-paid.email')
 const { formatCurrency } = require('../utils/formatCurrency')

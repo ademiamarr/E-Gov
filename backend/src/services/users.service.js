@@ -1,4 +1,4 @@
-const supabase = require('../config/supabase')
+const { supabase } = require('../config/supabase')
 const { getSignedUrl } = require('./storage.service')
 
 const getMe = async (clerk_id) => {

@@ -1,4 +1,4 @@
-const supabase = require('../config/supabase')
+const { supabase } = require('../config/supabase')
 
 const uploadIdPhoto = async (file, personal_id) => {
   const ext = file.mimetype.split('/')[1]

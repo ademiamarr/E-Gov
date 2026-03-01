@@ -1,4 +1,4 @@
-const supabase = require('../config/supabase')
+const { supabase } = require('../config/supabase')
 const resend = require('../config/resend')
 const appointmentConfirmEmail = require('../email/templates/appointment-confirm.email')
 const appointmentReminderEmail = require('../email/templates/appointment-reminder.email')

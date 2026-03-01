@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useSignUp } from '@clerk/clerk-react'
 import { useTranslation } from 'react-i18next'
 import LanguageSwitcher from '../components/LanguageSwitcher'
-import { AlertCircle, Eye, EyeOff, Upload, User, Mail, Lock, FileText } from 'lucide-react'
+import { AlertCircle, Eye, EyeOff, Upload, User, Mail, Lock, FileText, ArrowRight, ArrowLeft } from 'lucide-react'
 
 const validateEMBG = (embg) => {
   if (!/^\d{13}$/.test(embg)) return false
@@ -40,25 +40,46 @@ const Register = () => {
     if (!form.first_name || !form.last_name || !form.personal_id || !form.email) {
       return setError(t('fill_required'))
     }
-    if (!validateEMBG(form.personal_id)) return setError(t('embg_invalid'))
+    if (!validateEMBG(form.personal_id)) {
+      return setError('EMBG i pavlefshëm')
+    }
     setStep(2)
   }
 
   const handlePhoto = (e) => {
     const file = e.target.files[0]
     if (!file) return
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Fotoja duhet të jetë më e vogël se 5MB')
+      return
+    }
     setPhoto(file)
     setPhotoPreview(URL.createObjectURL(file))
   }
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault()
     setError('')
-    if (!form.password || !form.confirm_password) return setError(t('fill_required'))
-    if (form.password !== form.confirm_password) return setError(t('passwords_no_match'))
+    
+    if (!form.password || !form.confirm_password) {
+      return setError(t('fill_required'))
+    }
+    
+    if (form.password.length < 8) {
+      return setError('Fjalëkalimi duhet të ketë min. 8 karaktere')
+    }
+    
+    if (form.password !== form.confirm_password) {
+      return setError(t('passwords_no_match'))
+    }
+    
     if (!isLoaded) return
+    
     setLoading(true)
+    console.log('🔄 Starting registration process...')
 
     try {
+      console.log('📝 Creating Clerk user...')
       const su = await signUp.create({
         emailAddress: form.email,
         password: form.password,
@@ -66,6 +87,9 @@ const Register = () => {
         lastName: form.last_name,
       })
 
+      console.log('✅ Clerk user created:', su.createdUserId)
+
+      // Store data in window for VerifyEmail page
       window.__pendingRegister = {
         clerk_id: su.createdUserId,
         first_name: form.first_name,
@@ -75,10 +99,14 @@ const Register = () => {
         id_photo: photo,
       }
 
+      console.log('📧 Preparing email verification...')
       await signUp.prepareEmailAddressVerification({ strategy: 'email_code' })
+      
+      console.log('✅ Email verification prepared - navigating to verify page')
       navigate('/verify-email')
     } catch (err) {
-      setError(err.errors?.[0]?.message || t('fill_required'))
+      console.error('❌ Registration error:', err)
+      setError(err.errors?.[0]?.message || 'Gabim gjatë regjistrimit')
     } finally {
       setLoading(false)
     }
@@ -87,19 +115,14 @@ const Register = () => {
   return (
     <>
       <style>{`
-        * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-        }
-
-        body {
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-          background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+          background: linear-gradient(135deg, #ffffff 0%, #f8fafc 50%, #ffffff 100%);
           min-height: 100vh;
         }
 
-        .register-container {
+        .register-page {
           display: flex;
           min-height: 100vh;
           align-items: center;
@@ -124,21 +147,24 @@ const Register = () => {
         .register-logo {
           font-size: 18px;
           font-weight: 700;
-          color: #1f2937;
+          background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
           letter-spacing: -0.5px;
         }
 
         .register-card {
           background: #ffffff;
-          border-radius: 12px;
-          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+          border-radius: 16px;
+          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
           padding: 40px;
         }
 
         .register-title {
           font-size: 24px;
           font-weight: 700;
-          color: #1f2937;
+          color: #0f172a;
           margin-bottom: 8px;
           letter-spacing: -0.5px;
         }
@@ -172,8 +198,9 @@ const Register = () => {
         }
 
         .step-indicator.active {
-          background: #3b82f6;
+          background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
           color: #ffffff;
+          box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
         }
 
         .step-line {
@@ -184,13 +211,13 @@ const Register = () => {
         }
 
         .step-line.active {
-          background: #3b82f6;
+          background: linear-gradient(90deg, #2563eb 0%, #1d4ed8 100%);
         }
 
         .register-form {
           display: flex;
           flex-direction: column;
-          gap: 20px;
+          gap: 18px;
         }
 
         .form-row {
@@ -220,24 +247,33 @@ const Register = () => {
         .form-input {
           width: 100%;
           padding: 12px 14px;
-          border: 1px solid #e5e7eb;
+          border: 1px solid #d1d5db;
           border-radius: 8px;
           font-size: 14px;
-          color: #1f2937;
+          color: #0f172a;
           font-family: inherit;
-          transition: border-color 0.2s, box-shadow 0.2s;
+          transition: all 0.2s;
           background: #fafbfc;
         }
 
         .form-input:focus {
           outline: none;
-          border-color: #3b82f6;
+          border-color: #2563eb;
           background: #ffffff;
-          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
 
         .form-input::placeholder {
           color: #d1d5db;
+        }
+
+        .form-input-icon {
+          position: absolute;
+          left: 12px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #9ca3af;
+          pointer-events: none;
         }
 
         .form-icon-btn {
@@ -257,7 +293,7 @@ const Register = () => {
         }
 
         .form-icon-btn:hover {
-          color: #3b82f6;
+          color: #2563eb;
         }
 
         .photo-upload-box {
@@ -271,23 +307,8 @@ const Register = () => {
         }
 
         .photo-upload-box:hover {
-          border-color: #3b82f6;
+          border-color: #2563eb;
           background: #f0f4ff;
-        }
-
-        .photo-upload-label {
-          display: block;
-          cursor: pointer;
-        }
-
-        .photo-upload-icon {
-          color: #9ca3af;
-          margin-bottom: 8px;
-        }
-
-        .photo-upload-text {
-          font-size: 13px;
-          color: #6b7280;
         }
 
         .photo-preview-img {
@@ -307,7 +328,7 @@ const Register = () => {
           border-radius: 8px;
           color: #dc2626;
           font-size: 13px;
-          margin-bottom: 20px;
+          margin-bottom: 16px;
         }
 
         .error-message svg {
@@ -335,6 +356,7 @@ const Register = () => {
           align-items: center;
           justify-content: center;
           gap: 6px;
+          font-family: inherit;
         }
 
         .btn-back:hover {
@@ -342,36 +364,10 @@ const Register = () => {
           border-color: #9ca3af;
         }
 
-        .btn-submit {
-          padding: 12px 16px;
-          background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-          color: #ffffff;
-          border: none;
-          border-radius: 8px;
-          font-size: 14px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-        }
-
-        .btn-submit:hover:not(:disabled) {
-          background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-        }
-
-        .btn-submit:disabled {
-          opacity: 0.65;
-          cursor: not-allowed;
-        }
-
-        .btn-next {
+        .btn-next, .btn-submit {
           grid-column: 1 / -1;
           padding: 12px 16px;
-          background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+          background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
           color: #ffffff;
           border: none;
           border-radius: 8px;
@@ -383,11 +379,18 @@ const Register = () => {
           align-items: center;
           justify-content: center;
           gap: 8px;
+          font-family: inherit;
         }
 
-        .btn-next:hover {
-          background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        .btn-next:hover, .btn-submit:hover {
+          background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+          box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+          transform: translateY(-1px);
+        }
+
+        .btn-next:disabled, .btn-submit:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
         }
 
         .btn-loader {
@@ -411,14 +414,14 @@ const Register = () => {
         }
 
         .register-footer a {
-          color: #3b82f6;
+          color: #2563eb;
           text-decoration: none;
           font-weight: 600;
           transition: color 0.2s;
         }
 
         .register-footer a:hover {
-          color: #2563eb;
+          color: #1d4ed8;
         }
 
         @media (max-width: 480px) {
@@ -434,10 +437,6 @@ const Register = () => {
             grid-template-columns: 1fr;
           }
 
-          .form-actions {
-            grid-template-columns: 1fr;
-          }
-
           .form-input {
             padding: 11px 12px;
             font-size: 16px;
@@ -445,7 +444,7 @@ const Register = () => {
         }
       `}</style>
 
-      <div className="register-container">
+      <div className="register-page">
         <div className="register-wrapper">
           <div className="register-header-bar">
             <div className="register-logo">eGov Portal</div>
@@ -480,6 +479,7 @@ const Register = () => {
                       placeholder="Emri"
                       value={form.first_name}
                       onChange={(e) => setForm({ ...form, first_name: e.target.value })}
+                      required
                     />
                   </div>
                   <div className="form-group">
@@ -490,6 +490,7 @@ const Register = () => {
                       placeholder="Mbiemri"
                       value={form.last_name}
                       onChange={(e) => setForm({ ...form, last_name: e.target.value })}
+                      required
                     />
                   </div>
                 </div>
@@ -503,6 +504,7 @@ const Register = () => {
                     maxLength={13}
                     value={form.personal_id}
                     onChange={(e) => setForm({ ...form, personal_id: e.target.value.replace(/\D/g, '') })}
+                    required
                   />
                 </div>
 
@@ -514,35 +516,31 @@ const Register = () => {
                     placeholder="email@example.com"
                     value={form.email}
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    required
                   />
                 </div>
 
                 <button type="submit" className="btn-next">
                   {t('next')}
+                  <ArrowRight size={16} />
                 </button>
               </form>
             )}
 
             {step === 2 && (
-              <form className="register-form" onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+              <form className="register-form" onSubmit={handleSubmit}>
                 <div className="form-group">
                   <label className="form-label">{t('password')}</label>
                   <div className="form-input-wrapper">
-                    <Lock size={16} style={{
-                      position: 'absolute',
-                      left: '12px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      color: '#9ca3af',
-                      pointerEvents: 'none'
-                    }} />
+                    <Lock size={16} className="form-input-icon" />
                     <input
                       type={showPass ? 'text' : 'password'}
                       className="form-input"
-                      style={{ paddingLeft: '38px', paddingRight: '38px' }}
+                      style={{ paddingRight: '38px' }}
                       placeholder="Min. 8 karaktere"
                       value={form.password}
                       onChange={(e) => setForm({ ...form, password: e.target.value })}
+                      required
                     />
                     <button
                       type="button"
@@ -557,21 +555,15 @@ const Register = () => {
                 <div className="form-group">
                   <label className="form-label">{t('confirm_password')}</label>
                   <div className="form-input-wrapper">
-                    <Lock size={16} style={{
-                      position: 'absolute',
-                      left: '12px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      color: '#9ca3af',
-                      pointerEvents: 'none'
-                    }} />
+                    <Lock size={16} className="form-input-icon" />
                     <input
                       type={showPass2 ? 'text' : 'password'}
                       className="form-input"
-                      style={{ paddingLeft: '38px', paddingRight: '38px' }}
+                      style={{ paddingRight: '38px' }}
                       placeholder="••••••••••"
                       value={form.confirm_password}
                       onChange={(e) => setForm({ ...form, confirm_password: e.target.value })}
+                      required
                     />
                     <button
                       type="button"
@@ -590,8 +582,8 @@ const Register = () => {
                       <img src={photoPreview} alt="preview" className="photo-preview-img" />
                     ) : (
                       <div>
-                        <Upload size={20} className="photo-upload-icon" style={{ margin: '0 auto 8px' }} />
-                        <p className="photo-upload-text">Kliko për të ngarkuar dokumentin tuaj</p>
+                        <Upload size={20} style={{ color: '#9ca3af', margin: '0 auto 8px' }} />
+                        <p style={{ fontSize: '13px', color: '#6b7280' }}>Kliko për të ngarkuar dokumentin</p>
                       </div>
                     )}
                     <input type="file" accept="image/*" onChange={handlePhoto} hidden />
@@ -600,6 +592,7 @@ const Register = () => {
 
                 <div className="form-actions">
                   <button type="button" className="btn-back" onClick={() => setStep(1)}>
+                    <ArrowLeft size={16} />
                     {t('back')}
                   </button>
                   <button type="submit" className="btn-submit" disabled={loading}>

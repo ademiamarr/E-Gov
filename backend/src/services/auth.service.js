@@ -1,4 +1,4 @@
-const supabase = require('../config/supabase')
+const { supabase } = require('../config/supabase')
 const resend = require('../config/resend')
 const { uploadIdPhoto } = require('./storage.service')
 const verifyCodeEmail = require('../email/templates/verify-code.email')
