@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChevronDown } from 'lucide-react'
-import './LanguageSwitcher.css'
 
 const langs = [
   { code: 'sq', label: 'Shqip', flag: '🇦🇱' },

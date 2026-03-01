@@ -1,6 +1,5 @@
 import { useAuth } from '../../context/AuthContext'
 import { Building2, XCircle, LogOut } from 'lucide-react'
-import './Rejected.css'
 
 const Rejected = () => {
   const { logout } = useAuth()

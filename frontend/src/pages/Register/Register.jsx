@@ -4,7 +4,6 @@ import { useSignUp } from '@clerk/clerk-react'
 import { useTranslation } from 'react-i18next'
 import LanguageSwitcher from '../../components/LanguageSwitcher'
 import { Building2, AlertCircle, Eye, EyeOff, Upload, ChevronRight, ChevronLeft } from 'lucide-react'
-import './Register.css'
 
 const validateEMBG = (embg) => {
   if (!/^\d{13}$/.test(embg)) return false

@@ -1,79 +1,36 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useSignIn } from '@clerk/clerk-react'
 import { useTranslation } from 'react-i18next'
 import LanguageSwitcher from '../../components/LanguageSwitcher'
 import { Building2, Eye, EyeOff, AlertCircle, Lock, ChevronRight } from 'lucide-react'
-import './Login.css'
 
 const Login = () => {
-  const [form, setForm]             = useState({ email: '', password: '' })
-  const [showPass, setShowPass]     = useState(false)
-  const [error, setError]           = useState('')
-  const [loading, setLoading]       = useState(false)
+  const [form, setForm] = useState({ email: '', password: '' })
+  const [showPass, setShowPass] = useState(false)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
   const { signIn, isLoaded, setActive } = useSignIn()
   const { t } = useTranslation()
-
+  const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
-    if (!form.email || !form.password) {
-      setError('Plotëso të gjitha fushat')
-      return
-    }
-
-    if (!isLoaded) {
-      setError('Aplikacioni nuk është gati, provo përsëri')
-      return
-    }
-
+    if (!isLoaded) return
     setLoading(true)
     setError('')
-    
-    console.log(`📝 Login attempt: ${form.email}`)
-
     try {
       const result = await signIn.create({
         identifier: form.email,
         password: form.password,
       })
-
-      console.log('2️⃣ Result status:', result.status)
-
       if (result.status === 'complete') {
         await setActive({ session: result.createdSessionId })
-        console.log('✅ Login successful!')
-      } 
-      // ✅ HANDLE 2FA - SKIP IT
-      else if (result.status === 'needs_second_factor') {
-        console.log('⚠️ 2FA detected, attempting to bypass...')
-        
-        // Try to auto-complete without 2FA
-        // (works if 2FA is optional/backup)
-        try {
-          const completeResult = await signIn.attemptSecondFactor({
-            strategy: 'totp',
-            code: '000000' // dummy code
-          })
-          
-          if (completeResult.status === 'complete') {
-            await setActive({ session: completeResult.createdSessionId })
-            console.log('✅ Login successful!')
-          } else {
-            throw new Error('2FA required - please disable in Clerk settings')
-          }
-        } catch {
-          setError('2FA is enabled. Please disable it in Clerk Dashboard settings.')
-        }
-      }
-      else {
-        setError('Unexpected login status: ' + result.status)
+        // ✅ LET AUTHCONTEXT HANDLE REDIRECT
+        // DON'T HARDCODE window.location.href
       }
     } catch (err) {
-      const errMsg = err.errors?.[0]?.message || err.message
-      console.error('❌ Login error:', errMsg)
-      setError(errMsg)
+      setError(err.errors?.[0]?.message || t('fill_required'))
     } finally {
       setLoading(false)
     }
@@ -81,22 +38,24 @@ const Login = () => {
 
   return (
     <div className="login-page">
+      {/* Left Side */}
       <div className="login-left">
         <div className="login-left-grid" />
         <div className="login-left-glow1" />
         <div className="login-left-glow2" />
 
         <div className="login-left-logo">
-          <div className="login-logo-icon"><Building2 size={20} color="#fff" /></div>
+          <div className="login-logo-icon">
+            <Building2 size={20} color="#fff" />
+          </div>
           <div>
             <div className="login-logo-title">eGov Portal</div>
-            <div className="login-logo-sub">Republika e Maqedonisë</div>
+            <div className="login-logo-sub">Maqedonia e Veriut</div>
           </div>
         </div>
 
         <div className="login-left-content">
-          <div className="login-badge">🔒 Portal Qeveritar i Sigurt</div>
-          <h2 className="login-left-title">Shërbime qeveritare në një vend</h2>
+          <h2 className="login-left-title">Shërbime Qeveritare në Një Vend</h2>
           <p className="login-left-desc">Aksesoni të gjitha shërbimet administrative me siguri dhe shpejtësi.</p>
           <div className="login-chips">
             {['Terminë', 'Gjoba', 'Leje'].map(s => (
@@ -105,9 +64,10 @@ const Login = () => {
           </div>
         </div>
 
-        <div className="login-left-footer">© 2026 eGov Portal — Republika e Maqedonisë së Veriut</div>
+        <div className="login-left-footer">© 2026 eGov Portal — Republika e Maqedonisë</div>
       </div>
 
+      {/* Right Side */}
       <div className="login-right">
         <div className="login-right-header">
           <LanguageSwitcher />
@@ -115,72 +75,73 @@ const Login = () => {
 
         <div className="login-container">
           <div className="login-box">
-            <div className="login-box-logo">
-              <Building2 size={24} color="#2563eb" />
-            </div>
-
-            <div className="login-heading">
-              <h1>{t('login')}</h1>
-              <p>{t('login_subtitle')}</p>
-            </div>
+            <h1>{t('login')}</h1>
+            <p>{t('login_subtitle')}</p>
 
             {error && (
-              <div className="login-error">
-                <AlertCircle size={15} /> {error}
+              <div className="alert alert-danger">
+                <AlertCircle size={18} />
+                <span>{error}</span>
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="login-form">
               <div className="form-group">
-                <label>{t('email')}</label>
-                <input 
-                  type="email" 
-                  value={form.email} 
-                  placeholder="email@shembull.com"
-                  onChange={e => setForm({ ...form, email: e.target.value })} 
-                  required 
+                <label className="form-label">{t('email')}</label>
+                <input
+                  type="email"
+                  value={form.email}
+                  placeholder="email@example.com"
+                  onChange={e => setForm({ ...form, email: e.target.value })}
+                  className="form-control"
+                  required
                 />
               </div>
 
               <div className="form-group">
-                <label>{t('password')}</label>
-                <div className="input-icon-wrap">
-                  <input 
-                    type={showPass ? 'text' : 'password'} 
+                <label className="form-label">{t('password')}</label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showPass ? 'text' : 'password'}
                     value={form.password}
                     placeholder="••••••••"
-                    onChange={e => setForm({ ...form, password: e.target.value })} 
-                    required 
+                    onChange={e => setForm({ ...form, password: e.target.value })}
+                    className="form-control"
+                    required
                   />
-                  <button 
-                    type="button" 
-                    className="input-icon-btn" 
+                  <button
+                    type="button"
                     onClick={() => setShowPass(!showPass)}
+                    style={{
+                      position: 'absolute',
+                      right: '12px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: '#9ca3af'
+                    }}
                   >
-                    {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
+                    {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
               </div>
 
-              <button 
-                type="submit" 
-                className="btn-primary" 
-                disabled={loading || !isLoaded}
-              >
-                {loading ? (
-                  <><span className="btn-spinner" />{t('loading')}</>
-                ) : (
-                  <>{t('login')} <ChevronRight size={16} /></>
-                )}
+              <button type="submit" className="btn btn-primary" disabled={loading}>
+                {loading ? '🔄 Loading...' : <>
+                  {t('login')} <ChevronRight size={16} />
+                </>}
               </button>
             </form>
 
-            <p className="login-register-link">
-              {t('no_account')} <Link to="/register">{t('register')}</Link>
+            <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '13px' }}>
+              {t('no_account')} <Link to="/register" style={{ color: '#2563eb', fontWeight: '700' }}>{t('register')}</Link>
             </p>
 
-            <div className="login-secure">
-              <Lock size={12} /> {t('security_note')}
+            <div style={{ textAlign: 'center', marginTop: '16px', fontSize: '11px', color: '#9ca3af' }}>
+              <Lock size={12} style={{ display: 'inline', marginRight: '4px' }} />
+              {t('security_note')}
             </div>
           </div>
         </div>
