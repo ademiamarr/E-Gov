@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import API from '../../api/axios'
+import API from '../../../api/axios'
 import { AlertTriangle, Plus, Check, X, AlertCircle } from 'lucide-react'
 import './GjobaPanel.css'
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import API from '../../api/axios'
+import API from '../../../api/axios'
 import { UserCheck, Eye, Check, X, AlertCircle, Clock } from 'lucide-react'
 import './RegistrationPanel.css'
 

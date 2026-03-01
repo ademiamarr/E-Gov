@@ -1,8 +1,114 @@
-.rejected-page .step-dot.active { background: #ef4444; box-shadow: 0 0 0 4px rgba(239,68,68,0.2); }
+/* Rejected.css — i vetëqëndrueshëm, nuk varet nga Pending.css */
+
+.status-page {
+  min-height: 100vh;
+  background: #f8f9fc;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 24px;
+}
+
+.status-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e3a8a;
+  align-self: flex-start;
+  margin-bottom: 48px;
+  width: 100%;
+  max-width: 460px;
+}
+
+.status-logo-icon {
+  width: 32px;
+  height: 32px;
+  background: #1d4ed8;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.status-wrap {
+  max-width: 460px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.status-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.rejected-icon {
+  background: #fef2f2;
+}
+
+.status-wrap h1 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.03em;
+  margin-bottom: 8px;
+}
+
+.status-wrap p {
+  font-size: 13px;
+  color: #94a3b8;
+  line-height: 1.6;
+  margin-bottom: 28px;
+  max-width: 320px;
+}
+
+.status-card {
+  background: #fff;
+  border: 1px solid #e8ecf0;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.status-logout {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 1px solid #e2e8f0;
+  color: #94a3b8;
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s;
+  font-family: inherit;
+  cursor: pointer;
+}
+.status-logout:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+  background: #fef2f2;
+}
 
 .rejected-contact {
-  display: flex; gap: 16px; flex-wrap: wrap;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
   justify-content: center;
-  font-size: 12px; color: #64748b;
+  font-size: 12px;
+  color: #64748b;
   margin-bottom: 24px;
 }

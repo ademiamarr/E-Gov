@@ -1,3 +1,9 @@
+/* AdminLayout.css — vetëm stilet e layout-it (sidebar + topbar + main) */
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* BASE LAYOUT */
+/* ══════════════════════════════════════════════════════════════════════════ */
+
 .admin-layout {
   display: flex;
   min-height: 100vh;
@@ -21,7 +27,6 @@
   top: 0;
   height: 100vh;
   overflow-y: auto;
-  transition: transform 0.3s ease, width 0.3s ease;
   z-index: 100;
 }
 
@@ -35,14 +40,13 @@
     transform: translateX(-100%);
     transition: transform 0.3s ease;
   }
-
   .admin-sidebar.open {
     transform: translateX(0);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   }
 }
 
-/* Logo */
+/* ── Logo ── */
 .admin-sidebar-logo {
   display: flex;
   align-items: center;
@@ -76,7 +80,7 @@
   letter-spacing: 0.06em;
 }
 
-/* Navigation */
+/* ── Navigation ── */
 .admin-nav {
   flex: 1;
   display: flex;
@@ -113,7 +117,7 @@
   box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.2);
 }
 
-/* Footer */
+/* ── Sidebar Footer ── */
 .admin-sidebar-footer {
   display: flex;
   align-items: center;
@@ -196,7 +200,7 @@
   min-height: 100vh;
 }
 
-/* Top Bar */
+/* ── Top Bar ── */
 .admin-topbar {
   display: flex;
   align-items: center;
@@ -265,7 +269,7 @@
   white-space: nowrap;
 }
 
-/* Content Area */
+/* ── Content Area ── */
 .admin-content {
   flex: 1;
   padding: 32px;
@@ -280,108 +284,9 @@
 }
 
 /* ══════════════════════════════════════════════════════════════════════════ */
-/* PANELS STYLING */
+/* SCROLLBAR */
 /* ══════════════════════════════════════════════════════════════════════════ */
 
-.panel {
-  position: relative;
-}
-
-.panel-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 28px;
-}
-
-.panel-header h1 {
-  font-size: 1.4rem;
-  font-weight: 800;
-  color: #f0f4ff;
-  letter-spacing: -0.02em;
-}
-
-.panel-header p {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.35);
-  margin-top: 3px;
-}
-
-.panel-toast {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 18px;
-  border-radius: 10px;
-  font-size: 13px;
-  font-weight: 600;
-  animation: slideIn 0.3s ease;
-}
-
-.toast-ok {
-  background: rgba(16, 185, 129, 0.15);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  color: #34d399;
-}
-
-.toast-err {
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #f87171;
-}
-
-@keyframes slideIn {
-  from {
-    transform: translateX(30px);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-.panel-loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 60px;
-  min-height: 400px;
-}
-
-.panel-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid rgba(255, 255, 255, 0.08);
-  border-top-color: #3b82f6;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.panel-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  padding: 64px;
-  color: rgba(255, 255, 255, 0.3);
-  font-size: 14px;
-  text-align: center;
-  min-height: 400px;
-  justify-content: center;
-}
-
-/* Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;

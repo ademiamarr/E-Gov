@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
-import API from '../../api/axios'
-import { Calendar, Check, X, Clock, AlertCircle } from 'lucide-react'
-import './MVRPanel.css'
+import API from '../../../api/axios'
+import { MapPin, Check, X, AlertCircle } from 'lucide-react'
+import './KomunaPanel.css'
 
-const MVRPanel = () => {
+const KomunaPanel = () => {
   const [appointments, setAppointments] = useState([])
   const [loading, setLoading]           = useState(true)
   const [selected, setSelected]         = useState(null)
@@ -14,7 +14,7 @@ const MVRPanel = () => {
 
   const fetchAppts = async () => {
     try {
-      const res = await API.get('/appointments?institution=MVR')
+      const res = await API.get('/appointments?institution=Komuna')
       setAppointments(res.data.data || [])
     } catch (err) { console.error(err) }
     finally { setLoading(false) }
@@ -55,11 +55,11 @@ const MVRPanel = () => {
 
       <div className="panel-header">
         <div>
-          <h1>Terminë MVR</h1>
-          <p>Ministria e Punëve të Brendshme</p>
+          <h1>Terminë Komuna</h1>
+          <p>Terminë komunale dhe administrative</p>
         </div>
-        <div className="panel-badge-blue">
-          <Calendar size={14} /> {appointments.filter(a => a.status === 'pending').length} pending
+        <div className="panel-badge-green">
+          <MapPin size={14} /> {appointments.filter(a => a.status === 'pending').length} pending
         </div>
       </div>
 
@@ -67,8 +67,8 @@ const MVRPanel = () => {
         <div className="panel-loading"><div className="panel-spinner" /></div>
       ) : appointments.length === 0 ? (
         <div className="panel-empty">
-          <Calendar size={40} style={{ opacity: 0.2 }} />
-          <p>Nuk ka termine MVR</p>
+          <MapPin size={40} style={{ opacity: 0.2 }} />
+          <p>Nuk ka termine Komuna</p>
         </div>
       ) : (
         <div className="appt-table">
@@ -87,12 +87,10 @@ const MVRPanel = () => {
               </div>
               <span className="appt-reason">{a.reason}</span>
               <span className="appt-date">
-                {a.appointment_date
-                  ? new Date(a.appointment_date).toLocaleDateString('sq-AL')
-                  : '—'}
+                {a.appointment_date ? new Date(a.appointment_date).toLocaleDateString('sq-AL') : '—'}
               </span>
               {statusBadge(a.status)}
-              <button className="appt-btn" onClick={() => { setSelected(a); setForm({ status:'approved', admin_note:'', approved_date:'' }) }}>
+              <button className="appt-btn-green" onClick={() => { setSelected(a); setForm({ status:'approved', admin_note:'', approved_date:'' }) }}>
                 Menaxho
               </button>
             </div>
@@ -104,7 +102,7 @@ const MVRPanel = () => {
         <div className="modal-overlay" onClick={() => setSelected(null)}>
           <div className="appt-modal" onClick={e => e.stopPropagation()}>
             <div className="appt-modal-header">
-              <h3>Menaxho termin — {selected.users?.first_name}</h3>
+              <h3>Menaxho — {selected.users?.first_name}</h3>
               <button onClick={() => setSelected(null)}><X size={18} /></button>
             </div>
             <div className="appt-modal-body">
@@ -114,8 +112,7 @@ const MVRPanel = () => {
               </div>
               <div className="form-group">
                 <label>STATUSI</label>
-                <select value={form.status}
-                  onChange={e => setForm({ ...form, status: e.target.value })}>
+                <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}>
                   <option value="approved">Aprovo</option>
                   <option value="rejected">Refuzo</option>
                 </select>
@@ -128,14 +125,14 @@ const MVRPanel = () => {
                 </div>
               )}
               <div className="form-group">
-                <label>SHËNIM (opsionale)</label>
-                <input value={form.admin_note} placeholder="Shënim për qytetarin..."
+                <label>SHËNIM</label>
+                <input value={form.admin_note} placeholder="Shënim opsional..."
                   onChange={e => setForm({ ...form, admin_note: e.target.value })} />
               </div>
             </div>
             <div className="appt-modal-footer">
               <button className="btn-cancel-modal" onClick={() => setSelected(null)}>Anulo</button>
-              <button className="btn-confirm-modal" onClick={update}>Konfirmo ✓</button>
+              <button className="btn-confirm-green" onClick={update}>Konfirmo ✓</button>
             </div>
           </div>
         </div>
@@ -144,4 +141,4 @@ const MVRPanel = () => {
   )
 }
 
-export default MVRPanel
+export default KomunaPanel
