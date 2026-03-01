@@ -1,49 +1,57 @@
-import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ChevronDown } from 'lucide-react'
 
 const langs = [
-  { code: 'sq', label: 'Shqip', flag: '🇦🇱' },
-  { code: 'mk', label: 'Македонски', flag: '🇲🇰' },
-  { code: 'en', label: 'English', flag: '🇬🇧' },
+  { code: 'sq', label: 'SQ', flag: '🇦🇱' },
+  { code: 'mk', label: 'MK', flag: '🇲🇰' },
+  { code: 'en', label: 'EN', flag: '🇬🇧' },
 ]
 
 const LanguageSwitcher = () => {
   const { i18n } = useTranslation()
-  const [isOpen, setIsOpen] = useState(false)
 
-  const currentLang = langs.find(l => l.code === i18n.language) || langs[0]
-
-  const handleChange = (code) => {
-    i18n.changeLanguage(code)
-    setIsOpen(false)
+  const styles = {
+    langSwitcher: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '4px',
+    },
+    langBtn: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '4px',
+      padding: '4px 8px',
+      borderRadius: '6px',
+      border: '1px solid transparent',
+      background: 'transparent',
+      color: 'rgba(255,255,255,0.4)',
+      fontSize: '11px',
+      fontWeight: 600,
+      transition: 'all 0.15s',
+      fontFamily: 'inherit',
+      cursor: 'pointer',
+    },
+    langBtnActive: {
+      background: 'rgba(59,130,246,0.2)',
+      borderColor: 'rgba(59,130,246,0.4)',
+      color: '#60a5fa',
+    },
   }
 
   return (
-    <div className="lang-switcher">
-      <button 
-        className="lang-toggle"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <span className="lang-flag">{currentLang.flag}</span>
-        <span className="lang-code">{currentLang.code.toUpperCase()}</span>
-        <ChevronDown size={16} className={`lang-chevron ${isOpen ? 'open' : ''}`} />
-      </button>
-
-      {isOpen && (
-        <div className="lang-dropdown">
-          {langs.map(({ code, label, flag }) => (
-            <button
-              key={code}
-              className={`lang-option ${i18n.language === code ? 'active' : ''}`}
-              onClick={() => handleChange(code)}
-            >
-              <span className="lang-flag">{flag}</span>
-              <span className="lang-label">{label}</span>
-            </button>
-          ))}
-        </div>
-      )}
+    <div style={styles.langSwitcher}>
+      {langs.map(({ code, label, flag }) => (
+        <button
+          key={code}
+          style={{
+            ...styles.langBtn,
+            ...(i18n.language === code ? styles.langBtnActive : {}),
+          }}
+          onClick={() => i18n.changeLanguage(code)}
+        >
+          <span>{flag}</span>
+          <span>{label}</span>
+        </button>
+      ))}
     </div>
   )
 }
