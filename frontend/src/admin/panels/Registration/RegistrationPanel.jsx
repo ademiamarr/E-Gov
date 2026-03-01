@@ -4,11 +4,11 @@ import { UserCheck, Eye, Check, X, AlertCircle, Clock } from 'lucide-react'
 import './RegistrationPanel.css'
 
 const RegistrationPanel = () => {
-  const [users, setUsers]         = useState([])
-  const [loading, setLoading]     = useState(true)
-  const [selected, setSelected]   = useState(null)
+  const [users, setUsers]               = useState([])
+  const [loading, setLoading]           = useState(true)
+  const [selected, setSelected]         = useState(null)
   const [rejectReason, setRejectReason] = useState('')
-  const [toast, setToast]         = useState(null)
+  const [toast, setToast]               = useState(null)
 
   useEffect(() => { fetchUsers() }, [])
 
@@ -45,39 +45,36 @@ const RegistrationPanel = () => {
   }
 
   return (
-    <div className="panel">
+    <div className="reg-panel">
       {toast && (
-        <div className={`panel-toast ${toast.type === 'error' ? 'toast-err' : 'toast-ok'}`}>
+        <div className={`reg-toast ${toast.type === 'error' ? 'reg-toast--err' : 'reg-toast--ok'}`}>
           {toast.type === 'error' ? <AlertCircle size={14} /> : <Check size={14} />}
           {toast.msg}
         </div>
       )}
 
-      <div className="panel-header">
+      <div className="reg-panel-header">
         <div>
           <h1>Regjistrime në pritje</h1>
           <p>{users.length} kërkesa aktive</p>
         </div>
-        <div className="panel-badge">
+        <div className="reg-panel-badge">
           <Clock size={14} /> Pending
         </div>
       </div>
 
       {loading ? (
-        <div className="panel-loading"><div className="panel-spinner" /></div>
+        <div className="reg-loading"><div className="reg-spinner" /></div>
       ) : users.length === 0 ? (
-        <div className="panel-empty">
+        <div className="reg-empty">
           <UserCheck size={40} style={{ opacity: 0.2 }} />
           <p>Nuk ka regjistrime në pritje</p>
         </div>
       ) : (
         <div className="reg-table">
           <div className="reg-table-head">
-            <span>EMRI</span>
-            <span>EMAIL</span>
-            <span>EMBG</span>
-            <span>DATA</span>
-            <span>VEPRIME</span>
+            <span>EMRI</span><span>EMAIL</span><span>EMBG</span>
+            <span>DATA</span><span>VEPRIME</span>
           </div>
           {users.map(u => (
             <div key={u.id} className="reg-table-row">
@@ -86,13 +83,13 @@ const RegistrationPanel = () => {
               <span className="reg-embg">{u.personal_id}</span>
               <span className="reg-date">{new Date(u.created_at).toLocaleDateString('sq-AL')}</span>
               <div className="reg-actions">
-                <button className="reg-btn-view"  onClick={() => setSelected(u)}>
+                <button className="reg-btn-view" onClick={() => setSelected(u)}>
                   <Eye size={13} /> Shiko
                 </button>
                 <button className="reg-btn-approve" onClick={() => approve(u.id)}>
                   <Check size={13} />
                 </button>
-                <button className="reg-btn-reject" onClick={() => { setSelected(u); }}>
+                <button className="reg-btn-reject" onClick={() => setSelected(u)}>
                   <X size={13} />
                 </button>
               </div>
@@ -102,21 +99,20 @@ const RegistrationPanel = () => {
       )}
 
       {selected && (
-        <div className="modal-overlay" onClick={() => setSelected(null)}>
+        <div className="reg-overlay" onClick={() => setSelected(null)}>
           <div className="reg-modal" onClick={e => e.stopPropagation()}>
             <div className="reg-modal-header">
               <h3>{selected.first_name} {selected.last_name}</h3>
               <button onClick={() => setSelected(null)}><X size={18} /></button>
             </div>
-
             <div className="reg-modal-body">
               {selected.photo_signed_url && (
                 <img src={selected.photo_signed_url} alt="ID" className="reg-photo" />
               )}
               <div className="reg-info-grid">
                 {[
-                  ['Email', selected.email],
-                  ['EMBG', selected.personal_id],
+                  ['Email',       selected.email],
+                  ['EMBG',        selected.personal_id],
                   ['Regjistruar', new Date(selected.created_at).toLocaleDateString('sq-AL')],
                 ].map(([k, v]) => (
                   <div key={k} className="reg-info-item">
@@ -125,14 +121,13 @@ const RegistrationPanel = () => {
                   </div>
                 ))}
               </div>
-
-              <div className="form-group">
+              <div className="reg-form-group">
                 <label>ARSYEJA E REFUZIMIT (opsionale)</label>
-                <input value={rejectReason} placeholder="p.sh. Dokumenti nuk është i qartë..."
+                <input value={rejectReason}
+                  placeholder="p.sh. Dokumenti nuk është i qartë..."
                   onChange={e => setRejectReason(e.target.value)} />
               </div>
             </div>
-
             <div className="reg-modal-footer">
               <button className="reg-reject-btn" onClick={() => reject(selected.id)}>
                 <X size={14} /> Refuzo

@@ -1,289 +1,156 @@
-/* KomunaPanel.css — i vetëqëndrueshëm, nuk varet nga MVRPanel.css */
+/* KomunaPanel.css — të gjitha klasat kanë prefix "kom-" */
 
-/* ── Badge ── */
-.panel-badge-green {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(16, 185, 129, 0.15);
-  border: 1px solid rgba(16, 185, 129, 0.25);
-  color: #34d399;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 700;
+/* ── Header Badge ── */
+.kom-panel-badge {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.25);
+  color: #34d399; padding: 6px 12px; border-radius: 20px;
+  font-size: 11px; font-weight: 700;
 }
 
-/* ── Panel shared ── */
-.panel-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+/* ── Panel Header ── */
+.kom-panel-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
   margin-bottom: 28px;
 }
-.panel-header h1 {
-  font-size: 1.4rem;
-  font-weight: 800;
-  color: #f0f4ff;
-  letter-spacing: -0.02em;
+.kom-panel-header h1 {
+  font-size: 1.4rem; font-weight: 800; color: #f0f4ff; letter-spacing: -0.02em;
 }
-.panel-header p {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.35);
-  margin-top: 3px;
-}
+.kom-panel-header p { font-size: 12px; color: rgba(255,255,255,0.35); margin-top: 3px; }
 
-.panel-toast {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 18px;
-  border-radius: 10px;
-  font-size: 13px;
-  font-weight: 600;
-  animation: slideIn 0.3s ease;
+/* ── Toast ── */
+.kom-toast {
+  position: fixed; top: 20px; right: 20px; z-index: 9999;
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 18px; border-radius: 10px;
+  font-size: 13px; font-weight: 600; animation: kom-slideIn 0.3s ease;
 }
-.toast-ok  { background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399; }
-.toast-err { background: rgba(239, 68, 68, 0.15);  border: 1px solid rgba(239, 68, 68, 0.3);  color: #f87171; }
-@keyframes slideIn {
+.kom-toast--ok  { background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); color: #34d399; }
+.kom-toast--err { background: rgba(239,68,68,0.15);  border: 1px solid rgba(239,68,68,0.3);  color: #f87171; }
+@keyframes kom-slideIn {
   from { transform: translateX(30px); opacity: 0; }
   to   { transform: translateX(0);    opacity: 1; }
 }
 
-.panel-loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 60px;
-  min-height: 400px;
+/* ── Loading / Empty ── */
+.kom-loading {
+  display: flex; justify-content: center; align-items: center;
+  padding: 60px; min-height: 400px;
 }
-.panel-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid rgba(255, 255, 255, 0.08);
-  border-top-color: #3b82f6;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
+.kom-spinner {
+  width: 32px; height: 32px;
+  border: 3px solid rgba(255,255,255,0.08);
+  border-top-color: #10b981; border-radius: 50%;
+  animation: kom-spin 0.7s linear infinite;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
-
-.panel-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  padding: 64px;
-  color: rgba(255, 255, 255, 0.3);
-  font-size: 14px;
-  text-align: center;
-  min-height: 400px;
-  justify-content: center;
+@keyframes kom-spin { to { transform: rotate(360deg); } }
+.kom-empty {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 12px; padding: 64px; min-height: 400px; justify-content: center;
+  color: rgba(255,255,255,0.3); font-size: 14px; text-align: center;
 }
 
 /* ── Table ── */
-.appt-table {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 16px;
-  overflow: hidden;
+.kom-table {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 16px; overflow: hidden;
 }
-
-.appt-table-head {
-  display: grid;
-  grid-template-columns: 1.8fr 1.5fr 1.2fr 1fr 0.8fr;
-  padding: 12px 20px;
-  background: rgba(255, 255, 255, 0.03);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  font-size: 10px;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.3);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+.kom-table-head {
+  display: grid; grid-template-columns: 1.8fr 1.5fr 1.2fr 1fr 0.8fr;
+  padding: 12px 20px; background: rgba(255,255,255,0.03);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.3);
+  text-transform: uppercase; letter-spacing: 0.08em;
 }
-
-.appt-table-row {
-  display: grid;
-  grid-template-columns: 1.8fr 1.5fr 1.2fr 1fr 0.8fr;
-  padding: 14px 20px;
-  align-items: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-  transition: background 0.15s;
+.kom-table-row {
+  display: grid; grid-template-columns: 1.8fr 1.5fr 1.2fr 1fr 0.8fr;
+  padding: 14px 20px; align-items: center;
+  border-bottom: 1px solid rgba(255,255,255,0.04); transition: background 0.15s;
 }
-.appt-table-row:last-child { border-bottom: none; }
-.appt-table-row:hover { background: rgba(255, 255, 255, 0.03); }
-
-.appt-name   { font-size: 13px; font-weight: 600; color: #f0f4ff; }
-.appt-embg   { font-size: 11px; color: rgba(255, 255, 255, 0.35); font-family: monospace; }
-.appt-reason { font-size: 12px; color: rgba(255, 255, 255, 0.6); }
-.appt-date   { font-size: 12px; color: rgba(255, 255, 255, 0.4); }
-
-/* ── Buttons ── */
-.appt-btn-green {
-  background: rgba(16, 185, 129, 0.12);
-  border: 1px solid rgba(16, 185, 129, 0.22);
-  color: #34d399;
-  border-radius: 8px;
-  padding: 6px 12px;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.15s;
-}
-.appt-btn-green:hover { background: rgba(16, 185, 129, 0.22); }
-
-.btn-confirm-green {
-  flex: 2;
-  padding: 11px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #059669, #10b981);
-  border: none;
-  color: #fff;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  font-family: inherit;
-  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
-  transition: all 0.15s;
-}
-.btn-confirm-green:hover { opacity: 0.9; }
+.kom-table-row:last-child { border-bottom: none; }
+.kom-table-row:hover { background: rgba(255,255,255,0.03); }
+.kom-name   { font-size: 13px; font-weight: 600; color: #f0f4ff; }
+.kom-embg   { font-size: 11px; color: rgba(255,255,255,0.35); font-family: monospace; }
+.kom-reason { font-size: 12px; color: rgba(255,255,255,0.6); }
+.kom-date   { font-size: 12px; color: rgba(255,255,255,0.4); }
 
 /* ── Badges ── */
-.badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-.badge-pending  { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.25); }
-.badge-approved { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.25); }
-.badge-rejected { background: rgba(239, 68, 68, 0.15);  color: #f87171; border: 1px solid rgba(239, 68, 68, 0.25); }
+.kom-badge-pending  { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap; background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.25); }
+.kom-badge-approved { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap; background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.25); }
+.kom-badge-rejected { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap; background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.25); }
 
-/* ── Modal Overlay ── */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 24px;
+/* ── Buttons ── */
+.kom-btn-green {
+  background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.22);
+  color: #34d399; border-radius: 8px; padding: 6px 12px;
+  font-size: 11px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s;
 }
+.kom-btn-green:hover { background: rgba(16,185,129,0.22); }
 
-/* ── Modal ── */
-.appt-modal {
-  background: #0f1f50;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-  width: 100%;
-  max-width: 440px;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
-  animation: modalIn 0.2s ease;
+/* ── Overlay & Modal ── */
+.kom-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.75); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000; padding: 24px;
 }
-@keyframes modalIn {
+.kom-modal {
+  background: #0f1f50; border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px; width: 100%; max-width: 440px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.5); animation: kom-modalIn 0.2s ease;
+}
+@keyframes kom-modalIn {
   from { transform: scale(0.95); opacity: 0; }
   to   { transform: scale(1);    opacity: 1; }
 }
-
-.appt-modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+.kom-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
   padding: 20px 24px 0;
 }
-.appt-modal-header h3 {
-  font-size: 15px;
-  font-weight: 800;
-  color: #f0f4ff;
+.kom-modal-header h3 { font-size: 15px; font-weight: 800; color: #f0f4ff; }
+.kom-modal-header button {
+  background: rgba(255,255,255,0.08); border: none; border-radius: 8px;
+  color: rgba(255,255,255,0.5); padding: 6px; cursor: pointer; display: flex;
 }
-.appt-modal-header button {
-  background: rgba(255, 255, 255, 0.08);
-  border: none;
-  border-radius: 8px;
-  color: rgba(255, 255, 255, 0.5);
-  padding: 6px;
-  cursor: pointer;
-  display: flex;
+.kom-modal-body {
+  padding: 20px 24px; display: flex; flex-direction: column; gap: 14px;
 }
-
-.appt-modal-body {
-  padding: 20px 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+.kom-modal-info {
+  display: flex; flex-direction: column; gap: 6px;
+  background: rgba(255,255,255,0.04); border-radius: 10px;
+  padding: 12px 14px; font-size: 12px; color: rgba(255,255,255,0.5);
 }
-
-.appt-modal-info {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 10px;
-  padding: 12px 14px;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
-}
+.kom-modal-footer { display: flex; gap: 10px; padding: 0 24px 20px; }
 
 /* ── Form ── */
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+.kom-form-group { display: flex; flex-direction: column; gap: 6px; }
+.kom-form-group label {
+  font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.35);
+  text-transform: uppercase; letter-spacing: 0.08em;
 }
-.form-group label {
-  font-size: 10px;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.35);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+.kom-form-group input,
+.kom-form-group select {
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+  color: #f0f4ff; border-radius: 10px; padding: 10px 14px;
+  font-size: 13px; outline: none; font-family: inherit; width: 100%; transition: all 0.2s;
 }
-.form-group input,
-.form-group select {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #f0f4ff;
-  border-radius: 10px;
-  padding: 10px 14px;
-  font-size: 13px;
-  outline: none;
-  font-family: inherit;
-  width: 100%;
-  transition: all 0.2s;
-}
-.form-group input:focus,
-.form-group select:focus {
-  border-color: rgba(16, 185, 129, 0.5);
-  background: rgba(255, 255, 255, 0.08);
-}
-.form-group select option { background: #0f1f50; color: #f0f4ff; }
+.kom-form-group input:focus,
+.kom-form-group select:focus { border-color: rgba(16,185,129,0.5); background: rgba(255,255,255,0.08); }
+.kom-form-group select option { background: #0f1f50; color: #f0f4ff; }
 
-/* ── Modal Footer ── */
-.appt-modal-footer {
-  display: flex;
-  gap: 10px;
-  padding: 0 24px 20px;
+/* ── Modal Buttons ── */
+.kom-btn-cancel {
+  flex: 1; padding: 11px; border-radius: 10px;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.5); font-size: 13px; font-weight: 600;
+  cursor: pointer; font-family: inherit; transition: all 0.15s;
 }
-
-.btn-cancel-modal {
-  flex: 1;
-  padding: 11px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.15s;
+.kom-btn-cancel:hover { background: rgba(255,255,255,0.1); }
+.kom-btn-confirm-green {
+  flex: 2; padding: 11px; border-radius: 10px;
+  background: linear-gradient(135deg, #059669, #10b981); border: none;
+  color: #fff; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit;
+  box-shadow: 0 4px 14px rgba(16,185,129,0.3); transition: all 0.15s;
 }
-.btn-cancel-modal:hover { background: rgba(255, 255, 255, 0.1); }
+.kom-btn-confirm-green:hover { opacity: 0.9; }

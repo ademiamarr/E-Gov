@@ -1,277 +1,147 @@
-/* GjobaPanel.css — i vetëqëndrueshëm */
+/* GjobaPanel.css — të gjitha klasat kanë prefix "gjb-" */
 
-/* ── Panel shared ── */
-.panel-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+/* ── Panel Header ── */
+.gjb-panel-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
   margin-bottom: 28px;
 }
-.panel-header h1 {
-  font-size: 1.4rem;
-  font-weight: 800;
-  color: #f0f4ff;
-  letter-spacing: -0.02em;
+.gjb-panel-header h1 {
+  font-size: 1.4rem; font-weight: 800; color: #f0f4ff; letter-spacing: -0.02em;
 }
-.panel-header p {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.35);
-  margin-top: 3px;
-}
+.gjb-panel-header p { font-size: 12px; color: rgba(255,255,255,0.35); margin-top: 3px; }
 
-.panel-toast {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 18px;
-  border-radius: 10px;
-  font-size: 13px;
-  font-weight: 600;
-  animation: slideIn 0.3s ease;
+/* ── Add Button ── */
+.gjb-add-btn {
+  display: flex; align-items: center; gap: 6px;
+  background: linear-gradient(135deg, #dc2626, #ef4444);
+  color: #fff; border: none; padding: 10px 18px; border-radius: 10px;
+  font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit;
+  box-shadow: 0 4px 14px rgba(239,68,68,0.3); transition: all 0.2s;
 }
-.toast-ok  { background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399; }
-.toast-err { background: rgba(239, 68, 68, 0.15);  border: 1px solid rgba(239, 68, 68, 0.3);  color: #f87171; }
-@keyframes slideIn {
+.gjb-add-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+/* ── Toast ── */
+.gjb-toast {
+  position: fixed; top: 20px; right: 20px; z-index: 9999;
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 18px; border-radius: 10px;
+  font-size: 13px; font-weight: 600; animation: gjb-slideIn 0.3s ease;
+}
+.gjb-toast--ok  { background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); color: #34d399; }
+.gjb-toast--err { background: rgba(239,68,68,0.15);  border: 1px solid rgba(239,68,68,0.3);  color: #f87171; }
+@keyframes gjb-slideIn {
   from { transform: translateX(30px); opacity: 0; }
   to   { transform: translateX(0);    opacity: 1; }
 }
 
-.panel-loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 60px;
-  min-height: 400px;
+/* ── Loading / Empty ── */
+.gjb-loading {
+  display: flex; justify-content: center; align-items: center;
+  padding: 60px; min-height: 400px;
 }
-.panel-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid rgba(255, 255, 255, 0.08);
-  border-top-color: #3b82f6;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
+.gjb-spinner {
+  width: 32px; height: 32px;
+  border: 3px solid rgba(255,255,255,0.08);
+  border-top-color: #ef4444; border-radius: 50%;
+  animation: gjb-spin 0.7s linear infinite;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
-
-.panel-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  padding: 64px;
-  color: rgba(255, 255, 255, 0.3);
-  font-size: 14px;
-  text-align: center;
-  min-height: 400px;
-  justify-content: center;
+@keyframes gjb-spin { to { transform: rotate(360deg); } }
+.gjb-empty {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 12px; padding: 64px; min-height: 400px; justify-content: center;
+  color: rgba(255,255,255,0.3); font-size: 14px; text-align: center;
 }
-
-/* ── Add Button ── */
-.gjoba-add-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: linear-gradient(135deg, #dc2626, #ef4444);
-  color: #fff;
-  border: none;
-  padding: 10px 18px;
-  border-radius: 10px;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  font-family: inherit;
-  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);
-  transition: all 0.2s;
-}
-.gjoba-add-btn:hover { opacity: 0.9; transform: translateY(-1px); }
 
 /* ── Table ── */
-.gjoba-table {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 16px;
-  overflow: hidden;
+.gjb-table {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 16px; overflow: hidden;
 }
-
-.gjoba-table-head {
-  display: grid;
-  grid-template-columns: 2fr 2fr 1fr 1fr 1fr;
-  padding: 12px 20px;
-  background: rgba(255, 255, 255, 0.03);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  font-size: 10px;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.3);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+.gjb-table-head {
+  display: grid; grid-template-columns: 2fr 2fr 1fr 1fr 1fr;
+  padding: 12px 20px; background: rgba(255,255,255,0.03);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.3);
+  text-transform: uppercase; letter-spacing: 0.08em;
 }
-
-.gjoba-table-row {
-  display: grid;
-  grid-template-columns: 2fr 2fr 1fr 1fr 1fr;
-  padding: 14px 20px;
-  align-items: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-  transition: background 0.15s;
+.gjb-table-row {
+  display: grid; grid-template-columns: 2fr 2fr 1fr 1fr 1fr;
+  padding: 14px 20px; align-items: center;
+  border-bottom: 1px solid rgba(255,255,255,0.04); transition: background 0.15s;
 }
-.gjoba-table-row:last-child { border-bottom: none; }
-.gjoba-table-row:hover { background: rgba(255, 255, 255, 0.03); }
-
-.gjoba-name   { font-size: 13px; font-weight: 600; color: #f0f4ff; }
-.gjoba-email  { font-size: 11px; color: rgba(255, 255, 255, 0.35); }
-.gjoba-type   { font-size: 12px; color: rgba(255, 255, 255, 0.6); }
-.gjoba-amount { font-size: 13px; font-weight: 700; color: #fbbf24; }
-.gjoba-date   { font-size: 12px; color: rgba(255, 255, 255, 0.4); }
+.gjb-table-row:last-child { border-bottom: none; }
+.gjb-table-row:hover { background: rgba(255,255,255,0.03); }
+.gjb-name   { font-size: 13px; font-weight: 600; color: #f0f4ff; }
+.gjb-email  { font-size: 11px; color: rgba(255,255,255,0.35); }
+.gjb-type   { font-size: 12px; color: rgba(255,255,255,0.6); }
+.gjb-amount { font-size: 13px; font-weight: 700; color: #fbbf24; }
+.gjb-date   { font-size: 12px; color: rgba(255,255,255,0.4); }
 
 /* ── Badges ── */
-.badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 700;
-}
-.badge-pending  { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.25); }
-.badge-approved { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.25); }
+.gjb-badge-pending  { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.25); }
+.gjb-badge-approved { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.25); }
 
-/* ── Modal Overlay ── */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 24px;
+/* ── Overlay & Modal ── */
+.gjb-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.75); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000; padding: 24px;
 }
-
-/* ── Modal ── */
-.gjoba-modal {
-  background: #0f1f50;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-  width: 100%;
-  max-width: 460px;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
-  animation: modalIn 0.2s ease;
+.gjb-modal {
+  background: #0f1f50; border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px; width: 100%; max-width: 460px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.5); animation: gjb-modalIn 0.2s ease;
 }
-@keyframes modalIn {
+@keyframes gjb-modalIn {
   from { transform: scale(0.95); opacity: 0; }
   to   { transform: scale(1);    opacity: 1; }
 }
-
-.gjoba-modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+.gjb-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
   padding: 20px 24px 0;
 }
-.gjoba-modal-header h3 {
-  font-size: 16px;
-  font-weight: 800;
-  color: #f0f4ff;
+.gjb-modal-header h3 { font-size: 16px; font-weight: 800; color: #f0f4ff; }
+.gjb-modal-header button {
+  background: rgba(255,255,255,0.08); border: none; border-radius: 8px;
+  color: rgba(255,255,255,0.5); padding: 6px; cursor: pointer; display: flex;
 }
-.gjoba-modal-header button {
-  background: rgba(255, 255, 255, 0.08);
-  border: none;
-  border-radius: 8px;
-  color: rgba(255, 255, 255, 0.5);
-  padding: 6px;
-  cursor: pointer;
-  display: flex;
+.gjb-modal-body {
+  padding: 20px 24px; display: flex; flex-direction: column; gap: 14px;
 }
-
-.gjoba-modal-body {
-  padding: 20px 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.gjoba-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
+.gjb-modal-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.gjb-modal-footer { display: flex; gap: 10px; padding: 0 24px 20px; }
 
 /* ── Form ── */
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+.gjb-form-group { display: flex; flex-direction: column; gap: 6px; }
+.gjb-form-group label {
+  font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.35);
+  text-transform: uppercase; letter-spacing: 0.08em;
 }
-.form-group label {
-  font-size: 10px;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.35);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+.gjb-form-group input,
+.gjb-form-group select {
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+  color: #f0f4ff; border-radius: 10px; padding: 10px 14px;
+  font-size: 13px; outline: none; font-family: inherit; width: 100%; transition: all 0.2s;
 }
-.form-group input,
-.form-group select {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #f0f4ff;
-  border-radius: 10px;
-  padding: 10px 14px;
-  font-size: 13px;
-  outline: none;
-  font-family: inherit;
-  width: 100%;
-  transition: all 0.2s;
-}
-.form-group input:focus,
-.form-group select:focus {
-  border-color: rgba(239, 68, 68, 0.4);
-  background: rgba(255, 255, 255, 0.08);
-}
-.form-group select option { background: #0f1f50; color: #f0f4ff; }
+.gjb-form-group input:focus,
+.gjb-form-group select:focus { border-color: rgba(239,68,68,0.4); background: rgba(255,255,255,0.08); }
+.gjb-form-group select option { background: #0f1f50; color: #f0f4ff; }
 
-/* ── Modal Footer ── */
-.gjoba-modal-footer {
-  display: flex;
-  gap: 10px;
-  padding: 0 24px 20px;
+/* ── Modal Buttons ── */
+.gjb-btn-cancel {
+  flex: 1; padding: 11px; border-radius: 10px;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.5); font-size: 13px; font-weight: 600;
+  cursor: pointer; font-family: inherit; transition: all 0.15s;
 }
-
-.btn-cancel-modal {
-  flex: 1;
-  padding: 11px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.15s;
+.gjb-btn-cancel:hover { background: rgba(255,255,255,0.1); }
+.gjb-btn-confirm {
+  flex: 2; display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 11px; border-radius: 10px;
+  background: linear-gradient(135deg, #dc2626, #ef4444); border: none;
+  color: #fff; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit;
+  box-shadow: 0 4px 14px rgba(239,68,68,0.3); transition: all 0.15s;
 }
-.btn-cancel-modal:hover { background: rgba(255, 255, 255, 0.1); }
-
-.gjoba-confirm-btn {
-  flex: 2;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 11px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #dc2626, #ef4444);
-  border: none;
-  color: #fff;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  font-family: inherit;
-  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);
-  transition: all 0.15s;
-}
-.gjoba-confirm-btn:hover { opacity: 0.9; }
+.gjb-btn-confirm:hover { opacity: 0.9; }

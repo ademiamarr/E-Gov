@@ -36,63 +36,60 @@ const MVRPanel = () => {
 
   const statusBadge = (status) => {
     const map = {
-      pending:  { label: 'Në pritje', cls: 'badge-pending'  },
-      approved: { label: 'Aprovuar',  cls: 'badge-approved' },
-      rejected: { label: 'Refuzuar',  cls: 'badge-rejected' },
+      pending:  <span className="mvr-badge-pending">Në pritje</span>,
+      approved: <span className="mvr-badge-approved">Aprovuar</span>,
+      rejected: <span className="mvr-badge-rejected">Refuzuar</span>,
     }
-    const s = map[status] || map.pending
-    return <span className={`badge ${s.cls}`}>{s.label}</span>
+    return map[status] || map.pending
   }
 
   return (
-    <div className="panel">
+    <div>
       {toast && (
-        <div className={`panel-toast ${toast.type === 'error' ? 'toast-err' : 'toast-ok'}`}>
+        <div className={`mvr-toast ${toast.type === 'error' ? 'mvr-toast--err' : 'mvr-toast--ok'}`}>
           {toast.type === 'error' ? <AlertCircle size={14} /> : <Check size={14} />}
           {toast.msg}
         </div>
       )}
 
-      <div className="panel-header">
+      <div className="mvr-panel-header">
         <div>
           <h1>Terminë MVR</h1>
           <p>Ministria e Punëve të Brendshme</p>
         </div>
-        <div className="panel-badge-blue">
+        <div className="mvr-panel-badge">
           <Calendar size={14} /> {appointments.filter(a => a.status === 'pending').length} pending
         </div>
       </div>
 
       {loading ? (
-        <div className="panel-loading"><div className="panel-spinner" /></div>
+        <div className="mvr-loading"><div className="mvr-spinner" /></div>
       ) : appointments.length === 0 ? (
-        <div className="panel-empty">
+        <div className="mvr-empty">
           <Calendar size={40} style={{ opacity: 0.2 }} />
           <p>Nuk ka termine MVR</p>
         </div>
       ) : (
-        <div className="appt-table">
-          <div className="appt-table-head">
-            <span>QYTETARI</span>
-            <span>SHËRBIMI</span>
-            <span>DATA KËRKUAR</span>
-            <span>STATUSI</span>
-            <span>VEPRIME</span>
+        <div className="mvr-table">
+          <div className="mvr-table-head">
+            <span>QYTETARI</span><span>SHËRBIMI</span>
+            <span>DATA KËRKUAR</span><span>STATUSI</span><span>VEPRIME</span>
           </div>
           {appointments.map(a => (
-            <div key={a.id} className="appt-table-row">
+            <div key={a.id} className="mvr-table-row">
               <div>
-                <div className="appt-name">{a.users?.first_name} {a.users?.last_name}</div>
-                <div className="appt-embg">{a.users?.personal_id}</div>
+                <div className="mvr-name">{a.users?.first_name} {a.users?.last_name}</div>
+                <div className="mvr-embg">{a.users?.personal_id}</div>
               </div>
-              <span className="appt-reason">{a.reason}</span>
-              <span className="appt-date">
-                {a.appointment_date
-                  ? new Date(a.appointment_date).toLocaleDateString('sq-AL')
-                  : '—'}
+              <span className="mvr-reason">{a.reason}</span>
+              <span className="mvr-date">
+                {a.appointment_date ? new Date(a.appointment_date).toLocaleDateString('sq-AL') : '—'}
               </span>
               {statusBadge(a.status)}
-              <button className="appt-btn" onClick={() => { setSelected(a); setForm({ status:'approved', admin_note:'', approved_date:'' }) }}>
+              <button className="mvr-btn" onClick={() => {
+                setSelected(a)
+                setForm({ status: 'approved', admin_note: '', approved_date: '' })
+              }}>
                 Menaxho
               </button>
             </div>
@@ -101,18 +98,18 @@ const MVRPanel = () => {
       )}
 
       {selected && (
-        <div className="modal-overlay" onClick={() => setSelected(null)}>
-          <div className="appt-modal" onClick={e => e.stopPropagation()}>
-            <div className="appt-modal-header">
+        <div className="mvr-overlay" onClick={() => setSelected(null)}>
+          <div className="mvr-modal" onClick={e => e.stopPropagation()}>
+            <div className="mvr-modal-header">
               <h3>Menaxho termin — {selected.users?.first_name}</h3>
               <button onClick={() => setSelected(null)}><X size={18} /></button>
             </div>
-            <div className="appt-modal-body">
-              <div className="appt-modal-info">
+            <div className="mvr-modal-body">
+              <div className="mvr-modal-info">
                 <span>📋 {selected.reason}</span>
                 <span>👤 {selected.users?.email}</span>
               </div>
-              <div className="form-group">
+              <div className="mvr-form-group">
                 <label>STATUSI</label>
                 <select value={form.status}
                   onChange={e => setForm({ ...form, status: e.target.value })}>
@@ -121,21 +118,21 @@ const MVRPanel = () => {
                 </select>
               </div>
               {form.status === 'approved' && (
-                <div className="form-group">
+                <div className="mvr-form-group">
                   <label>DATA E KONFIRMUAR</label>
                   <input type="datetime-local" value={form.approved_date}
                     onChange={e => setForm({ ...form, approved_date: e.target.value })} />
                 </div>
               )}
-              <div className="form-group">
+              <div className="mvr-form-group">
                 <label>SHËNIM (opsionale)</label>
                 <input value={form.admin_note} placeholder="Shënim për qytetarin..."
                   onChange={e => setForm({ ...form, admin_note: e.target.value })} />
               </div>
             </div>
-            <div className="appt-modal-footer">
-              <button className="btn-cancel-modal" onClick={() => setSelected(null)}>Anulo</button>
-              <button className="btn-confirm-modal" onClick={update}>Konfirmo ✓</button>
+            <div className="mvr-modal-footer">
+              <button className="mvr-btn-cancel" onClick={() => setSelected(null)}>Anulo</button>
+              <button className="mvr-btn-confirm" onClick={update}>Konfirmo ✓</button>
             </div>
           </div>
         </div>

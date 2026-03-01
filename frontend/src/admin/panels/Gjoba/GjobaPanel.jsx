@@ -44,55 +44,52 @@ const GjobaPanel = () => {
   }
 
   const statusBadge = (status) => (
-    <span className={`badge ${status === 'paid' ? 'badge-approved' : 'badge-pending'}`}>
+    <span className={status === 'paid' ? 'gjb-badge-approved' : 'gjb-badge-pending'}>
       {status === 'paid' ? 'Paguar' : 'Pa paguar'}
     </span>
   )
 
   return (
-    <div className="panel">
+    <div>
       {toast && (
-        <div className={`panel-toast ${toast.type === 'error' ? 'toast-err' : 'toast-ok'}`}>
+        <div className={`gjb-toast ${toast.type === 'error' ? 'gjb-toast--err' : 'gjb-toast--ok'}`}>
           {toast.type === 'error' ? <AlertCircle size={14} /> : <Check size={14} />}
           {toast.msg}
         </div>
       )}
 
-      <div className="panel-header">
+      <div className="gjb-panel-header">
         <div>
           <h1>Gjoba</h1>
           <p>Menaxho gjobat e qytetarëve</p>
         </div>
-        <button className="gjoba-add-btn" onClick={() => setShowAdd(true)}>
+        <button className="gjb-add-btn" onClick={() => setShowAdd(true)}>
           <Plus size={15} /> Shto gjobë
         </button>
       </div>
 
       {loading ? (
-        <div className="panel-loading"><div className="panel-spinner" /></div>
+        <div className="gjb-loading"><div className="gjb-spinner" /></div>
       ) : fines.length === 0 ? (
-        <div className="panel-empty">
+        <div className="gjb-empty">
           <AlertTriangle size={40} style={{ opacity: 0.2 }} />
           <p>Nuk ka gjoba të regjistruara</p>
         </div>
       ) : (
-        <div className="gjoba-table">
-          <div className="gjoba-table-head">
-            <span>QYTETARI</span>
-            <span>LLOJI</span>
-            <span>SHUMA</span>
-            <span>DATA</span>
-            <span>STATUSI</span>
+        <div className="gjb-table">
+          <div className="gjb-table-head">
+            <span>QYTETARI</span><span>LLOJI</span>
+            <span>SHUMA</span><span>DATA</span><span>STATUSI</span>
           </div>
           {fines.map(f => (
-            <div key={f.id} className="gjoba-table-row">
+            <div key={f.id} className="gjb-table-row">
               <div>
-                <div className="gjoba-name">{f.users?.first_name} {f.users?.last_name}</div>
-                <div className="gjoba-email">{f.users?.email}</div>
+                <div className="gjb-name">{f.users?.first_name} {f.users?.last_name}</div>
+                <div className="gjb-email">{f.users?.email}</div>
               </div>
-              <span className="gjoba-type">{f.type}</span>
-              <span className="gjoba-amount">{f.amount} MKD</span>
-              <span className="gjoba-date">
+              <span className="gjb-type">{f.type}</span>
+              <span className="gjb-amount">{f.amount} MKD</span>
+              <span className="gjb-date">
                 {f.fine_date ? new Date(f.fine_date).toLocaleDateString('sq-AL') : '—'}
               </span>
               {statusBadge(f.status)}
@@ -102,14 +99,14 @@ const GjobaPanel = () => {
       )}
 
       {showAdd && (
-        <div className="modal-overlay" onClick={() => setShowAdd(false)}>
-          <div className="gjoba-modal" onClick={e => e.stopPropagation()}>
-            <div className="gjoba-modal-header">
+        <div className="gjb-overlay" onClick={() => setShowAdd(false)}>
+          <div className="gjb-modal" onClick={e => e.stopPropagation()}>
+            <div className="gjb-modal-header">
               <h3>Shto gjobë të re</h3>
               <button onClick={() => setShowAdd(false)}><X size={18} /></button>
             </div>
-            <div className="gjoba-modal-body">
-              <div className="form-group">
+            <div className="gjb-modal-body">
+              <div className="gjb-form-group">
                 <label>QYTETARI *</label>
                 <select value={form.user_id}
                   onChange={e => setForm({ ...form, user_id: e.target.value })}>
@@ -121,34 +118,34 @@ const GjobaPanel = () => {
                   ))}
                 </select>
               </div>
-              <div className="form-group">
+              <div className="gjb-form-group">
                 <label>LLOJI I GJOBËS *</label>
                 <select value={form.type}
                   onChange={e => setForm({ ...form, type: e.target.value })}>
                   {FINE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
-              <div className="gjoba-row">
-                <div className="form-group">
+              <div className="gjb-modal-row">
+                <div className="gjb-form-group">
                   <label>SHUMA (MKD) *</label>
                   <input type="number" value={form.amount} placeholder="0.00"
                     onChange={e => setForm({ ...form, amount: e.target.value })} />
                 </div>
-                <div className="form-group">
+                <div className="gjb-form-group">
                   <label>DATA E GJOBËS</label>
                   <input type="date" value={form.fine_date}
                     onChange={e => setForm({ ...form, fine_date: e.target.value })} />
                 </div>
               </div>
-              <div className="form-group">
+              <div className="gjb-form-group">
                 <label>PËRSHKRIM (opsionale)</label>
                 <input value={form.description} placeholder="Detaje shtesë..."
                   onChange={e => setForm({ ...form, description: e.target.value })} />
               </div>
             </div>
-            <div className="gjoba-modal-footer">
-              <button className="btn-cancel-modal" onClick={() => setShowAdd(false)}>Anulo</button>
-              <button className="gjoba-confirm-btn" onClick={addFine}>
+            <div className="gjb-modal-footer">
+              <button className="gjb-btn-cancel" onClick={() => setShowAdd(false)}>Anulo</button>
+              <button className="gjb-btn-confirm" onClick={addFine}>
                 <Plus size={14} /> Shto gjobën
               </button>
             </div>
