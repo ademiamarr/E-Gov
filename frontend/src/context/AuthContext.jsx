@@ -6,28 +6,37 @@ import API, { setTokenGetter } from '../api/axios'
 const AuthContext = createContext(null)
 
 export const AuthProvider = ({ children }) => {
-  const { getToken, signOut, isLoaded, isSignedIn } = useClerkAuth()
+  const { getToken, signOut, isLoaded, isSignedIn, user: clerkUser } = useClerkAuth()
   const [dbUser, setDbUser]   = useState(null)
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
 
-  // ✅ Setup token getter za Axios
+  // ✅ Setup token getter za Axios - CORRECT WAY
   useEffect(() => {
     if (isLoaded) {
-      setTokenGetter(() => getToken)
-      console.log('✅ Token getter e caktuar')
+      // ✅ Pass a function that RETURNS a promise
+      setTokenGetter(async () => {
+        try {
+          const token = await getToken()
+          return token || null
+        } catch (err) {
+          console.error('❌ Error getting token:', err.message)
+          return null
+        }
+      })
+      console.log('✅ Token getter initialized')
     }
   }, [isLoaded, getToken])
 
   // ✅ Merr user data nga backend
   useEffect(() => {
     if (!isLoaded) {
-      console.log('⏳ Clerk nuk e ka ngarkuar ende...')
+      console.log('⏳ Clerk is loading...')
       return
     }
 
     if (!isSignedIn) {
-      console.log('ℹ️ Useri nuk është i logguar')
+      console.log('ℹ️ User not signed in')
       setDbUser(null)
       setLoading(false)
       return
@@ -35,24 +44,35 @@ export const AuthProvider = ({ children }) => {
 
     const fetchDbUser = async () => {
       try {
-        console.log('🔍 Po marr user data nga backend...')
+        console.log('🔍 Fetching user data from backend...')
+        
         const res = await API.get('/auth/me')
-        console.log('✅ User data marrë:', res.data.data)
-        setDbUser(res.data.data)
+        
+        if (res.data?.success && res.data?.data) {
+          console.log('✅ User data received:', {
+            email: res.data.data.email,
+            role: res.data.data.role,
+            status: res.data.data.verification_status
+          })
+          setDbUser(res.data.data)
+        } else {
+          console.error('❌ Invalid response format:', res.data)
+          setDbUser(null)
+        }
       } catch (err) {
         const status = err.response?.status
         const message = err.response?.data?.message || err.message
-        
-        console.error(`❌ Gabim në fetchDbUser (HTTP ${status}):`, message)
-        console.error('📋 Full error:', err)
 
-        setDbUser(null)
+        console.error(`❌ Error fetching user (HTTP ${status}):`, message)
+        console.error('❌ Full error:', err)
 
-        // ⚠️ Nëse 401, logout userin
+        // If 401 Unauthorized, logout
         if (status === 401) {
-          console.log('⚠️ Token invalid, logout user...')
+          console.warn('⚠️ Token invalid or user not found, logging out...')
           signOut()
         }
+
+        setDbUser(null)
       } finally {
         setLoading(false)
       }
@@ -67,44 +87,46 @@ export const AuthProvider = ({ children }) => {
       return
     }
 
-    const { role } = dbUser
+    const { role, verification_status } = dbUser
     const currentPath = window.location.pathname
 
-    console.log(`🎯 Redirekto bazuar në role: ${role} (aktual path: ${currentPath})`)
+    console.log(`🎯 User role: ${role}, status: ${verification_status}`)
 
-    // Nëse pending, shko në /pending
-    if (role === 'pending' && !currentPath.startsWith('/pending')) {
-      console.log('➡️ Redirekto → /pending')
+    // Nëse pending
+    if (verification_status === 'pending' && !currentPath.startsWith('/pending')) {
+      console.log('➡️ Redirect → /pending')
       navigate('/pending', { replace: true })
+      return
     }
-    // Nëse rejected, shko në /rejected
-    else if (role === 'rejected' && !currentPath.startsWith('/rejected')) {
-      console.log('➡️ Redirekto → /rejected')
+
+    // Nëse rejected
+    if (verification_status === 'rejected' && !currentPath.startsWith('/rejected')) {
+      console.log('➡️ Redirect → /rejected')
       navigate('/rejected', { replace: true })
+      return
     }
-    // Nëse admin dhe në /dashboard, shko në /admin
-    else if (
-      ['super_admin', 'admin_users', 'admin_fines', 'admin_appointments'].includes(role) &&
-      currentPath === '/dashboard'
-    ) {
-      console.log('➡️ Redirekto → /admin')
-      navigate('/admin', { replace: true })
+
+    // Nëse admin
+    if (['super_admin', 'admin_users', 'admin_fines', 'admin_appointments'].includes(role)) {
+      if (currentPath === '/login' || currentPath === '/register' || currentPath === '/dashboard') {
+        console.log('➡️ Redirect → /admin')
+        navigate('/admin', { replace: true })
+      }
+      return
     }
-    // Nëse user normal dhe në /admin, shko në /dashboard
-    else if (role === 'user' && currentPath.startsWith('/admin')) {
-      console.log('➡️ Redirekto → /dashboard')
-      navigate('/dashboard', { replace: true })
-    }
-    // Nëse user approved dhe në /login, shko në dashboard/admin
-    else if ((role === 'user' || ['super_admin', 'admin_users', 'admin_fines', 'admin_appointments'].includes(role)) && currentPath === '/login') {
-      const nextPath = ['super_admin', 'admin_users', 'admin_fines', 'admin_appointments'].includes(role) ? '/admin' : '/dashboard'
-      console.log(`➡️ Redirekto → ${nextPath}`)
-      navigate(nextPath, { replace: true })
+
+    // Nëse user normal
+    if (role === 'user') {
+      if (currentPath === '/login' || currentPath === '/register' || currentPath.startsWith('/admin')) {
+        console.log('➡️ Redirect → /dashboard')
+        navigate('/dashboard', { replace: true })
+      }
+      return
     }
   }, [dbUser, loading, isLoaded, isSignedIn, navigate])
 
   const logout = async () => {
-    console.log('🔴 Logout process starting...')
+    console.log('🔴 Logging out...')
     await signOut()
     setDbUser(null)
     navigate('/login', { replace: true })
@@ -120,7 +142,7 @@ export const AuthProvider = ({ children }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext)
   if (!context) {
-    throw new Error('useAuth duhet të përdoret brenda AuthProvider')
+    throw new Error('useAuth must be used within AuthProvider')
   }
   return context
 }
