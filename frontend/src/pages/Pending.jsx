@@ -1,6 +1,5 @@
-import { useAuth } from '../../context/AuthContext'
+import { useAuth } from '../context/AuthContext'
 import { Building2, Clock, Mail, LogOut } from 'lucide-react'
-import './Pending.css'
 
 const Pending = () => {
   const { user, logout } = useAuth()

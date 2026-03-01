@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
-import API from '../../../api/axios'
+import API from '../../api/axios'
 import { MapPin, Check, X, AlertCircle } from 'lucide-react'
-import './KomunaPanel.css'
 
 const KomunaPanel = () => {
   const [appointments, setAppointments] = useState([])

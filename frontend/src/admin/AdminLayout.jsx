@@ -2,11 +2,10 @@ import { useState } from 'react'
 import { Routes, Route, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Building2, Users, UserCheck, AlertTriangle, Calendar, MapPin, LogOut, Menu, X } from 'lucide-react'
-import RegistrationPanel from './panels/Registration/RegistrationPanel.jsx'
-import MVRPanel from './panels/MVR/MVRPanel.jsx'
-import KomunaPanel from './panels/Komunale/KomunaPanel.jsx'
-import GjobaPanel from './panels/Gjoba/GjobaPanel.jsx'
-import './AdminLayout.css'
+import RegistrationPanel from './panels/RegistrationPanel.jsx'
+import MVRPanel from './panels/MVRPanel.jsx'
+import KomunaPanel from './panels/KomunaPanel.jsx'
+import GjobaPanel from './panels/GjobaPanel.jsx'
 
 const AdminLayout = () => {
   const { user, logout } = useAuth()

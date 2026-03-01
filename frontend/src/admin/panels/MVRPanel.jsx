@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
-import API from '../../../api/axios'
+import API from '../../api/axios'
 import { Calendar, Check, X, Clock, AlertCircle } from 'lucide-react'
-import './MVRPanel.css'
 
 const MVRPanel = () => {
   const [appointments, setAppointments] = useState([])

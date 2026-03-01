@@ -7,7 +7,6 @@ import {
   CreditCard, User, LogOut, Bell, X, CheckCircle,
   Clock, XCircle, Plus, ChevronRight, Building2
 } from 'lucide-react'
-import './Dashboard.css'
 
 const Dashboard = () => {
   const { user, logout } = useAuth()

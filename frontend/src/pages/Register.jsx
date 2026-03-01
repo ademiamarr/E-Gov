@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useSignUp } from '@clerk/clerk-react'
 import { useTranslation } from 'react-i18next'
-import LanguageSwitcher from '../../components/LanguageSwitcher'
+import LanguageSwitcher from '../components/LanguageSwitcher'
 import { Building2, AlertCircle, Eye, EyeOff, Upload, ChevronRight, ChevronLeft } from 'lucide-react'
 
 const validateEMBG = (embg) => {
