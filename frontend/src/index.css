@@ -1,0 +1,46 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: #f8f9fc;
+  color: #0f172a;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.admin-sidebar-closed { display: none !important; }
+
+.reg-panel-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
+.reg-panel-header h1 { font-size: 1.4rem; font-weight: 800; color: #f0f4ff; margin: 0; }
+.reg-panel-header p { font-size: 13px; color: rgba(255,255,255,0.4); margin-top: 4px; }
+.reg-panel-badge { display: flex; align-items: center; gap: 6px; background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3); color: #60a5fa; padding: 8px 14px; border-radius: 10px; font-size: 12px; font-weight: 600; }
+.reg-loading { display: flex; justify-content: center; padding: 40px; }
+.reg-spinner { width: 32px; height: 32px; border: 3px solid rgba(255,255,255,0.1); border-top-color: #a5b4fc; border-radius: 50%; animation: spin 0.7s linear infinite; }
+.reg-empty { text-align: center; padding: 60px 20px; color: rgba(255,255,255,0.3); }
+.reg-empty svg { margin-bottom: 12px; }
+.reg-table { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; overflow: hidden; }
+.reg-table-head { display: grid; grid-template-columns: 120px 160px 120px 120px 100px; gap: 16px; padding: 16px 20px; background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.07); font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.06em; }
+.reg-table-row { display: grid; grid-template-columns: 120px 160px 120px 120px 100px; gap: 16px; align-items: center; padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.reg-name { color: #f0f4ff; font-weight: 600; font-size: 13px; }
+.reg-email { color: rgba(255,255,255,0.5); font-size: 12px; }
+.reg-embg { color: rgba(255,255,255,0.5); font-size: 12px; }
+.reg-date { color: rgba(255,255,255,0.4); font-size: 12px; }
+.reg-actions { display: flex; gap: 8px; }
+.reg-btn-view { background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3); color: #60a5fa; border-radius: 7px; padding: 6px 10px; font-size: 11px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.15s; }
+.reg-btn-approve { background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); color: #34d399; padding: 6px 8px; border-radius: 7px; cursor: pointer; display: flex; align-items: center; transition: all 0.15s; }
+.reg-btn-reject { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #f87171; padding: 6px 8px; border-radius: 7px; cursor: pointer; display: flex; align-items: center; transition: all 0.15s; }
+.reg-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 24px; }
+.reg-modal { background: #0f1f50; border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; width: 100%; max-width: 520px; box-shadow: 0 24px 64px rgba(0,0,0,0.5); }
