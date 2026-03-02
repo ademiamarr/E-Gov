@@ -7,7 +7,7 @@ import en from './locales/en.json'
 
 const STORAGE_KEY = 'egov_language'
 
-// Read saved language from localStorage directly (before detector runs)
+// Lexo gjuhën e ruajtur nga localStorage direkt (para se detektori të ekzekutohet)
 const savedLang = localStorage.getItem(STORAGE_KEY)
 const supportedLangs = ['sq', 'mk', 'en']
 const initialLang = (savedLang && supportedLangs.includes(savedLang)) ? savedLang : 'sq'
@@ -21,11 +21,11 @@ i18n
       mk: { translation: mk },
       en: { translation: en },
     },
-    lng: initialLang,          // force the saved/default language
+    lng: initialLang,          // Vendos gjuhën e ruajtur
     fallbackLng: 'sq',
     interpolation: { escapeValue: false },
     detection: {
-      // only use our manual override, not browser/cookie
+      // Përdor vetëm override-in tonë manual, jo browser/cookie
       order: [],
     },
   })

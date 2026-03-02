@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useSocket } from '../../context/SocketContext'
-import { useUser } from '@clerk/clerk-react'   // ← FIX: useUser instead of useClerk
 import API from '../../api/axios'
 import LanguageSwitcher from '../../components/LanguageSwitcher'
 import { useTranslation } from 'react-i18next'
@@ -35,9 +34,6 @@ const Dashboard = () => {
   const { user, logout }        = useAuth()
   const { t }                   = useTranslation()
   const { liveNotif }           = useSocket()
-
-  // ── FIX: useUser() gives us a stable `user` object with updatePassword ──
-  const { user: clerkUser, isLoaded: clerkLoaded } = useUser()
 
   const [activeTab, setActiveTab]         = useState('overview')
   const [appointments, setAppointments]   = useState([])
@@ -104,7 +100,7 @@ const Dashboard = () => {
     } catch (e) { showToast(e.response?.data?.message || t('pay_failed'), 'error') }
   }
 
-  // ── FIXED password change using useUser() ──────────────────────────────
+  // ✅ PASSWORD CHANGE - BACKEND API
   const changePassword = async () => {
     setPwError('')
     setPwSuccess(false)
@@ -118,27 +114,26 @@ const Dashboard = () => {
     if (pwForm.next !== pwForm.confirm) {
       return setPwError(t('password_mismatch'))
     }
-    if (!clerkLoaded || !clerkUser) {
-      return setPwError('Sesioni nuk është gati. Provo të kyçesh përsëri.')
-    }
 
     setPwLoading(true)
     try {
-      await clerkUser.updatePassword({
+      const res = await API.post('/auth/change-password', {
         currentPassword: pwForm.current,
         newPassword:     pwForm.next,
-        signOutOfOtherSessions: false,
       })
-      setPwSuccess(true)
-      setPwForm({ current: '', next: '', confirm: '' })
-      showToast(t('password_success'))
-      setTimeout(() => setPwSuccess(false), 4000)
+
+      if (res.data?.success) {
+        setPwSuccess(true)
+        setPwForm({ current: '', next: '', confirm: '' })
+        showToast(t('password_success'))
+        setTimeout(() => setPwSuccess(false), 4000)
+      } else {
+        setPwError(res.data?.message || 'Gabim i panjohur')
+      }
     } catch (err) {
-      // Clerk returns errors array
-      const msg =
-        err?.errors?.[0]?.longMessage ||
-        err?.errors?.[0]?.message     ||
-        err?.message                  ||
+      const msg = 
+        err.response?.data?.message || 
+        err.message || 
         'Gabim gjatë ndryshimit të fjalëkalimit'
       setPwError(msg)
     } finally {
@@ -362,6 +357,10 @@ const Dashboard = () => {
         .pw-spinner { width:13px; height:13px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.6s linear infinite; }
         .pw-strength { display:flex; gap:4px; margin-top:4px; }
         .pw-strength-bar { height:3px; flex:1; border-radius:3px; transition:background 0.2s; }
+
+        @media (max-width: 768px) {
+          .profile-info-grid { grid-template-columns: 1fr; }
+        }
       `}</style>
 
       <div style={S.root}>

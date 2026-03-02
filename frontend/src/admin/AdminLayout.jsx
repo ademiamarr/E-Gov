@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Routes, Route, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useTranslation } from 'react-i18next'
 import { UserCheck, AlertTriangle, Calendar, MapPin, LogOut, ChevronRight, Menu, X } from 'lucide-react'
 import LanguageSwitcher from '../components/LanguageSwitcher'
 import RegistrationPanel from './panels/RegistrationPanel.jsx'
@@ -16,31 +17,10 @@ const ROLE_PANELS = {
   admin_fines:  ['gjoba'],
 }
 
-const ROLE_LABELS = {
-  super_admin:  'Super Admin',
-  admin_users:  'Admin Regjistrime',
-  admin_mvr:    'Admin MVR',
-  admin_komuna: 'Admin Komuna',
-  admin_fines:  'Admin Gjoba',
-}
-
-const PAGE_TITLES = {
-  registrations: 'Regjistrime',
-  mvr:           'Terminë MVR',
-  komuna:        'Terminë Komuna',
-  gjoba:         'Gjoba',
-}
-
-const NAV_ITEMS = [
-  { id: 'registrations', icon: UserCheck,      label: 'Regjistrime',    desc: 'Kërkesa për aprovim' },
-  { id: 'mvr',           icon: Calendar,       label: 'Terminë MVR',    desc: 'Min. e Brendshme' },
-  { id: 'komuna',        icon: MapPin,         label: 'Terminë Komuna', desc: 'Shërbime komunale' },
-  { id: 'gjoba',         icon: AlertTriangle,  label: 'Gjoba',          desc: 'Menaxhim gjobash' },
-]
-
 const AdminLayout = () => {
   const { user, logout } = useAuth()
   const navigate         = useNavigate()
+  const { t }            = useTranslation()
   const allowedPanels    = ROLE_PANELS[user?.role] || []
 
   const defaultPanel = allowedPanels[0] || 'registrations'
@@ -51,6 +31,29 @@ const AdminLayout = () => {
     setActive(panel)
     navigate(`/admin/${panel}`)
     if (window.innerWidth < 768) setSidebarOpen(false)
+  }
+
+  // ✅ TRANSLATIONS ARRAY
+  const NAV_ITEMS = [
+    { id: 'registrations', icon: UserCheck,      label: t('admin_registrations'),      desc: t('admin_registrations_desc') },
+    { id: 'mvr',           icon: Calendar,       label: t('admin_mvr'),                 desc: t('admin_mvr_desc') },
+    { id: 'komuna',        icon: MapPin,         label: t('admin_komuna'),              desc: t('admin_komuna_desc') },
+    { id: 'gjoba',         icon: AlertTriangle,  label: t('admin_fines'),               desc: t('admin_fines_desc') },
+  ]
+
+  const PAGE_TITLES = {
+    registrations: t('admin_registrations'),
+    mvr:           t('admin_mvr'),
+    komuna:        t('admin_komuna'),
+    gjoba:         t('admin_fines'),
+  }
+
+  const ROLE_LABELS = {
+    super_admin:  t('role_super_admin'),
+    admin_users:  t('role_admin_users'),
+    admin_mvr:    t('role_admin_mvr'),
+    admin_komuna: t('role_admin_komuna'),
+    admin_fines:  t('role_admin_fines'),
   }
 
   const visibleNav = NAV_ITEMS.filter(n => allowedPanels.includes(n.id))
@@ -238,7 +241,7 @@ const AdminLayout = () => {
             </div>
             <div>
               <div className="adm-brand-name">eGov Admin</div>
-              <div className="adm-brand-sub">Paneli i administrimit</div>
+              <div className="adm-brand-sub">{t('admin_panel')}</div>
             </div>
           </div>
 
@@ -267,7 +270,7 @@ const AdminLayout = () => {
               <span className="adm-user-name">{user?.first_name} {user?.last_name}</span>
               <span className="adm-user-role">{ROLE_LABELS[user?.role] || user?.role}</span>
             </div>
-            <button className="adm-logout-btn" onClick={logout} title="Dil">
+            <button className="adm-logout-btn" onClick={logout} title={t('logout')}>
               <LogOut size={15} />
             </button>
           </div>

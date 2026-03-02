@@ -140,6 +140,5 @@
   "role_admin_users": "Registration Admin",
   "role_admin_mvr": "MVR Admin",
   "role_admin_komuna": "Municipality Admin",
-  "role_admin_fines": "Fines Admin",
-  "logut": "Logout"
+  "role_admin_fines": "Fines Admin"
 }
