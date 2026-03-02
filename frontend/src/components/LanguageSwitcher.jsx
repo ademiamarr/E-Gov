@@ -1,22 +1,46 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChevronDown, Globe } from 'lucide-react'
 
 const langs = [
-  { code: 'sq', label: 'Shqip', flag: '🇦🇱', country: 'Albania' },
-  { code: 'mk', label: 'Македонски', flag: '🇲🇰', country: 'Македонија' },
-  { code: 'en', label: 'English', flag: '🇬🇧', country: 'United Kingdom' },
+  { code: 'sq', label: 'Shqip',       flag: '🇦🇱', country: 'Shqipëri / Maqedoni' },
+  { code: 'mk', label: 'Македонски',  flag: '🇲🇰', country: 'Македонија' },
+  { code: 'en', label: 'English',     flag: '🇬🇧', country: 'United Kingdom' },
 ]
+
+const STORAGE_KEY = 'egov_language'
 
 const LanguageSwitcher = () => {
   const { i18n } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
-  const currentLang = langs.find(l => l.code === i18n.language) || langs[0]
+  const wrapperRef = useRef(null)
+
+  // On mount: restore saved language
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (saved && saved !== i18n.language && langs.find(l => l.code === saved)) {
+      i18n.changeLanguage(saved)
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+        setIsOpen(false)
+      }
+    }
+    if (isOpen) document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [isOpen])
 
   const handleLanguageChange = (code) => {
     i18n.changeLanguage(code)
+    localStorage.setItem(STORAGE_KEY, code)
     setIsOpen(false)
   }
+
+  const currentLang = langs.find(l => l.code === i18n.language) || langs[0]
 
   return (
     <>
@@ -39,6 +63,7 @@ const LanguageSwitcher = () => {
           cursor: pointer;
           transition: all 0.2s ease;
           font-family: inherit;
+          white-space: nowrap;
         }
 
         .lang-switcher-btn:hover {
@@ -56,6 +81,7 @@ const LanguageSwitcher = () => {
           width: 14px;
           height: 14px;
           transition: transform 0.2s ease;
+          flex-shrink: 0;
         }
 
         .lang-switcher-btn.active .lang-chevron {
@@ -71,27 +97,21 @@ const LanguageSwitcher = () => {
           border-radius: 10px;
           box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
           overflow: hidden;
-          z-index: 1000;
-          min-width: 180px;
-          animation: slideDown 0.15s ease forwards;
+          z-index: 2000;
+          min-width: 190px;
+          animation: langSlideDown 0.15s ease forwards;
         }
 
-        @keyframes slideDown {
-          from {
-            opacity: 0;
-            transform: translateY(-8px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+        @keyframes langSlideDown {
+          from { opacity: 0; transform: translateY(-8px); }
+          to   { opacity: 1; transform: translateY(0); }
         }
 
         .lang-dropdown-item {
           display: flex;
           align-items: center;
           gap: 10px;
-          padding: 12px 14px;
+          padding: 11px 14px;
           border: none;
           background: transparent;
           color: #d1d5db;
@@ -116,23 +136,25 @@ const LanguageSwitcher = () => {
 
         .lang-flag {
           font-size: 16px;
-          width: 20px;
+          width: 22px;
           text-align: center;
+          flex-shrink: 0;
         }
 
         .lang-info {
           flex: 1;
           display: flex;
           flex-direction: column;
-          gap: 2px;
+          gap: 1px;
         }
 
         .lang-name {
           font-weight: 500;
+          font-size: 13px;
         }
 
         .lang-country {
-          font-size: 11px;
+          font-size: 10px;
           color: #9ca3af;
         }
 
@@ -143,14 +165,19 @@ const LanguageSwitcher = () => {
           align-items: center;
           justify-content: center;
           color: #60a5fa;
+          font-size: 14px;
           font-weight: bold;
+          flex-shrink: 0;
         }
       `}</style>
 
-      <div className="lang-switcher-wrapper">
+      <div className="lang-switcher-wrapper" ref={wrapperRef}>
         <button
           className={`lang-switcher-btn ${isOpen ? 'active' : ''}`}
           onClick={() => setIsOpen(!isOpen)}
+          type="button"
+          aria-haspopup="listbox"
+          aria-expanded={isOpen}
         >
           <Globe size={14} />
           <span>{currentLang.flag} {currentLang.label}</span>
@@ -158,12 +185,15 @@ const LanguageSwitcher = () => {
         </button>
 
         {isOpen && (
-          <div className="lang-dropdown">
+          <div className="lang-dropdown" role="listbox">
             {langs.map((lang) => (
               <button
                 key={lang.code}
+                role="option"
+                aria-selected={i18n.language === lang.code}
                 className={`lang-dropdown-item ${i18n.language === lang.code ? 'active' : ''}`}
                 onClick={() => handleLanguageChange(lang.code)}
+                type="button"
               >
                 <span className="lang-flag">{lang.flag}</span>
                 <div className="lang-info">
