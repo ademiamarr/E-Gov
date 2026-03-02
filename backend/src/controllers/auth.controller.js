@@ -47,7 +47,7 @@ const changePassword = async (req, res) => {
     }
 
     if (!currentPassword || !newPassword) {
-      return res.status(400).json({ success: false, message: 'Të dhënat janë të pakompletuara' })
+      return res.status(400).json({ success: false, message: 'Të dhënat janë të pakompletuesa' })
     }
 
     if (newPassword.length < 8) {
@@ -85,4 +85,23 @@ const changePassword = async (req, res) => {
   }
 }
 
-module.exports = { register, getMe, changePassword }
+const approveUser = async (req, res) => {
+  try {
+    const user = await authService.approveUser(req.params.id)
+    return success(res, user, 'Useri u aprovua')
+  } catch (err) {
+    return error(res, err.message, err.status || 500)
+  }
+}
+
+const rejectUser = async (req, res) => {
+  try {
+    const { reason } = req.body
+    const user = await authService.rejectUser(req.params.id, reason)
+    return success(res, user, 'Useri u refuzua')
+  } catch (err) {
+    return error(res, err.message, err.status || 500)
+  }
+}
+
+module.exports = { register, getMe, changePassword, approveUser, rejectUser }
