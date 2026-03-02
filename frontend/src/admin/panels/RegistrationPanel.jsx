@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import API from '../../api/axios'
-import { UserCheck, Eye, Check, X, AlertCircle, Clock, User, Mail, Hash, Calendar, Shield, Image, ZoomIn, ZoomOut, RotateCw } from 'lucide-react'
+import { UserCheck, Eye, Check, X, AlertCircle, Clock, User, Mail, Hash, Calendar, Shield, Image, ZoomIn, ZoomOut, RotateCw, ChevronDown } from 'lucide-react'
 
 const RegistrationPanel = () => {
   const [users, setUsers]               = useState([])
@@ -33,8 +33,8 @@ const RegistrationPanel = () => {
       await API.put(`/users/${id}/approve`)
       setSelected(null)
       fetchUsers()
-      showToast('Useri u aprovua me sukses!')
-    } catch { showToast('Gabim gjatë aprovimit!', 'error') }
+      showToast('Useri u aprovua me sukses.')
+    } catch { showToast('Gabim gjatë aprovimit.', 'error') }
   }
 
   const reject = async (id) => {
@@ -43,407 +43,466 @@ const RegistrationPanel = () => {
       setSelected(null)
       setRejectReason('')
       fetchUsers()
-      showToast('Useri u refuzua.')
-    } catch { showToast('Gabim gjatë refuzimit!', 'error') }
+      showToast('Kërkesa u refuzua.')
+    } catch { showToast('Gabim gjatë refuzimit.', 'error') }
   }
 
   const openModal = (u) => {
-    setSelected(u)
-    setRejectReason('')
-    setImgError(false)
-    setLightbox(false)
-    setZoom(1)
-    setRotation(0)
+    setSelected(u); setRejectReason(''); setImgError(false); setLightbox(false); setZoom(1); setRotation(0)
   }
-
-  const openLightbox = () => {
-    setLightbox(true)
-    setZoom(1)
-    setRotation(0)
-  }
-
-  const closeLightbox = () => {
-    setLightbox(false)
-    setZoom(1)
-    setRotation(0)
-  }
-
-  const zoomIn  = (e) => { e.stopPropagation(); setZoom(z => Math.min(z + 0.25, 4)) }
-  const zoomOut = (e) => { e.stopPropagation(); setZoom(z => Math.max(z - 0.25, 0.5)) }
-  const rotate  = (e) => { e.stopPropagation(); setRotation(r => (r + 90) % 360) }
 
   return (
     <>
       <style>{`
-        /* TOAST */
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+
+        .rp-root { font-family: 'DM Sans', sans-serif; }
+
+        /* Toast */
         .rp-toast {
-          position: fixed; top: 24px; right: 24px; z-index: 9999;
+          position: fixed; top: 20px; right: 20px; z-index: 9999;
           display: flex; align-items: center; gap: 8px;
-          padding: 12px 18px; border-radius: 12px;
-          font-size: 13px; font-weight: 600; backdrop-filter: blur(12px);
-          animation: rp-slide-in 0.25s ease;
+          padding: 11px 16px; border-radius: 8px;
+          font-size: 13px; font-weight: 500; font-family: 'DM Sans', sans-serif;
+          box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+          border: 1px solid;
         }
-        .rp-toast--ok  { background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.35); color:#34d399; }
-        .rp-toast--err { background:rgba(239,68,68,0.15);  border:1px solid rgba(239,68,68,0.35);  color:#f87171; }
-        @keyframes rp-slide-in { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
+        .rp-toast.ok  { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+        .rp-toast.err { background: #fef2f2; border-color: #fecaca; color: #dc2626; }
 
-        /* HEADER */
-        .rp-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:28px; }
-        .rp-header h1 { font-size:1.5rem; font-weight:800; color:#f0f4ff; margin:0; letter-spacing:-0.03em; }
-        .rp-header p  { font-size:13px; color:rgba(255,255,255,0.35); margin-top:4px; }
-        .rp-badge { display:flex; align-items:center; gap:6px; background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.25); color:#60a5fa; padding:8px 16px; border-radius:20px; font-size:12px; font-weight:700; }
+        /* Header */
+        .rp-header {
+          display: flex; justify-content: space-between; align-items: center;
+          margin-bottom: 24px;
+        }
+        .rp-header-left h1 { font-size: 18px; font-weight: 700; color: #0c1220; letter-spacing: -0.02em; }
+        .rp-header-left p { font-size: 13px; color: #8a929e; margin-top: 2px; }
 
-        /* LOADING / EMPTY */
-        .rp-loading { display:flex; justify-content:center; padding:60px; }
-        .rp-spinner { width:32px; height:32px; border:3px solid rgba(255,255,255,0.08); border-top-color:#60a5fa; border-radius:50%; animation:spin 0.7s linear infinite; }
-        @keyframes spin { to{transform:rotate(360deg)} }
-        .rp-empty { text-align:center; padding:80px 20px; color:rgba(255,255,255,0.25); }
-        .rp-empty p { font-size:14px; margin-top:12px; }
+        .rp-count-badge {
+          display: flex; align-items: center; gap: 6px;
+          background: #fff; border: 1px solid #e5e7eb;
+          border-radius: 20px; padding: 6px 14px;
+          font-size: 12px; font-weight: 600; color: #374151;
+        }
+        .rp-count-dot {
+          width: 7px; height: 7px; border-radius: 50%; background: #f59e0b;
+        }
 
-        /* GRID */
-        .rp-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:16px; }
-        .rp-card { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:18px; overflow:hidden; transition:all 0.2s; }
-        .rp-card:hover { border-color:rgba(96,165,250,0.3); background:rgba(255,255,255,0.06); transform:translateY(-2px); box-shadow:0 8px 32px rgba(0,0,0,0.3); }
-        .rp-card-top { padding:20px 20px 0; display:flex; align-items:center; gap:14px; }
-        .rp-avatar { width:56px; height:56px; border-radius:14px; overflow:hidden; flex-shrink:0; background:rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,0.1); }
-        .rp-avatar img { width:100%; height:100%; object-fit:cover; }
-        .rp-avatar-placeholder { width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,rgba(79,70,229,0.3),rgba(124,58,237,0.2)); font-size:20px; font-weight:800; color:#a5b4fc; }
-        .rp-card-name { font-size:15px; font-weight:700; color:#f0f4ff; }
-        .rp-card-date { font-size:11px; color:rgba(255,255,255,0.3); margin-top:3px; }
-        .rp-card-body { padding:14px 20px; display:flex; flex-direction:column; gap:8px; }
-        .rp-info-row { display:flex; align-items:center; gap:8px; font-size:12px; color:rgba(255,255,255,0.5); }
-        .rp-info-row svg { flex-shrink:0; color:rgba(255,255,255,0.25); }
-        .rp-info-val { color:#e2e8f0; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .rp-embg-val { font-family:'Courier New',monospace; font-size:13px; font-weight:700; color:#93c5fd; letter-spacing:1px; }
-        .rp-card-footer { padding:0 20px 18px; display:flex; gap:8px; margin-top:4px; }
-        .rp-btn-view { flex:1; display:flex; align-items:center; justify-content:center; gap:6px; background:rgba(99,102,241,0.15); border:1px solid rgba(99,102,241,0.3); color:#a5b4fc; padding:9px; border-radius:10px; font-size:12px; font-weight:700; cursor:pointer; transition:all 0.15s; font-family:inherit; }
-        .rp-btn-view:hover { background:rgba(99,102,241,0.25); }
-        .rp-btn-approve-quick { display:flex; align-items:center; justify-content:center; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); color:#34d399; padding:9px 12px; border-radius:10px; cursor:pointer; transition:all 0.15s; font-family:inherit; }
-        .rp-btn-approve-quick:hover { background:rgba(16,185,129,0.25); }
-        .rp-btn-reject-quick { display:flex; align-items:center; justify-content:center; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.25); color:#f87171; padding:9px 12px; border-radius:10px; cursor:pointer; transition:all 0.15s; font-family:inherit; }
-        .rp-btn-reject-quick:hover { background:rgba(239,68,68,0.22); }
+        /* Loading / Empty */
+        .rp-loading { display: flex; justify-content: center; align-items: center; padding: 80px 0; }
+        .rp-spinner {
+          width: 24px; height: 24px;
+          border: 2px solid #e5e7eb; border-top-color: #0c1220;
+          border-radius: 50%; animation: rp-spin 0.6s linear infinite;
+        }
+        @keyframes rp-spin { to { transform: rotate(360deg); } }
 
-        /* MODAL */
-        .rp-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.75); backdrop-filter:blur(6px); display:flex; align-items:center; justify-content:center; z-index:1000; padding:24px; }
-        .rp-modal { background:#0d1b3e; border:1px solid rgba(255,255,255,0.1); border-radius:24px; width:100%; max-width:600px; box-shadow:0 32px 80px rgba(0,0,0,0.6); overflow:hidden; animation:rp-modal-in 0.2s ease; }
-        @keyframes rp-modal-in { from{opacity:0;transform:scale(0.96)} to{opacity:1;transform:scale(1)} }
-        .rp-modal-header { display:flex; align-items:center; justify-content:space-between; padding:22px 26px; border-bottom:1px solid rgba(255,255,255,0.07); background:rgba(255,255,255,0.03); }
-        .rp-modal-header h3 { font-size:16px; font-weight:800; color:#f0f4ff; margin:0; }
-        .rp-modal-close { background:rgba(255,255,255,0.08); border:none; border-radius:8px; color:rgba(255,255,255,0.5); padding:7px; cursor:pointer; display:flex; align-items:center; transition:all 0.15s; }
-        .rp-modal-close:hover { background:rgba(255,255,255,0.14); color:#fff; }
-        .rp-modal-body { padding:24px 26px; }
-        .rp-modal-top { display:grid; grid-template-columns:160px 1fr; gap:20px; margin-bottom:20px; }
+        .rp-empty {
+          background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+          padding: 64px; text-align: center;
+        }
+        .rp-empty-icon {
+          width: 48px; height: 48px; border-radius: 12px;
+          background: #f5f6f8; display: flex; align-items: center; justify-content: center;
+          margin: 0 auto 16px; color: #9ca3af;
+        }
+        .rp-empty h3 { font-size: 15px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+        .rp-empty p  { font-size: 13px; color: #9ca3af; }
 
-        /* FOTO klikueshme */
+        /* Table */
+        .rp-table {
+          background: #fff;
+          border: 1px solid #e5e7eb;
+          border-radius: 12px;
+          overflow: hidden;
+        }
+
+        .rp-table-head {
+          display: grid;
+          grid-template-columns: 1fr 1fr 140px 100px 120px;
+          gap: 12px;
+          padding: 11px 20px;
+          background: #f9fafb;
+          border-bottom: 1px solid #e5e7eb;
+        }
+        .rp-th {
+          font-size: 11px; font-weight: 600; color: #6b7280;
+          text-transform: uppercase; letter-spacing: 0.05em;
+        }
+
+        .rp-table-row {
+          display: grid;
+          grid-template-columns: 1fr 1fr 140px 100px 120px;
+          gap: 12px;
+          align-items: center;
+          padding: 14px 20px;
+          border-bottom: 1px solid #f3f4f6;
+          transition: background 0.1s;
+        }
+        .rp-table-row:last-child { border-bottom: none; }
+        .rp-table-row:hover { background: #fafbfc; }
+
+        .rp-user-cell { display: flex; align-items: center; gap: 10px; }
+        .rp-avatar {
+          width: 34px; height: 34px; border-radius: 8px;
+          background: #f5f6f8; border: 1px solid #e5e7eb;
+          overflow: hidden; flex-shrink: 0;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 12px; font-weight: 700; color: #6b7280;
+        }
+        .rp-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+        .rp-user-name { font-size: 13px; font-weight: 600; color: #111827; }
+        .rp-user-date { font-size: 11px; color: #9ca3af; margin-top: 1px; }
+
+        .rp-email { font-size: 13px; color: #6b7280; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .rp-embg  { font-size: 12px; font-weight: 600; color: #374151; font-family: monospace; letter-spacing: 0.05em; }
+
+        .rp-badge-pending {
+          display: inline-flex; align-items: center; gap: 5px;
+          background: #fffbeb; border: 1px solid #fde68a;
+          color: #92400e; border-radius: 20px;
+          padding: 3px 10px; font-size: 11px; font-weight: 600;
+        }
+        .rp-badge-dot { width: 5px; height: 5px; border-radius: 50%; background: #f59e0b; }
+
+        .rp-action-cell { display: flex; gap: 6px; }
+
+        .rp-btn {
+          display: flex; align-items: center; gap: 4px;
+          padding: 6px 12px; border-radius: 6px;
+          font-size: 12px; font-weight: 600;
+          font-family: 'DM Sans', sans-serif;
+          border: 1px solid; cursor: pointer; transition: all 0.1s;
+        }
+        .rp-btn-view   { background: #fff; border-color: #e5e7eb; color: #374151; }
+        .rp-btn-view:hover { background: #f9fafb; border-color: #d1d5db; }
+        .rp-btn-approve { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+        .rp-btn-approve:hover { background: #dcfce7; }
+        .rp-btn-reject  { background: #fef2f2; border-color: #fecaca; color: #dc2626; }
+        .rp-btn-reject:hover { background: #fee2e2; }
+
+        /* Modal overlay */
+        .rp-overlay {
+          position: fixed; inset: 0;
+          background: rgba(12,18,32,0.5);
+          backdrop-filter: blur(2px);
+          display: flex; align-items: center; justify-content: center;
+          z-index: 1000; padding: 24px;
+        }
+
+        .rp-modal {
+          background: #fff;
+          border: 1px solid #e5e7eb;
+          border-radius: 14px;
+          width: 100%; max-width: 580px;
+          box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+          overflow: hidden;
+        }
+
+        .rp-modal-header {
+          display: flex; align-items: center; justify-content: space-between;
+          padding: 18px 22px;
+          border-bottom: 1px solid #f3f4f6;
+        }
+        .rp-modal-header h3 { font-size: 15px; font-weight: 700; color: #0c1220; }
+        .rp-modal-close {
+          background: #f5f6f8; border: none; border-radius: 6px;
+          color: #6b7280; padding: 6px; cursor: pointer;
+          display: flex; align-items: center;
+          transition: background 0.1s;
+        }
+        .rp-modal-close:hover { background: #eaecf0; }
+
+        .rp-modal-body { padding: 22px; }
+
+        .rp-modal-grid { display: grid; grid-template-columns: 150px 1fr; gap: 20px; margin-bottom: 20px; }
+
         .rp-modal-photo {
-          width:160px; height:200px; border-radius:14px; overflow:hidden;
-          border:2px solid rgba(255,255,255,0.1);
-          background:rgba(255,255,255,0.05);
-          display:flex; align-items:center; justify-content:center;
-          position:relative; transition:all 0.2s;
+          width: 150px; height: 190px; border-radius: 10px;
+          border: 1px solid #e5e7eb; overflow: hidden;
+          background: #f9fafb; display: flex; align-items: center; justify-content: center;
+          position: relative; cursor: pointer;
         }
-        .rp-modal-photo.clickable { cursor:pointer; }
-        .rp-modal-photo.clickable:hover { border-color:rgba(99,102,241,0.6); box-shadow:0 0 0 3px rgba(99,102,241,0.15); }
-        .rp-modal-photo.clickable:hover img { transform:scale(1.04); }
-        .rp-modal-photo.clickable:hover .rp-photo-overlay { opacity:1; }
-        .rp-modal-photo img { width:100%; height:100%; object-fit:cover; transition:transform 0.25s; }
-        .rp-photo-overlay {
-          position:absolute; inset:0;
-          background:rgba(0,0,0,0.6);
-          display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
-          opacity:0; transition:opacity 0.2s; border-radius:12px;
+        .rp-modal-photo img { width: 100%; height: 100%; object-fit: cover; }
+        .rp-photo-hover {
+          position: absolute; inset: 0; background: rgba(0,0,0,0.45);
+          display: flex; flex-direction: column; align-items: center; justify-content: center;
+          gap: 6px; opacity: 0; transition: opacity 0.15s; border-radius: 10px;
+          color: #fff;
         }
-        .rp-photo-overlay-text { font-size:11px; font-weight:800; color:#fff; letter-spacing:0.08em; text-transform:uppercase; }
-        .rp-modal-photo-placeholder { display:flex; flex-direction:column; align-items:center; gap:8px; color:rgba(255,255,255,0.2); font-size:11px; font-weight:600; }
+        .rp-modal-photo:hover .rp-photo-hover { opacity: 1; }
+        .rp-photo-hover span { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
+        .rp-photo-empty { display: flex; flex-direction: column; align-items: center; gap: 6px; color: #d1d5db; font-size: 11px; }
 
-        /* FIELDS */
-        .rp-modal-fields { display:flex; flex-direction:column; gap:10px; }
-        .rp-modal-field { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07); border-radius:12px; padding:11px 14px; }
-        .rp-modal-field-label { font-size:10px; font-weight:700; color:rgba(255,255,255,0.3); text-transform:uppercase; letter-spacing:0.08em; display:flex; align-items:center; gap:5px; margin-bottom:3px; }
-        .rp-modal-field-val { font-size:14px; font-weight:600; color:#f0f4ff; }
-        .rp-embg-field-val { font-size:15px; font-weight:700; color:#93c5fd; font-family:'Courier New',monospace; letter-spacing:2px; }
-        .rp-status-badge { display:inline-flex; align-items:center; gap:5px; background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.3); color:#fbbf24; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700; }
+        .rp-modal-fields { display: flex; flex-direction: column; gap: 10px; }
 
-        /* REJECT */
-        .rp-reject-label { font-size:11px; font-weight:700; color:rgba(255,255,255,0.35); text-transform:uppercase; letter-spacing:0.07em; margin-bottom:8px; display:block; }
-        .rp-reject-textarea { width:100%; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:12px; color:#f0f4ff; font-size:13px; padding:12px 14px; resize:vertical; min-height:80px; font-family:inherit; outline:none; transition:border-color 0.2s; }
-        .rp-reject-textarea:focus { border-color:rgba(239,68,68,0.4); }
-        .rp-reject-textarea::placeholder { color:rgba(255,255,255,0.2); }
+        .rp-field {
+          background: #f9fafb; border: 1px solid #f3f4f6;
+          border-radius: 8px; padding: 10px 13px;
+        }
+        .rp-field-label {
+          font-size: 10px; font-weight: 600; color: #9ca3af;
+          text-transform: uppercase; letter-spacing: 0.06em;
+          display: flex; align-items: center; gap: 4px; margin-bottom: 2px;
+        }
+        .rp-field-val { font-size: 14px; font-weight: 600; color: #111827; }
+        .rp-field-embg { font-family: monospace; letter-spacing: 0.08em; color: #1d4ed8; }
+        .rp-field-status {
+          display: inline-flex; align-items: center; gap: 5px;
+          background: #fffbeb; border: 1px solid #fde68a;
+          color: #92400e; border-radius: 20px;
+          padding: 3px 10px; font-size: 11px; font-weight: 600;
+        }
 
-        /* MODAL FOOTER */
-        .rp-modal-footer { display:flex; gap:10px; padding:0 26px 24px; }
-        .rp-btn-cancel { flex:1; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.5); padding:12px; border-radius:12px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; transition:all 0.15s; }
-        .rp-btn-cancel:hover { background:rgba(255,255,255,0.1); color:#fff; }
-        .rp-btn-reject-final { flex:1.5; display:flex; align-items:center; justify-content:center; gap:6px; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.35); color:#f87171; padding:12px; border-radius:12px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; transition:all 0.15s; }
-        .rp-btn-reject-final:hover { background:rgba(239,68,68,0.25); }
-        .rp-btn-approve-final { flex:2; display:flex; align-items:center; justify-content:center; gap:6px; background:linear-gradient(135deg,#065f46,#10b981); border:none; color:#fff; padding:12px; border-radius:12px; font-size:13px; font-weight:800; cursor:pointer; font-family:inherit; transition:all 0.2s; box-shadow:0 4px 16px rgba(16,185,129,0.3); }
-        .rp-btn-approve-final:hover { box-shadow:0 6px 24px rgba(16,185,129,0.5); transform:translateY(-1px); }
+        .rp-reject-section { margin-top: 4px; }
+        .rp-reject-label { font-size: 12px; font-weight: 600; color: #374151; display: block; margin-bottom: 6px; }
+        .rp-reject-input {
+          width: 100%; background: #f9fafb; border: 1.5px solid #e5e7eb;
+          border-radius: 8px; color: #111827; font-size: 13px;
+          padding: 10px 13px; resize: vertical; min-height: 72px;
+          font-family: 'DM Sans', sans-serif; outline: none;
+          transition: border-color 0.15s;
+        }
+        .rp-reject-input:focus { border-color: #9ca3af; }
+        .rp-reject-input::placeholder { color: #d1d5db; }
 
-        /* ══════════════ LIGHTBOX ══════════════ */
+        .rp-modal-footer {
+          display: flex; gap: 8px; padding: 16px 22px;
+          border-top: 1px solid #f3f4f6;
+        }
+
+        .rp-mf-cancel {
+          flex: 1; padding: 10px; background: #fff; border: 1px solid #e5e7eb;
+          color: #6b7280; border-radius: 8px; font-size: 13px; font-weight: 600;
+          cursor: pointer; font-family: 'DM Sans', sans-serif;
+          transition: all 0.1s;
+        }
+        .rp-mf-cancel:hover { background: #f9fafb; }
+
+        .rp-mf-reject {
+          flex: 1.5; display: flex; align-items: center; justify-content: center; gap: 6px;
+          padding: 10px; background: #fef2f2; border: 1px solid #fecaca;
+          color: #dc2626; border-radius: 8px; font-size: 13px; font-weight: 600;
+          cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.1s;
+        }
+        .rp-mf-reject:hover { background: #fee2e2; }
+
+        .rp-mf-approve {
+          flex: 2; display: flex; align-items: center; justify-content: center; gap: 6px;
+          padding: 10px; background: #0c1220; border: none;
+          color: #fff; border-radius: 8px; font-size: 13px; font-weight: 600;
+          cursor: pointer; font-family: 'DM Sans', sans-serif; transition: background 0.1s;
+        }
+        .rp-mf-approve:hover { background: #1a2540; }
+
+        /* Lightbox */
         .rp-lightbox {
-          position:fixed; inset:0; z-index:9000;
-          background:rgba(0,0,0,0.93);
-          backdrop-filter:blur(20px);
-          display:flex; flex-direction:column;
-          align-items:center; justify-content:center;
-          animation:lb-fade 0.2s ease;
+          position: fixed; inset: 0; z-index: 9000;
+          background: rgba(0,0,0,0.9);
+          display: flex; flex-direction: column;
+          align-items: center; justify-content: center;
         }
-        @keyframes lb-fade { from{opacity:0} to{opacity:1} }
 
-        /* Toolbar */
         .rp-lb-toolbar {
-          position:absolute; top:20px; left:50%; transform:translateX(-50%);
-          display:flex; align-items:center; gap:6px;
-          background:rgba(15,25,60,0.9);
-          border:1px solid rgba(255,255,255,0.1);
-          backdrop-filter:blur(12px);
-          border-radius:50px; padding:8px 14px;
-          box-shadow:0 8px 32px rgba(0,0,0,0.5);
-          white-space:nowrap;
+          position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+          display: flex; align-items: center; gap: 6px;
+          background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
+          backdrop-filter: blur(12px);
+          border-radius: 50px; padding: 7px 14px;
         }
-        .rp-lb-name {
-          font-size:13px; font-weight:700; color:#f0f4ff;
-          padding-right:12px; border-right:1px solid rgba(255,255,255,0.12);
-          margin-right:2px;
+        .rp-lb-name { font-size: 13px; font-weight: 600; color: #fff; padding-right: 12px; border-right: 1px solid rgba(255,255,255,0.15); margin-right: 4px; }
+        .rp-lb-btn {
+          background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
+          color: #e5e7eb; width: 32px; height: 32px; border-radius: 50%;
+          cursor: pointer; display: flex; align-items: center; justify-content: center;
+          transition: background 0.15s;
         }
-        .rp-lb-divider { width:1px; height:20px; background:rgba(255,255,255,0.1); margin:0 2px; }
-        .rp-lb-icon-btn {
-          background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12);
-          color:#e2e8f0; width:34px; height:34px; border-radius:50%;
-          cursor:pointer; display:flex; align-items:center; justify-content:center;
-          transition:all 0.15s; font-family:inherit;
-        }
-        .rp-lb-icon-btn:hover { background:rgba(255,255,255,0.18); color:#fff; transform:scale(1.05); }
-        .rp-lb-zoom-val {
-          font-size:12px; font-weight:700; color:rgba(255,255,255,0.45);
-          min-width:42px; text-align:center; font-family:'Courier New',monospace;
-        }
-        .rp-lb-close-btn {
-          background:rgba(239,68,68,0.2); border:1px solid rgba(239,68,68,0.35);
-          color:#f87171; width:34px; height:34px; border-radius:50%;
-          cursor:pointer; display:flex; align-items:center; justify-content:center;
-          transition:all 0.15s; margin-left:4px;
-        }
-        .rp-lb-close-btn:hover { background:rgba(239,68,68,0.4); color:#fff; transform:scale(1.05); }
+        .rp-lb-btn:hover { background: rgba(255,255,255,0.2); }
+        .rp-lb-zoom { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.4); min-width: 40px; text-align: center; font-family: monospace; }
+        .rp-lb-div { width: 1px; height: 18px; background: rgba(255,255,255,0.12); margin: 0 2px; }
+        .rp-lb-close { background: rgba(239,68,68,0.2); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; }
+        .rp-lb-close:hover { background: rgba(239,68,68,0.35); }
 
-        /* image */
-        .rp-lb-stage {
-          width:100%; height:100%;
-          display:flex; align-items:center; justify-content:center;
-          overflow:hidden;
-          padding-top:80px; padding-bottom:50px;
-        }
         .rp-lb-img {
-          max-width:88vw; max-height:78vh;
-          object-fit:contain;
-          border-radius:10px;
-          box-shadow:0 32px 100px rgba(0,0,0,0.9);
-          user-select:none; pointer-events:none;
-          transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+          max-width: 85vw; max-height: 78vh; object-fit: contain;
+          border-radius: 8px; box-shadow: 0 24px 80px rgba(0,0,0,0.8);
+          pointer-events: none; user-select: none;
+          transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
         }
 
-        /* hint bar */
         .rp-lb-hint {
-          position:absolute; bottom:18px; left:50%; transform:translateX(-50%);
-          display:flex; align-items:center; gap:16px;
-          font-size:11px; color:rgba(255,255,255,0.22);
-          font-weight:500; letter-spacing:0.04em; white-space:nowrap;
-        }
-        .rp-lb-hint span { display:flex; align-items:center; gap:4px; }
-
-        @media (max-width:640px) {
-          .rp-modal-top { grid-template-columns:1fr; }
-          .rp-modal-photo { width:100%; height:180px; }
-          .rp-lb-name { display:none; }
+          position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+          font-size: 11px; color: rgba(255,255,255,0.2); white-space: nowrap;
+          display: flex; gap: 12px;
         }
       `}</style>
 
-      {/* TOAST */}
-      {toast && (
-        <div className={`rp-toast ${toast.type === 'error' ? 'rp-toast--err' : 'rp-toast--ok'}`}>
-          {toast.type === 'error' ? <AlertCircle size={15}/> : <Check size={15}/>}
-          {toast.msg}
-        </div>
-      )}
+      <div className="rp-root">
+        {/* Toast */}
+        {toast && (
+          <div className={`rp-toast ${toast.type === 'error' ? 'err' : 'ok'}`}>
+            {toast.type === 'error' ? <AlertCircle size={14}/> : <Check size={14}/>}
+            {toast.msg}
+          </div>
+        )}
 
-      {/* HEADER */}
-      <div className="rp-header">
-        <div>
-          <h1>Regjistrime në pritje</h1>
-          <p>{users.length} kërkesa aktive për aprovim</p>
+        {/* Header */}
+        <div className="rp-header">
+          <div className="rp-header-left">
+            <h1>Regjistrime në pritje</h1>
+            <p>Shqyrtoni dhe aprovoni kërkesat e qytetarëve</p>
+          </div>
+          <div className="rp-count-badge">
+            <div className="rp-count-dot" />
+            {users.length} kërkesa aktive
+          </div>
         </div>
-        <div className="rp-badge"><Clock size={13}/> {users.length} Pending</div>
-      </div>
 
-      {/* CONTENT */}
-      {loading ? (
-        <div className="rp-loading"><div className="rp-spinner"/></div>
-      ) : users.length === 0 ? (
-        <div className="rp-empty"><UserCheck size={48}/><p>Nuk ka regjistrime në pritje</p></div>
-      ) : (
-        <div className="rp-grid">
-          {users.map(u => (
-            <div key={u.id} className="rp-card">
-              <div className="rp-card-top">
-                <div className="rp-avatar">
-                  {u.photo_signed_url
-                    ? <img src={u.photo_signed_url} alt="ID" onError={e => e.target.style.display='none'}/>
-                    : <div className="rp-avatar-placeholder">{u.first_name?.[0]}{u.last_name?.[0]}</div>
-                  }
+        {/* Content */}
+        {loading ? (
+          <div className="rp-loading"><div className="rp-spinner"/></div>
+        ) : users.length === 0 ? (
+          <div className="rp-empty">
+            <div className="rp-empty-icon"><UserCheck size={22}/></div>
+            <h3>Asnjë kërkesë në pritje</h3>
+            <p>Të gjitha kërkesat janë trajtuar.</p>
+          </div>
+        ) : (
+          <div className="rp-table">
+            <div className="rp-table-head">
+              <div className="rp-th">Qytetari</div>
+              <div className="rp-th">Email</div>
+              <div className="rp-th">EMBG</div>
+              <div className="rp-th">Statusi</div>
+              <div className="rp-th">Veprime</div>
+            </div>
+            {users.map(u => (
+              <div key={u.id} className="rp-table-row">
+                <div className="rp-user-cell">
+                  <div className="rp-avatar">
+                    {u.photo_signed_url
+                      ? <img src={u.photo_signed_url} alt="" onError={e => e.target.style.display='none'} />
+                      : <>{u.first_name?.[0]}{u.last_name?.[0]}</>
+                    }
+                  </div>
+                  <div>
+                    <div className="rp-user-name">{u.first_name} {u.last_name}</div>
+                    <div className="rp-user-date">{new Date(u.created_at).toLocaleDateString('sq-AL',{day:'2-digit',month:'short',year:'numeric'})}</div>
+                  </div>
                 </div>
+                <div className="rp-email">{u.email}</div>
+                <div className="rp-embg">{u.personal_id}</div>
                 <div>
-                  <div className="rp-card-name">{u.first_name} {u.last_name}</div>
-                  <div className="rp-card-date">
-                    {new Date(u.created_at).toLocaleDateString('sq-AL',{day:'2-digit',month:'short',year:'numeric'})}
-                  </div>
+                  <span className="rp-badge-pending"><div className="rp-badge-dot"/>Në pritje</span>
+                </div>
+                <div className="rp-action-cell">
+                  <button className="rp-btn rp-btn-view" onClick={() => openModal(u)}><Eye size={13}/> Shiko</button>
+                  <button className="rp-btn rp-btn-approve" onClick={() => approve(u.id)}><Check size={13}/></button>
+                  <button className="rp-btn rp-btn-reject" onClick={() => openModal(u)}><X size={13}/></button>
                 </div>
               </div>
-              <div className="rp-card-body">
-                <div className="rp-info-row"><Mail size={13}/><span className="rp-info-val">{u.email}</span></div>
-                <div className="rp-info-row"><Hash size={13}/><span className="rp-info-val rp-embg-val">{u.personal_id}</span></div>
+            ))}
+          </div>
+        )}
+
+        {/* Modal */}
+        {selected && !lightbox && (
+          <div className="rp-overlay" onClick={() => setSelected(null)}>
+            <div className="rp-modal" onClick={e => e.stopPropagation()}>
+              <div className="rp-modal-header">
+                <h3>{selected.first_name} {selected.last_name}</h3>
+                <button className="rp-modal-close" onClick={() => setSelected(null)}><X size={16}/></button>
               </div>
-              <div className="rp-card-footer">
-                <button className="rp-btn-view" onClick={() => openModal(u)}><Eye size={13}/> Shiko detajet</button>
-                <button className="rp-btn-approve-quick" onClick={() => approve(u.id)} title="Aprovo"><Check size={15}/></button>
-                <button className="rp-btn-reject-quick" onClick={() => openModal(u)} title="Refuzo"><X size={15}/></button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
 
-      {/* ── MODAL ── */}
-      {selected && !lightbox && (
-        <div className="rp-overlay" onClick={() => setSelected(null)}>
-          <div className="rp-modal" onClick={e => e.stopPropagation()}>
+              <div className="rp-modal-body">
+                <div className="rp-modal-grid">
+                  <div className="rp-modal-photo" onClick={selected.photo_signed_url && !imgError ? () => setLightbox(true) : undefined}>
+                    {selected.photo_signed_url && !imgError ? (
+                      <>
+                        <img src={selected.photo_signed_url} alt="ID" onError={() => setImgError(true)} />
+                        <div className="rp-photo-hover"><ZoomIn size={22}/><span>Zmadho</span></div>
+                      </>
+                    ) : (
+                      <div className="rp-photo-empty"><Image size={28}/><span>Pa foto</span></div>
+                    )}
+                  </div>
 
-            <div className="rp-modal-header">
-              <h3>👤 {selected.first_name} {selected.last_name}</h3>
-              <button className="rp-modal-close" onClick={() => setSelected(null)}><X size={17}/></button>
-            </div>
-
-            <div className="rp-modal-body">
-              <div className="rp-modal-top">
-
-                {/* FOTO */}
-                <div
-                  className={`rp-modal-photo ${selected.photo_signed_url && !imgError ? 'clickable' : ''}`}
-                  onClick={selected.photo_signed_url && !imgError ? openLightbox : undefined}
-                >
-                  {selected.photo_signed_url && !imgError ? (
-                    <>
-                      <img src={selected.photo_signed_url} alt="Dokument ID" onError={() => setImgError(true)}/>
-                      <div className="rp-photo-overlay">
-                        <ZoomIn size={26} color="#fff"/>
-                        <span className="rp-photo-overlay-text">Shiko zmadhuar</span>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="rp-modal-photo-placeholder">
-                      <Image size={32} style={{opacity:0.3}}/>
-                      <span>Foto nuk u gjet</span>
+                  <div className="rp-modal-fields">
+                    <div className="rp-field">
+                      <div className="rp-field-label"><User size={10}/> Emri i plotë</div>
+                      <div className="rp-field-val">{selected.first_name} {selected.last_name}</div>
                     </div>
-                  )}
-                </div>
-
-                {/* FIELDS */}
-                <div className="rp-modal-fields">
-                  <div className="rp-modal-field">
-                    <div className="rp-modal-field-label"><User size={11}/> Emri i plotë</div>
-                    <div className="rp-modal-field-val">{selected.first_name} {selected.last_name}</div>
-                  </div>
-                  <div className="rp-modal-field">
-                    <div className="rp-modal-field-label"><Hash size={11}/> EMBG</div>
-                    <div className="rp-embg-field-val">{selected.personal_id}</div>
-                  </div>
-                  <div className="rp-modal-field">
-                    <div className="rp-modal-field-label"><Mail size={11}/> Email</div>
-                    <div className="rp-modal-field-val" style={{fontSize:13}}>{selected.email}</div>
-                  </div>
-                  <div className="rp-modal-field">
-                    <div className="rp-modal-field-label"><Calendar size={11}/> Regjistruar</div>
-                    <div className="rp-modal-field-val">
-                      {new Date(selected.created_at).toLocaleDateString('sq-AL',{day:'2-digit',month:'long',year:'numeric'})}
+                    <div className="rp-field">
+                      <div className="rp-field-label"><Hash size={10}/> EMBG</div>
+                      <div className="rp-field-val rp-field-embg">{selected.personal_id}</div>
+                    </div>
+                    <div className="rp-field">
+                      <div className="rp-field-label"><Mail size={10}/> Email</div>
+                      <div className="rp-field-val" style={{fontSize:12}}>{selected.email}</div>
+                    </div>
+                    <div className="rp-field">
+                      <div className="rp-field-label"><Calendar size={10}/> Regjistruar më</div>
+                      <div className="rp-field-val" style={{fontSize:13}}>{new Date(selected.created_at).toLocaleDateString('sq-AL',{day:'2-digit',month:'long',year:'numeric'})}</div>
+                    </div>
+                    <div className="rp-field">
+                      <div className="rp-field-label"><Shield size={10}/> Statusi</div>
+                      <span className="rp-field-status"><div className="rp-badge-dot"/>Në pritje</span>
                     </div>
                   </div>
-                  <div className="rp-modal-field">
-                    <div className="rp-modal-field-label"><Shield size={11}/> Statusi</div>
-                    <span className="rp-status-badge">⏳ Në pritje</span>
-                  </div>
+                </div>
+
+                <div className="rp-reject-section">
+                  <label className="rp-reject-label">Arsyeja e refuzimit (opsionale)</label>
+                  <textarea
+                    className="rp-reject-input"
+                    value={rejectReason}
+                    placeholder="Shënoni arsyen nëse do ta refuzoni këtë kërkesë..."
+                    onChange={e => setRejectReason(e.target.value)}
+                  />
                 </div>
               </div>
 
-              <label className="rp-reject-label">Arsyeja e refuzimit (opsionale)</label>
-              <textarea
-                className="rp-reject-textarea"
-                value={rejectReason}
-                placeholder="p.sh. Dokumenti nuk është i qartë, Të dhënat nuk përputhen, etj..."
-                onChange={e => setRejectReason(e.target.value)}
-              />
-            </div>
-
-            <div className="rp-modal-footer">
-              <button className="rp-btn-cancel" onClick={() => setSelected(null)}>Anulo</button>
-              <button className="rp-btn-reject-final" onClick={() => reject(selected.id)}><X size={14}/> Refuzo</button>
-              <button className="rp-btn-approve-final" onClick={() => approve(selected.id)}><Check size={14}/> Aprovo ✓</button>
+              <div className="rp-modal-footer">
+                <button className="rp-mf-cancel" onClick={() => setSelected(null)}>Anulo</button>
+                <button className="rp-mf-reject" onClick={() => reject(selected.id)}><X size={14}/> Refuzo</button>
+                <button className="rp-mf-approve" onClick={() => approve(selected.id)}><Check size={14}/> Aprovo</button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* ── LIGHTBOX ── */}
-      {lightbox && selected?.photo_signed_url && (
-        <div className="rp-lightbox" onClick={closeLightbox}>
-
-          {/* Toolbar */}
-          <div className="rp-lb-toolbar" onClick={e => e.stopPropagation()}>
-            <span className="rp-lb-name">📄 {selected.first_name} {selected.last_name}</span>
-
-            <button className="rp-lb-icon-btn" onClick={zoomOut} title="Zvogëlo (-)">
-              <ZoomOut size={15}/>
-            </button>
-
-            <span className="rp-lb-zoom-val">{Math.round(zoom * 100)}%</span>
-
-            <button className="rp-lb-icon-btn" onClick={zoomIn} title="Zmadho (+)">
-              <ZoomIn size={15}/>
-            </button>
-
-            <div className="rp-lb-divider"/>
-
-            <button className="rp-lb-icon-btn" onClick={rotate} title="Rrotullo 90°">
-              <RotateCw size={15}/>
-            </button>
-
-            <div className="rp-lb-divider"/>
-
-            <button className="rp-lb-close-btn" onClick={closeLightbox} title="Mbyll">
-              <X size={15}/>
-            </button>
-          </div>
-
-          {/* Image */}
-          <div className="rp-lb-stage" onClick={closeLightbox}>
+        {/* Lightbox */}
+        {lightbox && selected?.photo_signed_url && (
+          <div className="rp-lightbox" onClick={() => setLightbox(false)}>
+            <div className="rp-lb-toolbar" onClick={e => e.stopPropagation()}>
+              <span className="rp-lb-name">{selected.first_name} {selected.last_name}</span>
+              <button className="rp-lb-btn" onClick={() => setZoom(z => Math.max(z-0.25, 0.5))}><ZoomOut size={13}/></button>
+              <span className="rp-lb-zoom">{Math.round(zoom*100)}%</span>
+              <button className="rp-lb-btn" onClick={() => setZoom(z => Math.min(z+0.25, 4))}><ZoomIn size={13}/></button>
+              <div className="rp-lb-div"/>
+              <button className="rp-lb-btn" onClick={() => setRotation(r => (r+90)%360)}><RotateCw size={13}/></button>
+              <div className="rp-lb-div"/>
+              <button className="rp-lb-btn rp-lb-close" onClick={() => setLightbox(false)}><X size={13}/></button>
+            </div>
             <img
               className="rp-lb-img"
               src={selected.photo_signed_url}
-              alt="Dokument ID"
+              alt="ID"
               style={{ transform: `scale(${zoom}) rotate(${rotation}deg)` }}
-              draggable={false}
               onClick={e => e.stopPropagation()}
+              draggable={false}
             />
+            <div className="rp-lb-hint">
+              <span>Kliko jashtë për të mbyllur</span>
+              <span>·</span>
+              <span>Zoom: − / +</span>
+              <span>·</span>
+              <span>Rrotullo 90°</span>
+            </div>
           </div>
-
-          {/* Hint */}
-          <div className="rp-lb-hint">
-            <span>🖱 Kliko jashtë për të mbyllur</span>
-            <span>|</span>
-            <span>🔍 Zoom: − / +</span>
-            <span>|</span>
-            <span>↻ Rrotullo 90°</span>
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </>
   )
 }

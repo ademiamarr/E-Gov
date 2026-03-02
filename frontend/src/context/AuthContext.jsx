@@ -5,29 +5,35 @@ import API, { setTokenGetter } from '../api/axios'
 
 const AuthContext = createContext(null)
 
+const ADMIN_ROLES = [
+  'super_admin', 'admin_users', 'admin_mvr', 'admin_komuna', 'admin_fines'
+]
+
+// Ku shkon çdo admin sapo kyçet
+const ADMIN_HOME = {
+  super_admin:  '/admin/registrations',
+  admin_users:  '/admin/registrations',
+  admin_mvr:    '/admin/mvr',
+  admin_komuna: '/admin/komuna',
+  admin_fines:  '/admin/gjoba',
+}
+
 export const AuthProvider = ({ children }) => {
   const { getToken, signOut, isLoaded, isSignedIn } = useClerkAuth()
   const [dbUser, setDbUser]   = useState(null)
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
 
-  // Setup token getter për Axios
+  // Inicializo token getter për Axios
   useEffect(() => {
-    if (isLoaded) {
-      setTokenGetter(async () => {
-        try {
-          const token = await getToken()
-          return token || null
-        } catch (err) {
-          console.error('❌ Error getting token:', err.message)
-          return null
-        }
-      })
-      console.log('✅ Token getter initialized')
-    }
+    if (!isLoaded) return
+    setTokenGetter(async () => {
+      try { return await getToken() || null }
+      catch { return null }
+    })
   }, [isLoaded, getToken])
 
-  // Merr user data nga backend
+  // Merr user nga backend
   useEffect(() => {
     if (!isLoaded) return
 
@@ -37,91 +43,69 @@ export const AuthProvider = ({ children }) => {
       return
     }
 
-    const fetchDbUser = async () => {
+    const fetchUser = async () => {
       try {
-        console.log('🔍 Fetching user data from backend...')
         const res = await API.get('/auth/me')
-
         if (res.data?.success && res.data?.data) {
-          const userData = res.data.data
-          console.log('✅ User data received:', {
-            email: userData.email,
-            role: userData.role,
-            personal_id: userData.personal_id,
-            status: userData.verification_status
-          })
-          setDbUser(userData)
+          setDbUser(res.data.data)
         } else {
           setDbUser(null)
         }
       } catch (err) {
-        const status = err.response?.status
-        const code   = err.response?.data?.code
-        const message = err.response?.data?.message || err.message
-
-        console.error(`❌ Error fetching user (HTTP ${status}):`, message)
-
-        // 404 USER_NOT_REGISTERED - useri është në Clerk por nuk ka bërë register
-        // Ridrejtojmë në /register
-        if (status === 404 && code === 'USER_NOT_REGISTERED') {
-          console.warn('⚠️ User not registered, redirecting to /register')
-          navigate('/register', { replace: true })
-          setDbUser(null)
-          setLoading(false)
-          return
-        }
-
-        // 401 - token invalid, logout
-        if (status === 401) {
-          console.warn('⚠️ Token invalid, logging out...')
-          await signOut()
-        }
-
+        if (err.response?.status === 401) signOut()
         setDbUser(null)
       } finally {
         setLoading(false)
       }
     }
 
-    fetchDbUser()
-  }, [isLoaded, isSignedIn, signOut, navigate])
+    fetchUser()
+  }, [isLoaded, isSignedIn, signOut])
 
-  // Redirekto bazuar në role
+  // Redirect bazuar në rol
   useEffect(() => {
     if (loading || !isLoaded || !isSignedIn || !dbUser) return
 
     const { role, verification_status } = dbUser
-    const currentPath = window.location.pathname
+    const path = window.location.pathname
 
-    console.log(`🎯 User role: ${role}, status: ${verification_status}, EMBG: ${dbUser.personal_id}`)
-
-    if (verification_status === 'pending' && !currentPath.startsWith('/pending')) {
+    // Pending → faqja e pritjes
+    if (verification_status === 'pending' && !path.startsWith('/pending')) {
       navigate('/pending', { replace: true })
       return
     }
 
-    if (verification_status === 'rejected' && !currentPath.startsWith('/rejected')) {
+    // Rejected → faqja e refuzimit
+    if (verification_status === 'rejected' && !path.startsWith('/rejected')) {
       navigate('/rejected', { replace: true })
       return
     }
 
-    const adminRoles = ['super_admin', 'admin_users', 'admin_fines', 'admin_appointments']
-    if (adminRoles.includes(role)) {
-      if (['/login', '/register', '/dashboard'].includes(currentPath)) {
-        navigate('/admin', { replace: true })
+    // Admin → drejto te paneli i vet
+    if (ADMIN_ROLES.includes(role)) {
+      const adminHome = ADMIN_HOME[role] || '/admin/registrations'
+      const isOnWrongPage =
+        path === '/login'     ||
+        path === '/register'  ||
+        path === '/dashboard' ||
+        path === '/admin'     ||
+        path === '/admin/'
+
+      if (isOnWrongPage) {
+        navigate(adminHome, { replace: true })
       }
       return
     }
 
+    // User i rregullt → dashboard
     if (role === 'user') {
-      if (currentPath === '/login' || currentPath === '/register' || currentPath.startsWith('/admin')) {
+      if (path === '/login' || path === '/register' || path.startsWith('/admin')) {
         navigate('/dashboard', { replace: true })
       }
     }
   }, [dbUser, loading, isLoaded, isSignedIn, navigate])
 
   const logout = async () => {
-    console.log('🔴 Logging out...')
     await signOut()
     setDbUser(null)
     navigate('/login', { replace: true })

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useSignIn } from '@clerk/clerk-react'
 import { useTranslation } from 'react-i18next'
 import LanguageSwitcher from '../components/LanguageSwitcher'
-import { Mail, Lock, AlertCircle, Eye, EyeOff, ArrowRight } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, AlertCircle, ArrowRight } from 'lucide-react'
 
 const Login = () => {
   const [form, setForm] = useState({ email: '', password: '' })
@@ -18,15 +18,9 @@ const Login = () => {
     if (!isLoaded) return
     setLoading(true)
     setError('')
-
     try {
-      const result = await signIn.create({
-        identifier: form.email,
-        password: form.password,
-      })
-      if (result.status === 'complete') {
-        await setActive({ session: result.createdSessionId })
-      }
+      const result = await signIn.create({ identifier: form.email, password: form.password })
+      if (result.status === 'complete') await setActive({ session: result.createdSessionId })
     } catch (err) {
       setError(err.errors?.[0]?.message || t('fill_required'))
     } finally {
@@ -37,383 +31,436 @@ const Login = () => {
   return (
     <>
       <style>{`
-        * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap');
 
-        body, html {
-          width: 100%;
-          height: 100%;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-        }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-        .login-page {
+        .login-root {
           min-height: 100vh;
-          background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          font-family: 'DM Sans', sans-serif;
+          background: #fff;
+        }
+
+        /* Left panel */
+        .login-left {
+          background: #0c1220;
           display: flex;
-          align-items: center;
-          justify-content: center;
+          flex-direction: column;
+          justify-content: space-between;
+          padding: 48px 56px;
           position: relative;
           overflow: hidden;
         }
 
-        .login-bg-decoration {
+        .login-left::before {
+          content: '';
           position: absolute;
-          width: 500px;
-          height: 500px;
-          border-radius: 50%;
-          opacity: 0.05;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 79px,
+            rgba(255,255,255,0.025) 79px,
+            rgba(255,255,255,0.025) 80px
+          ),
+          repeating-linear-gradient(
+            90deg,
+            transparent,
+            transparent 79px,
+            rgba(255,255,255,0.025) 79px,
+            rgba(255,255,255,0.025) 80px
+          );
           pointer-events: none;
         }
 
-        .login-bg-decoration:nth-child(1) {
-          background: radial-gradient(circle, #3b82f6, transparent);
-          top: -200px;
-          left: -200px;
-        }
-
-        .login-bg-decoration:nth-child(2) {
-          background: radial-gradient(circle, #8b5cf6, transparent);
-          bottom: -300px;
-          right: -200px;
-        }
-
-        .login-container {
+        .login-left-brand {
           position: relative;
-          z-index: 10;
-          width: 100%;
-          max-width: 440px;
-          padding: 20px;
+          z-index: 2;
+          display: flex;
+          align-items: center;
+          gap: 12px;
         }
 
-        .login-card {
-          background: rgba(30, 41, 59, 0.8);
-          backdrop-filter: blur(10px);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 16px;
-          padding: 48px 40px;
-          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        .login-left-logo {
+          width: 36px;
+          height: 36px;
+          background: #fff;
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
-        .login-header {
-          margin-bottom: 36px;
-          text-align: center;
+        .login-left-logo svg {
+          width: 20px;
+          height: 20px;
         }
 
-        .login-logo {
-          font-size: 32px;
-          font-weight: 800;
-          background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          margin-bottom: 12px;
-          letter-spacing: -0.8px;
+        .login-left-name {
+          font-size: 15px;
+          font-weight: 600;
+          color: #fff;
+          letter-spacing: -0.01em;
         }
 
-        .login-title {
-          font-size: 20px;
+        .login-left-content {
+          position: relative;
+          z-index: 2;
+        }
+
+        .login-left-tag {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          background: rgba(255,255,255,0.08);
+          border: 1px solid rgba(255,255,255,0.12);
+          color: rgba(255,255,255,0.6);
+          font-size: 11px;
+          font-weight: 500;
+          padding: 5px 12px;
+          border-radius: 20px;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+          margin-bottom: 24px;
+        }
+
+        .login-left-title {
+          font-family: 'DM Serif Display', serif;
+          font-size: 2.6rem;
+          color: #fff;
+          line-height: 1.15;
+          letter-spacing: -0.02em;
+          margin-bottom: 20px;
+        }
+
+        .login-left-title em {
+          color: rgba(255,255,255,0.4);
+          font-style: italic;
+        }
+
+        .login-left-desc {
+          font-size: 14px;
+          color: rgba(255,255,255,0.4);
+          line-height: 1.7;
+          max-width: 340px;
+        }
+
+        .login-left-stats {
+          position: relative;
+          z-index: 2;
+          display: flex;
+          gap: 32px;
+          padding-top: 32px;
+          border-top: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .login-stat-item {}
+        .login-stat-num {
+          font-size: 22px;
           font-weight: 700;
-          color: #f1f5f9;
-          margin-bottom: 6px;
-          letter-spacing: -0.3px;
+          color: #fff;
+          letter-spacing: -0.03em;
+        }
+        .login-stat-label {
+          font-size: 11px;
+          color: rgba(255,255,255,0.35);
+          margin-top: 2px;
+          letter-spacing: 0.02em;
         }
 
-        .login-subtitle {
+        /* Right panel */
+        .login-right {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          padding: 48px 72px;
+          background: #fff;
+        }
+
+        .login-right-inner {
+          width: 100%;
+          max-width: 380px;
+        }
+
+        .login-right-top {
+          display: flex;
+          justify-content: flex-end;
+          margin-bottom: 48px;
+        }
+
+        .login-heading {
+          font-size: 24px;
+          font-weight: 700;
+          color: #0c1220;
+          letter-spacing: -0.03em;
+          margin-bottom: 6px;
+        }
+
+        .login-subheading {
           font-size: 13px;
-          color: #94a3b8;
+          color: #8a929e;
+          margin-bottom: 36px;
           line-height: 1.5;
         }
 
-        .login-lang-switcher {
+        .login-error {
           display: flex;
-          justify-content: center;
-          margin-bottom: 28px;
+          align-items: center;
+          gap: 8px;
+          padding: 12px 14px;
+          background: #fef2f2;
+          border: 1px solid #fde8e8;
+          border-radius: 8px;
+          color: #c0392b;
+          font-size: 13px;
+          margin-bottom: 20px;
         }
 
         .login-form {
           display: flex;
           flex-direction: column;
-          gap: 18px;
-          margin-bottom: 24px;
+          gap: 16px;
         }
 
-        .form-group {
+        .lf-group {
           display: flex;
           flex-direction: column;
-          gap: 8px;
+          gap: 6px;
         }
 
-        .form-label {
-          font-size: 11px;
-          font-weight: 700;
-          color: #cbd5e1;
-          text-transform: uppercase;
-          letter-spacing: 0.6px;
+        .lf-label {
+          font-size: 12px;
+          font-weight: 600;
+          color: #374151;
+          letter-spacing: 0.02em;
         }
 
-        .form-input-wrapper {
+        .lf-input-wrap {
           position: relative;
         }
 
-        .form-input {
-          width: 100%;
-          padding: 12px 14px 12px 38px;
-          background: rgba(71, 85, 105, 0.4);
-          border: 1px solid rgba(148, 163, 184, 0.2);
-          border-radius: 10px;
-          color: #f1f5f9;
-          font-size: 14px;
-          font-family: inherit;
-          transition: all 0.2s ease;
-          backdrop-filter: blur(4px);
-        }
-
-        .form-input::placeholder {
-          color: #64748b;
-        }
-
-        .form-input:focus {
-          outline: none;
-          background: rgba(71, 85, 105, 0.6);
-          border-color: rgba(59, 130, 246, 0.4);
-          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-
-        .form-input-icon {
+        .lf-icon {
           position: absolute;
-          left: 12px;
+          left: 13px;
           top: 50%;
           transform: translateY(-50%);
-          color: #64748b;
+          color: #b0b8c4;
           pointer-events: none;
         }
 
-        .form-icon-btn {
+        .lf-input {
+          width: 100%;
+          padding: 11px 13px 11px 38px;
+          font-size: 14px;
+          font-family: 'DM Sans', sans-serif;
+          color: #0c1220;
+          background: #f7f8fa;
+          border: 1.5px solid #e8eaee;
+          border-radius: 8px;
+          outline: none;
+          transition: border-color 0.15s, background 0.15s;
+        }
+
+        .lf-input::placeholder { color: #b0b8c4; }
+
+        .lf-input:focus {
+          background: #fff;
+          border-color: #0c1220;
+        }
+
+        .lf-eye {
           position: absolute;
           right: 12px;
           top: 50%;
           transform: translateY(-50%);
           background: none;
           border: none;
-          color: #64748b;
+          color: #b0b8c4;
           cursor: pointer;
-          padding: 4px;
+          padding: 2px;
           display: flex;
           align-items: center;
-          justify-content: center;
-          transition: color 0.2s ease;
         }
 
-        .form-icon-btn:hover {
-          color: #94a3b8;
-        }
+        .lf-eye:hover { color: #6b7280; }
 
-        .error-alert {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 12px 14px;
-          background: rgba(220, 38, 38, 0.1);
-          border: 1px solid rgba(220, 38, 38, 0.2);
-          border-radius: 10px;
-          color: #fca5a5;
-          font-size: 13px;
-          margin-bottom: 16px;
-        }
-
-        .error-alert svg {
-          flex-shrink: 0;
-        }
-
-        .btn-submit {
+        .lf-submit {
+          margin-top: 8px;
           width: 100%;
-          padding: 13px 16px;
-          background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-          color: #ffffff;
+          padding: 12px 16px;
+          background: #0c1220;
+          color: #fff;
           border: none;
-          border-radius: 10px;
+          border-radius: 8px;
           font-size: 14px;
-          font-weight: 700;
+          font-weight: 600;
+          font-family: 'DM Sans', sans-serif;
           cursor: pointer;
-          transition: all 0.2s ease;
           display: flex;
           align-items: center;
           justify-content: center;
           gap: 8px;
-          letter-spacing: 0.3px;
+          letter-spacing: -0.01em;
+          transition: background 0.15s;
         }
 
-        .btn-submit:hover:not(:disabled) {
-          background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-          box-shadow: 0 8px 24px rgba(59, 130, 246, 0.3);
-          transform: translateY(-2px);
-        }
+        .lf-submit:hover:not(:disabled) { background: #1a2540; }
+        .lf-submit:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        .btn-submit:active:not(:disabled) {
-          transform: translateY(0);
-        }
-
-        .btn-submit:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .loader {
+        .lf-spinner {
           width: 14px;
           height: 14px;
-          border: 2px solid rgba(255, 255, 255, 0.3);
-          border-top-color: #ffffff;
+          border: 2px solid rgba(255,255,255,0.3);
+          border-top-color: #fff;
           border-radius: 50%;
-          animation: spin 0.6s linear infinite;
+          animation: lf-spin 0.6s linear infinite;
         }
-
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
+        @keyframes lf-spin { to { transform: rotate(360deg); } }
 
         .login-footer {
+          margin-top: 24px;
           text-align: center;
           font-size: 13px;
-          color: #94a3b8;
-          padding-top: 20px;
-          border-top: 1px solid rgba(255, 255, 255, 0.05);
+          color: #8a929e;
         }
 
         .login-footer a {
-          color: #60a5fa;
-          text-decoration: none;
+          color: #0c1220;
           font-weight: 600;
-          transition: color 0.2s ease;
+          text-decoration: none;
         }
+        .login-footer a:hover { text-decoration: underline; }
 
-        .login-footer a:hover {
-          color: #93c5fd;
-        }
-
-        .login-security {
+        .login-secure {
+          margin-top: 32px;
           display: flex;
           align-items: center;
           justify-content: center;
           gap: 6px;
-          font-size: 12px;
-          color: #64748b;
-          margin-top: 16px;
+          font-size: 11px;
+          color: #c4c9d4;
         }
 
-        @media (max-width: 480px) {
-          .login-card {
-            padding: 32px 24px;
-          }
-
-          .login-logo {
-            font-size: 28px;
-          }
-
-          .login-title {
-            font-size: 18px;
-          }
-
-          .form-input {
-            padding: 11px 12px 11px 36px;
-            font-size: 16px;
-          }
-
-          .btn-submit {
-            padding: 12px 14px;
-            font-size: 13px;
-          }
+        @media (max-width: 900px) {
+          .login-root { grid-template-columns: 1fr; }
+          .login-left { display: none; }
+          .login-right { padding: 40px 24px; }
         }
       `}</style>
 
-      <div className="login-page">
-        <div className="login-bg-decoration"></div>
-        <div className="login-bg-decoration"></div>
+      <div className="login-root">
+        {/* Left decorative panel */}
+        <div className="login-left">
+          <div className="login-left-brand">
+            <div className="login-left-logo">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 22V10L12 3L21 10V22H15V16H9V22H3Z" fill="#0c1220"/>
+              </svg>
+            </div>
+            <span className="login-left-name">eGov Portal</span>
+          </div>
 
-        <div className="login-container">
-          <div className="login-card">
-            <div className="login-lang-switcher">
+          <div className="login-left-content">
+            <div className="login-left-tag">
+              <span>🇲🇰</span>
+              Republika e Maqedonisë së Veriut
+            </div>
+            <h2 className="login-left-title">
+              Shërbime<br/>
+              qeveritare<br/>
+              <em>online.</em>
+            </h2>
+            <p className="login-left-desc">
+              Aksesoni gjitha shërbimet administrative nga një vend — me siguri, shpejtësi dhe transparencë.
+            </p>
+          </div>
+
+          <div className="login-left-stats">
+            <div className="login-stat-item">
+              <div className="login-stat-num">24/7</div>
+              <div className="login-stat-label">Shërbim i vazhdueshëm</div>
+            </div>
+            <div className="login-stat-item">
+              <div className="login-stat-num">SSL</div>
+              <div className="login-stat-label">Lidhje e enkriptuar</div>
+            </div>
+            <div className="login-stat-item">
+              <div className="login-stat-num">100%</div>
+              <div className="login-stat-label">Qeveritar zyrtar</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right form panel */}
+        <div className="login-right">
+          <div className="login-right-inner">
+            <div className="login-right-top">
               <LanguageSwitcher />
             </div>
 
-            <div className="login-header">
-              <div className="login-logo">eGov</div>
-              <div className="login-title">{t('login')}</div>
-              <div className="login-subtitle">Qasni shërbimet qeveritare me siguri</div>
-            </div>
+            <h1 className="login-heading">Mirë se erdhët</h1>
+            <p className="login-subheading">Kyçuni në llogarinë tuaj qeveritare</p>
 
             {error && (
-              <div className="error-alert">
-                <AlertCircle size={16} />
+              <div className="login-error">
+                <AlertCircle size={15} />
                 <span>{error}</span>
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="login-form">
-              <div className="form-group">
-                <label className="form-label">{t('email')}</label>
-                <div className="form-input-wrapper">
-                  <Mail size={16} className="form-input-icon" />
+            <form className="login-form" onSubmit={handleSubmit}>
+              <div className="lf-group">
+                <label className="lf-label">Email</label>
+                <div className="lf-input-wrap">
+                  <Mail size={15} className="lf-icon" />
                   <input
                     type="email"
-                    className="form-input"
-                    placeholder="admin@egov.mk"
+                    className="lf-input"
+                    placeholder="emri@shembull.mk"
                     value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    onChange={e => setForm({ ...form, email: e.target.value })}
                     required
                   />
                 </div>
               </div>
 
-              <div className="form-group">
-                <label className="form-label">{t('password')}</label>
-                <div className="form-input-wrapper">
-                  <Lock size={16} className="form-input-icon" />
+              <div className="lf-group">
+                <label className="lf-label">Fjalëkalim</label>
+                <div className="lf-input-wrap">
+                  <Lock size={15} className="lf-icon" />
                   <input
                     type={showPass ? 'text' : 'password'}
-                    className="form-input"
-                    placeholder="••••••••••"
+                    className="lf-input"
+                    placeholder="••••••••"
                     value={form.password}
-                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                    onChange={e => setForm({ ...form, password: e.target.value })}
                     required
                   />
-                  <button
-                    type="button"
-                    className="form-icon-btn"
-                    onClick={() => setShowPass(!showPass)}
-                  >
-                    {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                  <button type="button" className="lf-eye" onClick={() => setShowPass(!showPass)}>
+                    {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
                 </div>
               </div>
 
-              <button
-                type="submit"
-                className="btn-submit"
-                disabled={loading || !isLoaded}
-              >
+              <button type="submit" className="lf-submit" disabled={loading || !isLoaded}>
                 {loading ? (
-                  <>
-                    <div className="loader" />
-                    {t('loading')}
-                  </>
+                  <><div className="lf-spinner" /> Duke u kyçur...</>
                 ) : (
-                  <>
-                    {t('login')}
-                    <ArrowRight size={16} />
-                  </>
+                  <>Kyçu <ArrowRight size={15} /></>
                 )}
               </button>
             </form>
 
-            <div className="login-footer">
-              {t('no_account')} <Link to="/register">{t('register')}</Link>
-            </div>
+            <p className="login-footer">
+              Nuk keni llogari? <Link to="/register">Regjistrohuni</Link>
+            </p>
 
-            <div className="login-security">
-              🔐 Lidhje e sigurt SSL
+            <div className="login-secure">
+              <Lock size={11} />
+              <span>Lidhje e sigurt me enkriptim 256-bit</span>
             </div>
           </div>
         </div>

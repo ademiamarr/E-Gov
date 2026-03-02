@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Routes, Route, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { Building2, Users, UserCheck, AlertTriangle, Calendar, MapPin, LogOut, Menu, X } from 'lucide-react'
+import { Users, UserCheck, AlertTriangle, Calendar, MapPin, LogOut, ChevronRight, Menu, X } from 'lucide-react'
 import RegistrationPanel from './panels/RegistrationPanel.jsx'
 import MVRPanel from './panels/MVRPanel.jsx'
 import KomunaPanel from './panels/KomunaPanel.jsx'
@@ -12,43 +12,6 @@ const AdminLayout = () => {
   const navigate = useNavigate()
   const [active, setActive] = useState('registrations')
   const [sidebarOpen, setSidebarOpen] = useState(true)
-
-  const styles = {
-    adminLayout: { display: 'flex', minHeight: '100vh', background: '#0a1628' },
-    adminSidebar: { 
-      width: '240px', flexShrink: 0, background: 'rgba(8,18,40,0.95)',
-      borderRight: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column',
-      padding: '24px 16px', transition: 'all 0.3s', position: 'sticky', top: 0, height: '100vh'
-    },
-    sidebarLogo: { display: 'flex', alignItems: 'center', gap: '10px', paddingBottom: '24px', borderBottom: '1px solid rgba(255,255,255,0.06)', marginBottom: '20px' },
-    logoIcon: { width: '36px', height: '36px', borderRadius: '10px', background: 'linear-gradient(135deg, #4f46e5, #7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-    logoTitle: { fontSize: '13px', fontWeight: 700, color: '#f0f4ff' },
-    logoSub: { fontSize: '10px', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.06em' },
-    adminNav: { flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' },
-    adminNavItem: {
-      display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px',
-      border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.4)', fontSize: '13px',
-      fontWeight: 500, transition: 'all 0.15s', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left'
-    },
-    adminNavItemActive: {
-      background: 'linear-gradient(135deg, rgba(79,70,229,0.4), rgba(124,58,237,0.3))',
-      color: '#a5b4fc', boxShadow: '0 0 0 1px rgba(79,70,229,0.3)'
-    },
-    adminSidebarFooter: { display: 'flex', alignItems: 'center', gap: '10px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.06)' },
-    adminUser: { display: 'flex', alignItems: 'center', gap: '8px', flex: 1, overflow: 'hidden' },
-    adminUserAvatar: { width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, #4f46e5, #7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, color: '#fff', flexShrink: 0 },
-    adminUserName: { fontSize: '12px', fontWeight: 600, color: '#f0f4ff', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
-    adminUserRole: { fontSize: '10px', color: 'rgba(255,255,255,0.3)', display: 'block' },
-    adminLogout: { background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: '8px', color: 'rgba(255,255,255,0.3)', padding: '7px', cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'all 0.15s', flexShrink: 0 },
-    adminMain: { flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' },
-    adminTopbar: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 32px', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(15,31,80,0.5)' },
-    adminMenuToggle: { background: 'none', border: 'none', color: '#f0f4ff', cursor: 'pointer', display: 'none', fontSize: '20px', padding: '8px' },
-    adminTopbarContent: { flex: 1, paddingLeft: '20px' },
-    adminPageTitle: { fontSize: '1.2rem', fontWeight: 800, color: '#f0f4ff', margin: 0, letterSpacing: '-0.02em' },
-    adminTopbarUser: { display: 'flex', alignItems: 'center', gap: '8px' },
-    adminUserBadge: { background: 'rgba(79,70,229,0.2)', border: '1px solid rgba(79,70,229,0.3)', color: '#a5b4fc', padding: '6px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: 700, textTransform: 'capitalize' },
-    adminContent: { flex: 1, padding: '32px', overflowY: 'auto' },
-  }
 
   const isAdmin = (role) => {
     const map = {
@@ -63,99 +26,319 @@ const AdminLayout = () => {
   const go = (panel) => {
     setActive(panel)
     navigate(`/admin/${panel}`)
+    if (window.innerWidth < 768) setSidebarOpen(false)
   }
 
   const navItems = [
-    { id: 'registrations', icon: UserCheck, label: 'Regjistrime' },
-    { id: 'mvr', icon: Calendar, label: 'Terminë MVR' },
-    { id: 'komuna', icon: MapPin, label: 'Terminë Komuna' },
-    { id: 'gjoba', icon: AlertTriangle, label: 'Gjoba' },
-  ].filter(n => isAdmin(n.id) || user?.role === 'super_admin')
+    { id: 'registrations', icon: UserCheck, label: 'Regjistrime', desc: 'Kërkesa për aprovim' },
+    { id: 'mvr',           icon: Calendar,  label: 'Terminë MVR', desc: 'Min. e Brendshme' },
+    { id: 'komuna',        icon: MapPin,    label: 'Terminë Komuna', desc: 'Shërbime komunale' },
+    { id: 'gjoba',         icon: AlertTriangle, label: 'Gjoba', desc: 'Menaxhim gjobash' },
+  ].filter(n => user?.role === 'super_admin' || isAdmin(n.id))
+
+  const roleLabel = {
+    super_admin: 'Super Admin',
+    admin_users: 'Admin Regjistrime',
+    admin_fines: 'Admin Gjoba',
+    admin_appointments: 'Admin Termine',
+  }
+
+  const pageTitle = {
+    registrations: 'Regjistrime',
+    mvr: 'Terminë MVR',
+    komuna: 'Terminë Komuna',
+    gjoba: 'Gjoba',
+  }
 
   return (
     <>
       <style>{`
-        @media (max-width: 768px) {
-          .admin-sidebar-closed { display: none; }
-          .admin-menu-toggle { display: flex !important; }
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+        .adm-root {
+          display: flex;
+          min-height: 100vh;
+          background: #f5f6f8;
+          font-family: 'DM Sans', sans-serif;
         }
-        button:hover { opacity: 0.9; }
+
+        /* ── SIDEBAR ── */
+        .adm-sidebar {
+          width: 240px;
+          flex-shrink: 0;
+          background: #fff;
+          border-right: 1px solid #eaecf0;
+          display: flex;
+          flex-direction: column;
+          height: 100vh;
+          position: sticky;
+          top: 0;
+        }
+
+        .adm-sidebar-header {
+          padding: 20px 20px 18px;
+          border-bottom: 1px solid #eaecf0;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .adm-logo-box {
+          width: 32px; height: 32px;
+          background: #0c1220;
+          border-radius: 7px;
+          display: flex; align-items: center; justify-content: center;
+          flex-shrink: 0;
+        }
+
+        .adm-logo-box svg { width: 18px; height: 18px; }
+
+        .adm-brand-name {
+          font-size: 14px;
+          font-weight: 700;
+          color: #0c1220;
+          letter-spacing: -0.02em;
+        }
+
+        .adm-brand-sub {
+          font-size: 10px;
+          color: #8a929e;
+          font-weight: 400;
+        }
+
+        .adm-nav {
+          flex: 1;
+          padding: 12px 10px;
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+
+        .adm-nav-item {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 9px 12px;
+          border-radius: 8px;
+          border: none;
+          background: transparent;
+          cursor: pointer;
+          font-family: 'DM Sans', sans-serif;
+          transition: background 0.12s;
+          text-align: left;
+          width: 100%;
+        }
+
+        .adm-nav-item:hover { background: #f5f6f8; }
+
+        .adm-nav-item.active {
+          background: #f0f2ff;
+        }
+
+        .adm-nav-icon {
+          width: 30px; height: 30px;
+          border-radius: 6px;
+          display: flex; align-items: center; justify-content: center;
+          flex-shrink: 0;
+          background: #f5f6f8;
+          color: #6b7280;
+        }
+
+        .adm-nav-item.active .adm-nav-icon {
+          background: #0c1220;
+          color: #fff;
+        }
+
+        .adm-nav-text { flex: 1; }
+        .adm-nav-label { font-size: 13px; font-weight: 600; color: #374151; display: block; }
+        .adm-nav-desc  { font-size: 11px; color: #9ca3af; display: block; margin-top: 1px; }
+        .adm-nav-item.active .adm-nav-label { color: #0c1220; }
+        .adm-nav-item.active .adm-nav-desc  { color: #6b7280; }
+
+        .adm-nav-arrow { color: #d1d5db; }
+        .adm-nav-item.active .adm-nav-arrow { color: #0c1220; }
+
+        .adm-sidebar-footer {
+          padding: 14px 16px;
+          border-top: 1px solid #eaecf0;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .adm-user-avatar {
+          width: 34px; height: 34px;
+          border-radius: 50%;
+          background: #0c1220;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 12px; font-weight: 700; color: #fff;
+          flex-shrink: 0;
+          letter-spacing: -0.02em;
+        }
+
+        .adm-user-info { flex: 1; overflow: hidden; }
+        .adm-user-name {
+          font-size: 13px; font-weight: 600; color: #0c1220;
+          white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;
+        }
+        .adm-user-role { font-size: 10px; color: #8a929e; display: block; margin-top: 1px; }
+
+        .adm-logout-btn {
+          background: none; border: none;
+          color: #9ca3af; cursor: pointer; padding: 4px;
+          border-radius: 6px; display: flex; align-items: center;
+          transition: color 0.15s, background 0.15s;
+        }
+        .adm-logout-btn:hover { color: #ef4444; background: #fef2f2; }
+
+        /* ── MAIN ── */
+        .adm-main {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          min-width: 0;
+        }
+
+        .adm-topbar {
+          background: #fff;
+          border-bottom: 1px solid #eaecf0;
+          padding: 0 28px;
+          height: 56px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          flex-shrink: 0;
+        }
+
+        .adm-topbar-left { display: flex; align-items: center; gap: 12px; }
+
+        .adm-menu-btn {
+          display: none;
+          background: none; border: none;
+          color: #6b7280; cursor: pointer; padding: 4px;
+          border-radius: 6px;
+        }
+
+        .adm-page-title {
+          font-size: 15px;
+          font-weight: 700;
+          color: #0c1220;
+          letter-spacing: -0.01em;
+        }
+
+        .adm-topbar-right { display: flex; align-items: center; gap: 10px; }
+
+        .adm-role-badge {
+          font-size: 11px;
+          font-weight: 600;
+          color: #374151;
+          background: #f5f6f8;
+          border: 1px solid #e5e7eb;
+          border-radius: 20px;
+          padding: 4px 12px;
+          letter-spacing: 0.01em;
+          text-transform: capitalize;
+        }
+
+        .adm-content {
+          flex: 1;
+          padding: 28px;
+          overflow-y: auto;
+        }
+
+        /* Mobile */
+        .adm-overlay {
+          display: none;
+          position: fixed; inset: 0;
+          background: rgba(0,0,0,0.4);
+          z-index: 99;
+        }
+
+        @media (max-width: 768px) {
+          .adm-sidebar {
+            position: fixed; left: 0; top: 0; z-index: 100;
+            transform: translateX(-100%);
+            transition: transform 0.2s;
+          }
+          .adm-sidebar.open { transform: translateX(0); }
+          .adm-overlay.show { display: block; }
+          .adm-menu-btn { display: flex; }
+          .adm-content { padding: 20px 16px; }
+        }
       `}</style>
 
-      <div style={styles.adminLayout}>
+      <div className="adm-root">
+        {/* Sidebar overlay for mobile */}
+        <div className={`adm-overlay ${sidebarOpen && window?.innerWidth < 768 ? 'show' : ''}`} onClick={() => setSidebarOpen(false)} />
+
         {/* SIDEBAR */}
-        <aside style={{ ...styles.adminSidebar, ...(sidebarOpen ? {} : { transform: 'translateX(-100%)', position: 'absolute', zIndex: 100 }) }} className={sidebarOpen ? '' : 'admin-sidebar-closed'}>
-          <div style={styles.sidebarLogo}>
-            <div style={styles.logoIcon}><Building2 size={18} /></div>
+        <aside className={`adm-sidebar ${sidebarOpen ? 'open' : ''}`}>
+          <div className="adm-sidebar-header">
+            <div className="adm-logo-box">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M3 22V10L12 3L21 10V22H15V16H9V22H3Z" fill="#fff"/></svg>
+            </div>
             <div>
-              <div style={styles.logoTitle}>eGov Admin</div>
-              <div style={styles.logoSub}>{user?.role?.replace(/_/g,' ')}</div>
+              <div className="adm-brand-name">eGov Admin</div>
+              <div className="adm-brand-sub">Paneli i administrimit</div>
             </div>
           </div>
 
-          <nav style={styles.adminNav}>
-            {navItems.map(({ id, icon: Icon, label }) => (
+          <nav className="adm-nav">
+            {navItems.map(({ id, icon: Icon, label, desc }) => (
               <button
                 key={id}
-                style={{ ...styles.adminNavItem, ...(active === id ? styles.adminNavItemActive : {}) }}
-                onClick={() => {
-                  go(id)
-                  if (window.innerWidth < 768) setSidebarOpen(false)
-                }}
+                className={`adm-nav-item ${active === id ? 'active' : ''}`}
+                onClick={() => go(id)}
               >
-                <Icon size={17} />
-                <span>{label}</span>
+                <div className="adm-nav-icon">
+                  <Icon size={15} />
+                </div>
+                <div className="adm-nav-text">
+                  <span className="adm-nav-label">{label}</span>
+                  <span className="adm-nav-desc">{desc}</span>
+                </div>
+                <ChevronRight size={13} className="adm-nav-arrow" />
               </button>
             ))}
           </nav>
 
-          <div style={styles.adminSidebarFooter}>
-            <div style={styles.adminUser}>
-              <div style={styles.adminUserAvatar}>
-                {user?.first_name?.[0]}{user?.last_name?.[0]}
-              </div>
-              <div>
-                <span style={styles.adminUserName}>{user?.first_name} {user?.last_name}</span>
-                <span style={styles.adminUserRole}>{user?.role}</span>
-              </div>
+          <div className="adm-sidebar-footer">
+            <div className="adm-user-avatar">
+              {user?.first_name?.[0]}{user?.last_name?.[0]}
             </div>
-            <button style={styles.adminLogout} onClick={logout} title="Dil">
+            <div className="adm-user-info">
+              <span className="adm-user-name">{user?.first_name} {user?.last_name}</span>
+              <span className="adm-user-role">{roleLabel[user?.role] || user?.role}</span>
+            </div>
+            <button className="adm-logout-btn" onClick={logout} title="Dil">
               <LogOut size={15} />
             </button>
           </div>
         </aside>
 
-        {/* MAIN CONTENT */}
-        <main style={styles.adminMain}>
-          <div style={styles.adminTopbar}>
-            <button
-              style={styles.adminMenuToggle}
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-            >
-              {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
-
-            <div style={styles.adminTopbarContent}>
-              <h1 style={styles.adminPageTitle}>
-                {active === 'registrations' && 'Regjistrime në pritje'}
-                {active === 'mvr' && 'Terminë MVR'}
-                {active === 'komuna' && 'Terminë Komuna'}
-                {active === 'gjoba' && 'Gjoba'}
-              </h1>
+        {/* MAIN */}
+        <main className="adm-main">
+          <div className="adm-topbar">
+            <div className="adm-topbar-left">
+              <button className="adm-menu-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
+                {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
+              </button>
+              <h1 className="adm-page-title">{pageTitle[active]}</h1>
             </div>
-
-            <div style={styles.adminTopbarUser}>
-              <span style={styles.adminUserBadge}>{user?.role}</span>
+            <div className="adm-topbar-right">
+              <span className="adm-role-badge">{roleLabel[user?.role] || user?.role}</span>
             </div>
           </div>
 
-          <div style={styles.adminContent}>
+          <div className="adm-content">
             <Routes>
-              <Route path="/" element={<RegistrationPanel />} />
+              <Route path="/"              element={<RegistrationPanel />} />
               <Route path="/registrations" element={<RegistrationPanel />} />
-              <Route path="/mvr" element={<MVRPanel />} />
-              <Route path="/komuna" element={<KomunaPanel />} />
-              <Route path="/gjoba" element={<GjobaPanel />} />
+              <Route path="/mvr"           element={<MVRPanel />} />
+              <Route path="/komuna"        element={<KomunaPanel />} />
+              <Route path="/gjoba"         element={<GjobaPanel />} />
             </Routes>
           </div>
         </main>
