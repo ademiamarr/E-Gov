@@ -114,7 +114,7 @@ const Dashboard = () => {
 
   if (loading) return (
     <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'#f5f6f8' }}>
-      <div style={{ width:24, height:24, border:'2px solid #e5e7eb', borderTopColor:'#0c1220', borderRadius:'50%', animation:'spin .6s linear infinite' }}/>
+      <div style={{ width:24, height:24, border:'2px solid #e5e7eb', borderTopColor:'#1e3a8a', borderRadius:'50%', animation:'spin .6s linear infinite' }}/>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
@@ -125,48 +125,48 @@ const Dashboard = () => {
     /* sidebar */
     sidebar: { width:220, flexShrink:0, background:'#fff', borderRight:'1px solid #eaecf0', display:'flex', flexDirection:'column', height:'100vh', position:'sticky', top:0 },
     sidebarHeader: { padding:'20px 16px 16px', borderBottom:'1px solid #eaecf0', display:'flex', alignItems:'center', gap:10 },
-    logoBox: { width:30, height:30, background:'#0c1220', borderRadius:7, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 },
-    brandName: { fontSize:13, fontWeight:700, color:'#0c1220', letterSpacing:'-0.01em' },
+    logoBox: { width:30, height:30, background:'#1e3a8a', borderRadius:7, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 },
+    brandName: { fontSize:13, fontWeight:700, color:'#1e3a8a', letterSpacing:'-0.01em' },
     brandSub: { fontSize:10, color:'#8a929e' },
     nav: { flex:1, padding:'10px 8px', display:'flex', flexDirection:'column', gap:2 },
     navBtn: (active) => ({
       display:'flex', alignItems:'center', gap:8, padding:'8px 10px',
-      borderRadius:7, border:'none', background: active ? '#f0f2ff' : 'transparent',
+      borderRadius:7, border:'none', background: active ? '#eff6ff' : 'transparent',
       cursor:'pointer', fontFamily:"'DM Sans', sans-serif",
       transition:'background .1s', textAlign:'left', width:'100%', position:'relative'
     }),
     navIcon: (active) => ({
       width:28, height:28, borderRadius:6, display:'flex', alignItems:'center', justifyContent:'center',
-      background: active ? '#0c1220' : '#f5f6f8', color: active ? '#fff' : '#6b7280', flexShrink:0
+      background: active ? '#1e3a8a' : '#f5f6f8', color: active ? '#fff' : '#6b7280', flexShrink:0
     }),
-    navLabel: (active) => ({ fontSize:13, fontWeight:600, color: active ? '#0c1220' : '#374151', display:'block' }),
+    navLabel: (active) => ({ fontSize:13, fontWeight:600, color: active ? '#1e3a8a' : '#374151', display:'block' }),
     navBadge: { position:'absolute', right:10, background:'#ef4444', color:'#fff', fontSize:10, fontWeight:700, padding:'1px 6px', borderRadius:10 },
     sidebarFooter: { padding:'12px 14px', borderTop:'1px solid #eaecf0', display:'flex', alignItems:'center', gap:10 },
-    userAvatar: { width:32, height:32, borderRadius:'50%', background:'#0c1220', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color:'#fff', flexShrink:0 },
-    userName: { fontSize:13, fontWeight:600, color:'#0c1220', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', display:'block' },
+    userAvatar: { width:32, height:32, borderRadius:'50%', background:'#1e3a8a', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color:'#fff', flexShrink:0 },
+    userName: { fontSize:13, fontWeight:600, color:'#1e3a8a', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', display:'block' },
     userRole: { fontSize:10, color:'#8a929e', display:'block' },
     logoutBtn: { background:'none', border:'none', color:'#9ca3af', cursor:'pointer', padding:4, borderRadius:6, display:'flex', alignItems:'center', transition:'color .1s' },
 
     /* main */
     main: { flex:1, display:'flex', flexDirection:'column', minWidth:0 },
     topbar: { background:'#fff', borderBottom:'1px solid #eaecf0', padding:'0 24px', height:52, display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 },
-    pageTitle: { fontSize:15, fontWeight:700, color:'#0c1220', letterSpacing:'-0.01em' },
+    pageTitle: { fontSize:15, fontWeight:700, color:'#1e3a8a', letterSpacing:'-0.01em' },
     pageSub: { fontSize:12, color:'#8a929e', marginTop:2 },
-    topbarAvatar: { width:32, height:32, borderRadius:'50%', background:'#0c1220', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color:'#fff' },
+    topbarAvatar: { width:32, height:32, borderRadius:'50%', background:'#1e3a8a', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color:'#fff' },
     content: { flex:1, padding:'24px', overflowY:'auto' },
 
     /* stats */
     statsGrid: { display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12, marginBottom:20 },
     statCard: { background:'#fff', border:'1px solid #e5e7eb', borderRadius:10, padding:16, display:'flex', alignItems:'center', gap:12 },
     statIcon: (color) => ({ width:38, height:38, borderRadius:9, background:`${color}15`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }),
-    statNum: { fontSize:'1.4rem', fontWeight:800, color:'#0c1220', lineHeight:1, letterSpacing:'-0.03em' },
+    statNum: { fontSize:'1.4rem', fontWeight:800, color:'#1e3a8a', lineHeight:1, letterSpacing:'-0.03em' },
     statLabel: { fontSize:11, color:'#8a929e', marginTop:3 },
 
     /* cards */
     card: { background:'#fff', border:'1px solid #e5e7eb', borderRadius:10, overflow:'hidden' },
     cardHeader: { display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 18px', borderBottom:'1px solid #f3f4f6' },
-    cardTitle: { fontSize:13, fontWeight:700, color:'#0c1220' },
-    cardLink: { display:'flex', alignItems:'center', gap:3, background:'none', border:'none', color:'#2563eb', fontSize:11, fontWeight:600, cursor:'pointer', fontFamily:"'DM Sans', sans-serif" },
+    cardTitle: { fontSize:13, fontWeight:700, color:'#1e3a8a' },
+    cardLink: { display:'flex', alignItems:'center', gap:3, background:'none', border:'none', color:'#1e3a8a', fontSize:11, fontWeight:600, cursor:'pointer', fontFamily:"'DM Sans', sans-serif" },
     tableRow: { display:'flex', alignItems:'center', justifyContent:'space-between', padding:'11px 18px', borderBottom:'1px solid #f9fafb' },
     tableRowTitle: { fontSize:13, fontWeight:600, color:'#111827' },
     tableRowSub: { fontSize:11, color:'#9ca3af', marginTop:1 },
@@ -175,10 +175,10 @@ const Dashboard = () => {
     emptyMsg: { textAlign:'center', color:'#9ca3af', fontSize:13, padding:'28px 0' },
 
     /* modal overlay */
-    overlay: { position:'fixed', inset:0, background:'rgba(12,18,32,0.45)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000, padding:24 },
+    overlay: { position:'fixed', inset:0, background:'rgba(30,58,138,0.45)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000, padding:24 },
     modal: { background:'#fff', border:'1px solid #e5e7eb', borderRadius:14, width:'100%', maxWidth:440, boxShadow:'0 20px 60px rgba(0,0,0,.12)', overflow:'hidden' },
     modalHeader: { display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 20px', borderBottom:'1px solid #f3f4f6' },
-    modalTitle: { fontSize:15, fontWeight:700, color:'#0c1220' },
+    modalTitle: { fontSize:15, fontWeight:700, color:'#1e3a8a' },
     modalClose: { background:'#f5f6f8', border:'none', borderRadius:6, color:'#6b7280', padding:6, cursor:'pointer', display:'flex' },
     modalBody: { padding:'18px 20px' },
     modalFooter: { display:'flex', gap:8, padding:'14px 20px', borderTop:'1px solid #f3f4f6' },
@@ -189,18 +189,18 @@ const Dashboard = () => {
       width:24, height:24, borderRadius:'50%', border:'1.5px solid',
       display:'flex', alignItems:'center', justifyContent:'center',
       fontSize:10, fontWeight:700, flexShrink:0,
-      ...(state === 'done'   ? { background:'#0c1220', borderColor:'#0c1220', color:'#fff' } :
-          state === 'active' ? { background:'#fff', borderColor:'#0c1220', color:'#0c1220' } :
+      ...(state === 'done'   ? { background:'#1e3a8a', borderColor:'#1e3a8a', color:'#fff' } :
+          state === 'active' ? { background:'#fff', borderColor:'#1e3a8a', color:'#1e3a8a' } :
                                { background:'#f5f6f8', borderColor:'#e5e7eb', color:'#9ca3af' })
     }),
-    wzLine: (done) => ({ flex:1, height:1.5, background: done ? '#0c1220' : '#e5e7eb', margin:'0 4px' }),
+    wzLine: (done) => ({ flex:1, height:1.5, background: done ? '#1e3a8a' : '#e5e7eb', margin:'0 4px' }),
 
     /* wizard content */
     instGrid: { display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 },
     instCard: (sel) => ({
-      border:`1.5px solid ${sel ? '#0c1220' : '#e5e7eb'}`,
+      border:`1.5px solid ${sel ? '#1e3a8a' : '#e5e7eb'}`,
       borderRadius:10, padding:'16px 12px', textAlign:'center', cursor:'pointer',
-      background: sel ? '#0c1220' : '#fff', transition:'all .1s'
+      background: sel ? '#1e3a8a' : '#fff', transition:'all .1s'
     }),
     instIcon: { fontSize:24, display:'block', marginBottom:8 },
     instName: (sel) => ({ fontSize:13, fontWeight:700, color: sel ? '#fff' : '#111827' }),
@@ -210,22 +210,22 @@ const Dashboard = () => {
     svcItem: (sel) => ({
       display:'flex', alignItems:'center', gap:10,
       padding:'11px 14px', fontSize:13, fontWeight:500,
-      color: sel ? '#0c1220' : '#6b7280',
-      background: sel ? '#f0f2ff' : '#fff',
+      color: sel ? '#1e3a8a' : '#6b7280',
+      background: sel ? '#eff6ff' : '#fff',
       cursor:'pointer', transition:'background .1s',
       borderBottom:'1px solid #f3f4f6'
     }),
     svcRadio: (sel) => ({
       width:14, height:14, borderRadius:'50%',
-      border:`1.5px solid ${sel ? '#0c1220' : '#d1d5db'}`,
+      border:`1.5px solid ${sel ? '#1e3a8a' : '#d1d5db'}`,
       display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0
     }),
 
     dateGrid: { display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:6 },
     dateCard: (sel) => ({
-      border:`1.5px solid ${sel ? '#0c1220' : '#e5e7eb'}`,
+      border:`1.5px solid ${sel ? '#1e3a8a' : '#e5e7eb'}`,
       borderRadius:8, padding:'9px 4px', textAlign:'center', cursor:'pointer',
-      background: sel ? '#0c1220' : '#fff', transition:'all .1s'
+      background: sel ? '#1e3a8a' : '#fff', transition:'all .1s'
     }),
     dateDW: (sel) => ({ fontSize:9, fontWeight:700, color: sel ? 'rgba(255,255,255,.5)' : '#9ca3af', textTransform:'uppercase', letterSpacing:'.05em', marginBottom:3 }),
     dateNum: (sel) => ({ fontSize:16, fontWeight:800, color: sel ? '#fff' : '#111827', lineHeight:1 }),
@@ -238,15 +238,15 @@ const Dashboard = () => {
 
     timeGrid: { display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:7 },
     timeBtn: (sel) => ({
-      border:`1.5px solid ${sel ? '#0c1220' : '#e5e7eb'}`,
+      border:`1.5px solid ${sel ? '#1e3a8a' : '#e5e7eb'}`,
       borderRadius:7, padding:'8px 4px', textAlign:'center',
-      cursor:'pointer', background: sel ? '#0c1220' : '#fff',
+      cursor:'pointer', background: sel ? '#1e3a8a' : '#fff',
       fontSize:13, fontWeight:600, color: sel ? '#fff' : '#374151',
       fontFamily:"'DM Sans', sans-serif", transition:'all .1s'
     }),
 
     /* pay modal */
-    piLabel: { fontSize:11, fontWeight:600, color:'#374151', textTransform:'uppercase', letterSpacing:'.04em', display:'block', marginBottom:5 },
+    piLabel: { fontSize:11, fontWeight:600, color:'#1e3a8a', textTransform:'uppercase', letterSpacing:'.04em', display:'block', marginBottom:5 },
     piInput: { width:'100%', background:'#f9fafb', border:'1.5px solid #e5e7eb', color:'#111827', borderRadius:8, padding:'10px 12px', fontSize:13, outline:'none', fontFamily:"'DM Sans', sans-serif", marginBottom:12, transition:'border .15s' },
   }
 
@@ -341,7 +341,7 @@ const Dashboard = () => {
               <>
                 <div style={S.statsGrid}>
                   {[
-                    { label:'Terminë aktive', val:active.length, icon:Calendar, color:'#2563eb' },
+                    { label:'Terminë aktive', val:active.length, icon:Calendar, color:'#1e3a8a' },
                     { label:'Gjoba pa paguar', val:unpaid.length, icon:AlertTriangle, color:'#d97706' },
                     { label:'Pagesa totale', val:fines.filter(f=>f.status==='paid').length, icon:CreditCard, color:'#16a34a' },
                   ].map(({ label, val, icon:Icon, color }) => (
@@ -389,7 +389,7 @@ const Dashboard = () => {
               <>
                 <button
                   onClick={() => { resetForm(); setShowApptModal(true) }}
-                  style={{ display:'flex', alignItems:'center', gap:6, background:'#0c1220', color:'#fff', border:'none', padding:'9px 16px', borderRadius:8, fontSize:13, fontWeight:600, marginBottom:16, cursor:'pointer', fontFamily:"'DM Sans', sans-serif" }}
+                  style={{ display:'flex', alignItems:'center', gap:6, background:'#1e3a8a', color:'#fff', border:'none', padding:'9px 16px', borderRadius:8, fontSize:13, fontWeight:600, marginBottom:16, cursor:'pointer', fontFamily:"'DM Sans', sans-serif" }}
                 >
                   <Plus size={14}/> Rezervo termin të ri
                 </button>
@@ -457,10 +457,10 @@ const Dashboard = () => {
             {activeTab === 'profile' && (
               <div style={{ maxWidth:380 }}>
                 <div style={{ ...S.card, padding:24, display:'flex', flexDirection:'column', alignItems:'center', marginBottom:16 }}>
-                  <div style={{ width:56, height:56, borderRadius:'50%', background:'#0c1220', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, fontWeight:700, color:'#fff', marginBottom:12 }}>
+                  <div style={{ width:56, height:56, borderRadius:'50%', background:'#1e3a8a', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, fontWeight:700, color:'#fff', marginBottom:12 }}>
                     {user?.first_name?.[0]}{user?.last_name?.[0]}
                   </div>
-                  <h2 style={{ fontSize:'1.05rem', fontWeight:700, color:'#0c1220', letterSpacing:'-0.02em' }}>
+                  <h2 style={{ fontSize:'1.05rem', fontWeight:700, color:'#1e3a8a', letterSpacing:'-0.02em' }}>
                     {user?.first_name} {user?.last_name}
                   </h2>
                 </div>
@@ -529,7 +529,7 @@ const Dashboard = () => {
                       return (
                         <div key={svc} style={{ ...S.svcItem(sel), lastChild: { borderBottom:'none' } }} onClick={() => setApptService(svc)}>
                           <div style={S.svcRadio(sel)}>
-                            {sel && <div style={{ width:6, height:6, borderRadius:'50%', background:'#0c1220' }}/>}
+                            {sel && <div style={{ width:6, height:6, borderRadius:'50%', background:'#1e3a8a' }}/>}
                           </div>
                           {svc}
                         </div>
@@ -588,7 +588,7 @@ const Dashboard = () => {
                 </button>
                 {step < 4 ? (
                   <button
-                    style={{ flex:2, padding:10, background: canNext() ? '#0c1220' : '#f5f6f8', border:'none', color: canNext() ? '#fff' : '#9ca3af', borderRadius:8, fontSize:13, fontWeight:600, cursor: canNext() ? 'pointer' : 'not-allowed', fontFamily:"'DM Sans', sans-serif" }}
+                    style={{ flex:2, padding:10, background: canNext() ? '#1e3a8a' : '#f5f6f8', border:'none', color: canNext() ? '#fff' : '#9ca3af', borderRadius:8, fontSize:13, fontWeight:600, cursor: canNext() ? 'pointer' : 'not-allowed', fontFamily:"'DM Sans', sans-serif" }}
                     onClick={() => canNext() && setStep(s=>s+1)}
                   >
                     Vazhdo →
@@ -617,7 +617,7 @@ const Dashboard = () => {
               <div style={S.modalBody}>
                 <div style={{ background:'#f9fafb', border:'1px solid #f3f4f6', borderRadius:8, padding:14, textAlign:'center', marginBottom:16 }}>
                   <div style={{ fontSize:11, color:'#9ca3af', marginBottom:4 }}>Shuma totale</div>
-                  <div style={{ fontSize:'1.5rem', fontWeight:800, color:'#0c1220', letterSpacing:'-0.03em' }}>
+                  <div style={{ fontSize:'1.5rem', fontWeight:800, color:'#1e3a8a', letterSpacing:'-0.03em' }}>
                     {fines.find(f=>f.id===showPayModal)?.amount} MKD
                   </div>
                 </div>

@@ -19,11 +19,9 @@ const ADMIN_ROLES = [
   ROLES.ADMIN_FINES,
 ]
 
-const getUserRole = (user) => {
-  if (!user) return null
-  return user.publicMetadata?.role || ROLES.PENDING
-}
+const VALID_ROLES = Object.values(ROLES)
 
+const getUserRole  = (user) => user?.publicMetadata?.role || ROLES.PENDING
 const isAdmin      = (user) => ADMIN_ROLES.includes(getUserRole(user))
 const isSuperAdmin = (user) => getUserRole(user) === ROLES.SUPER_ADMIN
 const isApproved   = (user) => {
@@ -37,4 +35,14 @@ const setUserRole = async (clerkUserId, role) => {
   })
 }
 
-module.exports = { Clerk, ROLES, ADMIN_ROLES, getUserRole, isAdmin, isSuperAdmin, isApproved, setUserRole }
+module.exports = {
+  Clerk,
+  ROLES,
+  ADMIN_ROLES,
+  VALID_ROLES,
+  getUserRole,
+  isAdmin,
+  isSuperAdmin,
+  isApproved,
+  setUserRole,
+}

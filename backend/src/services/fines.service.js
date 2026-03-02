@@ -1,5 +1,5 @@
 const { supabase } = require('../config/supabase')
-const resend = require('../config/resend')
+const { sendEmail } = require('../config/resend')
 const finePaidEmail = require('../email/templates/fine-paid.email')
 const { formatCurrency } = require('../utils/formatCurrency')
 const { formatDate } = require('../utils/formatDate')
@@ -67,17 +67,21 @@ const markFinePaid = async (id, user) => {
 
   if (error) throw { status: 500, message: error.message }
 
-  await resend.emails.send({
-    from: process.env.EMAIL_FROM,
-    to: user.email,
-    ...finePaidEmail({
-      first_name: user.first_name,
-      fine_type: fine.type,
-      amount: formatCurrency(fine.amount),
-      reference_id: `FINE-${id.slice(0, 8).toUpperCase()}`,
-      paid_at: formatDate(new Date())
+  // ✅ përdor sendEmail helper — jo resend direkt
+  try {
+    await sendEmail({
+      to: user.email,
+      ...finePaidEmail({
+        first_name:   user.first_name,
+        fine_type:    fine.type,
+        amount:       formatCurrency(fine.amount),
+        reference_id: `FINE-${id.slice(0, 8).toUpperCase()}`,
+        paid_at:      formatDate(new Date()),
+      }),
     })
-  })
+  } catch (emailErr) {
+    console.warn('⚠️ Fine paid email dështoi:', emailErr.message)
+  }
 
   return updated
 }

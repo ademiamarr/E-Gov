@@ -75,7 +75,7 @@ const RegistrationPanel = () => {
           display: flex; justify-content: space-between; align-items: center;
           margin-bottom: 24px;
         }
-        .rp-header-left h1 { font-size: 18px; font-weight: 700; color: #0c1220; letter-spacing: -0.02em; }
+        .rp-header-left h1 { font-size: 18px; font-weight: 700; color: #1e3a8a; letter-spacing: -0.02em; }
         .rp-header-left p { font-size: 13px; color: #8a929e; margin-top: 2px; }
 
         .rp-count-badge {
@@ -92,7 +92,7 @@ const RegistrationPanel = () => {
         .rp-loading { display: flex; justify-content: center; align-items: center; padding: 80px 0; }
         .rp-spinner {
           width: 24px; height: 24px;
-          border: 2px solid #e5e7eb; border-top-color: #0c1220;
+          border: 2px solid #e5e7eb; border-top-color: #1e3a8a;
           border-radius: 50%; animation: rp-spin 0.6s linear infinite;
         }
         @keyframes rp-spin { to { transform: rotate(360deg); } }
@@ -148,7 +148,7 @@ const RegistrationPanel = () => {
           background: #f5f6f8; border: 1px solid #e5e7eb;
           overflow: hidden; flex-shrink: 0;
           display: flex; align-items: center; justify-content: center;
-          font-size: 12px; font-weight: 700; color: #6b7280;
+          font-size: 12px; font-weight: 700; color: #1e3a8a;
         }
         .rp-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
@@ -156,7 +156,7 @@ const RegistrationPanel = () => {
         .rp-user-date { font-size: 11px; color: #9ca3af; margin-top: 1px; }
 
         .rp-email { font-size: 13px; color: #6b7280; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .rp-embg  { font-size: 12px; font-weight: 600; color: #374151; font-family: monospace; letter-spacing: 0.05em; }
+        .rp-embg  { font-size: 12px; font-weight: 600; color: #1e3a8a; font-family: monospace; letter-spacing: 0.05em; }
 
         .rp-badge-pending {
           display: inline-flex; align-items: center; gap: 5px;
@@ -175,8 +175,8 @@ const RegistrationPanel = () => {
           font-family: 'DM Sans', sans-serif;
           border: 1px solid; cursor: pointer; transition: all 0.1s;
         }
-        .rp-btn-view   { background: #fff; border-color: #e5e7eb; color: #374151; }
-        .rp-btn-view:hover { background: #f9fafb; border-color: #d1d5db; }
+        .rp-btn-view   { background: #fff; border-color: #e5e7eb; color: #1e3a8a; }
+        .rp-btn-view:hover { background: #eff6ff; border-color: #bfdbfe; }
         .rp-btn-approve { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
         .rp-btn-approve:hover { background: #dcfce7; }
         .rp-btn-reject  { background: #fef2f2; border-color: #fecaca; color: #dc2626; }
@@ -185,7 +185,7 @@ const RegistrationPanel = () => {
         /* Modal overlay */
         .rp-overlay {
           position: fixed; inset: 0;
-          background: rgba(12,18,32,0.5);
+          background: rgba(30,58,138,0.5);
           backdrop-filter: blur(2px);
           display: flex; align-items: center; justify-content: center;
           z-index: 1000; padding: 24px;
@@ -205,7 +205,7 @@ const RegistrationPanel = () => {
           padding: 18px 22px;
           border-bottom: 1px solid #f3f4f6;
         }
-        .rp-modal-header h3 { font-size: 15px; font-weight: 700; color: #0c1220; }
+        .rp-modal-header h3 { font-size: 15px; font-weight: 700; color: #1e3a8a; }
         .rp-modal-close {
           background: #f5f6f8; border: none; border-radius: 6px;
           color: #6b7280; padding: 6px; cursor: pointer;
@@ -226,7 +226,7 @@ const RegistrationPanel = () => {
         }
         .rp-modal-photo img { width: 100%; height: 100%; object-fit: cover; }
         .rp-photo-hover {
-          position: absolute; inset: 0; background: rgba(0,0,0,0.45);
+          position: absolute; inset: 0; background: rgba(30,58,138,0.45);
           display: flex; flex-direction: column; align-items: center; justify-content: center;
           gap: 6px; opacity: 0; transition: opacity 0.15s; border-radius: 10px;
           color: #fff;
@@ -247,7 +247,7 @@ const RegistrationPanel = () => {
           display: flex; align-items: center; gap: 4px; margin-bottom: 2px;
         }
         .rp-field-val { font-size: 14px; font-weight: 600; color: #111827; }
-        .rp-field-embg { font-family: monospace; letter-spacing: 0.08em; color: #1d4ed8; }
+        .rp-field-embg { font-family: monospace; letter-spacing: 0.08em; color: #1e3a8a; }
         .rp-field-status {
           display: inline-flex; align-items: center; gap: 5px;
           background: #fffbeb; border: 1px solid #fde68a;
@@ -256,7 +256,7 @@ const RegistrationPanel = () => {
         }
 
         .rp-reject-section { margin-top: 4px; }
-        .rp-reject-label { font-size: 12px; font-weight: 600; color: #374151; display: block; margin-bottom: 6px; }
+        .rp-reject-label { font-size: 12px; font-weight: 600; color: #1e3a8a; display: block; margin-bottom: 6px; }
         .rp-reject-input {
           width: 100%; background: #f9fafb; border: 1.5px solid #e5e7eb;
           border-radius: 8px; color: #111827; font-size: 13px;
@@ -264,7 +264,7 @@ const RegistrationPanel = () => {
           font-family: 'DM Sans', sans-serif; outline: none;
           transition: border-color 0.15s;
         }
-        .rp-reject-input:focus { border-color: #9ca3af; }
+        .rp-reject-input:focus { border-color: #1e3a8a; }
         .rp-reject-input::placeholder { color: #d1d5db; }
 
         .rp-modal-footer {
@@ -290,11 +290,11 @@ const RegistrationPanel = () => {
 
         .rp-mf-approve {
           flex: 2; display: flex; align-items: center; justify-content: center; gap: 6px;
-          padding: 10px; background: #0c1220; border: none;
+          padding: 10px; background: #1e3a8a; border: none;
           color: #fff; border-radius: 8px; font-size: 13px; font-weight: 600;
           cursor: pointer; font-family: 'DM Sans', sans-serif; transition: background 0.1s;
         }
-        .rp-mf-approve:hover { background: #1a2540; }
+        .rp-mf-approve:hover { background: #1d4ed8; }
 
         /* Lightbox */
         .rp-lightbox {

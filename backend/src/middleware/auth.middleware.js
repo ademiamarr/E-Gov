@@ -1,13 +1,9 @@
 const { ClerkExpressRequireAuth } = require('@clerk/clerk-sdk-node')
 const { supabase } = require('../config/supabase')
 const Clerk = require('@clerk/clerk-sdk-node')
+const { VALID_ROLES, ROLES } = require('../config/clerk')
 
 const requireAuth = ClerkExpressRequireAuth()
-
-const VALID_ROLES = [
-  'super_admin', 'admin_users', 'admin_mvr',
-  'admin_komuna', 'admin_fines', 'user', 'pending', 'rejected'
-]
 
 const attachRole = async (req, res, next) => {
   try {
@@ -32,10 +28,8 @@ const attachRole = async (req, res, next) => {
     if (!dbUser) {
       try {
         const clerkUser = await Clerk.users.getUser(clerkUserId)
-        const userRole = clerkUser.publicMetadata?.role || 'pending'
-
-        // Valido rolin para se të insertosh
-        const safeRole = VALID_ROLES.includes(userRole) ? userRole : 'pending'
+        const userRole  = clerkUser.publicMetadata?.role || ROLES.PENDING
+        const safeRole  = VALID_ROLES.includes(userRole) ? userRole : ROLES.PENDING
 
         const newUser = {
           clerk_id:            clerkUserId,
@@ -44,7 +38,7 @@ const attachRole = async (req, res, next) => {
           email:               clerkUser.emailAddresses[0]?.emailAddress || '',
           personal_id:         clerkUser.publicMetadata?.personal_id || `TEMP-${clerkUserId.slice(0, 8)}`,
           role:                safeRole,
-          verification_status: ['pending','rejected'].includes(safeRole) ? safeRole : 'approved',
+          verification_status: [ROLES.PENDING, ROLES.REJECTED].includes(safeRole) ? safeRole : 'approved',
         }
 
         const { data: created, error: createError } = await supabase

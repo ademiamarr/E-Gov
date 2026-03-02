@@ -2,19 +2,18 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSignUp } from '@clerk/clerk-react'
 import { Building2, AlertCircle, Mail, Check } from 'lucide-react'
-import API from '../api/axios'
 
 const VerifyEmail = () => {
-  const [code, setCode] = useState('')
-  const [error, setError] = useState('')
+  const [code, setCode]       = useState('')
+  const [error, setError]     = useState('')
   const [loading, setLoading] = useState(false)
-  const [debugInfo, setDebugInfo] = useState('')
-  const { signUp, isLoaded } = useSignUp()
-  const navigate = useNavigate()
+  const [done, setDone]       = useState(false)
+  const { signUp, isLoaded }  = useSignUp()
+  const navigate              = useNavigate()
 
   const handleVerify = async (e) => {
     e?.preventDefault()
-    
+
     if (!isLoaded) {
       setError('Aplikacioni po ngarkohet, prit...')
       return
@@ -27,94 +26,59 @@ const VerifyEmail = () => {
 
     setLoading(true)
     setError('')
-    setDebugInfo('Verifikon kodin...')
-    console.log('🔄 Verifying email code:', code)
 
     try {
-      // ✅ Step 1: Verify Clerk email
-      console.log('📧 Step 1: Verifying with Clerk...')
+      // Step 1: Verifiko me Clerk
       const result = await signUp.attemptEmailAddressVerification({ code })
-      console.log('✅ Clerk verification result:', result.status)
 
       if (result.status !== 'complete') {
         setError('Kodi nuk është i saktë ose ka skaduar')
-        setDebugInfo(`Status: ${result.status}`)
         setLoading(false)
         return
       }
 
       const clerkUserId = result.createdUserId
-      console.log('✅ Clerk user ID:', clerkUserId)
-      setDebugInfo(`Clerk: ✓ User created: ${clerkUserId}`)
 
-      // ✅ Step 2: Get pending registration data
-      console.log('📝 Step 2: Getting pending registration data...')
+      // Step 2: Merr të dhënat e regjistrimit
       const pending = window.__pendingRegister
 
       if (!pending) {
-        setError('Të dhënat e regjistrimit nuk u gjetën. Provoni të regjistrohet përsëri.')
-        setDebugInfo('❌ No pending registration data')
+        setError('Të dhënat e regjistrimit nuk u gjetën. Provoni të regjistroheni përsëri.')
         setLoading(false)
         return
       }
 
-      console.log('✅ Pending data found:', {
-        email: pending.email,
-        first_name: pending.first_name,
-        personal_id: pending.personal_id
-      })
-      setDebugInfo(`Clerk: ✓\nData: ✓ ${pending.first_name} ${pending.last_name}`)
-
-      // ✅ Step 3: Register in backend
-      console.log('📤 Step 3: Registering in backend...')
-      
+      // Step 3: Regjistro në backend
       const formData = new FormData()
-      formData.append('clerk_id', clerkUserId)
-      formData.append('first_name', pending.first_name)
-      formData.append('last_name', pending.last_name)
+      formData.append('clerk_id',    clerkUserId)
+      formData.append('first_name',  pending.first_name)
+      formData.append('last_name',   pending.last_name)
       formData.append('personal_id', pending.personal_id)
-      formData.append('email', pending.email)
+      formData.append('email',       pending.email)
       if (pending.id_photo) {
         formData.append('id_photo', pending.id_photo)
-        console.log('📸 Photo attached:', pending.id_photo.name)
       }
 
-      const apiUrl = `${import.meta.env.VITE_API_URL}/api/auth/register`
-      console.log('🌐 API URL:', apiUrl)
-
-      const res = await fetch(apiUrl, {
+      const res  = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/register`, {
         method: 'POST',
-        body: formData
+        body:   formData,
       })
-
-      console.log('📥 Backend response status:', res.status)
       const data = await res.json()
-      console.log('📥 Backend response data:', data)
 
       if (!res.ok) {
-        setError(data.message || 'Gabim në backend')
-        setDebugInfo(`❌ Backend error: ${data.message}`)
+        setError(data.message || 'Gabim gjatë regjistrimit')
         setLoading(false)
         return
       }
 
-      console.log('✅ Backend registration successful')
-      setDebugInfo(`Clerk: ✓\nData: ✓\nBackend: ✓`)
-
-      // ✅ Clear pending data
+      // Step 4: Pastro dhe redirect
       delete window.__pendingRegister
-      console.log('🧹 Cleared pending registration data')
+      setDone(true)
 
-      // ✅ Redirect to pending page
-      setTimeout(() => {
-        console.log('➡️ Redirecting to /pending')
-        navigate('/pending', { replace: true })
-      }, 1500)
+      setTimeout(() => navigate('/pending', { replace: true }), 1500)
 
     } catch (err) {
-      console.error('❌ Verification error:', err)
-      setError(err.message || 'Gabim gjatë verifikimit')
-      setDebugInfo(`❌ Error: ${err.message}`)
+      setError(err.errors?.[0]?.message || err.message || 'Gabim gjatë verifikimit')
     } finally {
       setLoading(false)
     }
@@ -123,284 +87,203 @@ const VerifyEmail = () => {
   return (
     <>
       <style>{`
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
         body {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-          background: linear-gradient(135deg, #ffffff 0%, #f8fafc 50%, #ffffff 100%);
+          font-family: 'DM Sans', sans-serif;
+          background: #f8fafc;
           min-height: 100vh;
         }
 
-        .verify-page {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          min-height: 100vh;
-          padding: 20px;
+        .vf-page {
+          display: flex; flex-direction: column;
+          align-items: center; justify-content: center;
+          min-height: 100vh; padding: 20px;
+          font-family: 'DM Sans', sans-serif;
         }
 
-        .verify-logo {
-          display: flex;
-          align-items: center;
-          gap: 10px;
+        .vf-logo {
+          display: flex; align-items: center; gap: 10px;
           margin-bottom: 40px;
-          font-size: 13px;
-          font-weight: 700;
-          color: #0f172a;
+          font-size: 13px; font-weight: 700; color: #0f172a;
         }
 
-        .verify-logo-icon {
-          width: 36px;
-          height: 36px;
-          border-radius: 10px;
+        .vf-logo-icon {
+          width: 36px; height: 36px; border-radius: 10px;
           background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
+          display: flex; align-items: center; justify-content: center;
         }
 
-        .verify-wrap {
-          width: 100%;
-          max-width: 480px;
-        }
+        .vf-wrap { width: 100%; max-width: 420px; }
 
-        .verify-icon-wrap {
-          width: 64px;
-          height: 64px;
-          border-radius: 16px;
-          background: linear-gradient(135deg, #2563eb15 0%, #1d4ed815 100%);
-          display: flex;
-          align-items: center;
-          justify-content: center;
+        .vf-icon-wrap {
+          width: 64px; height: 64px; border-radius: 16px;
+          background: #eff6ff; border: 1px solid #bfdbfe;
+          display: flex; align-items: center; justify-content: center;
           margin: 0 auto 24px;
-          border: 1px solid rgba(37, 99, 235, 0.2);
         }
 
-        .verify-wrap h1 {
-          font-size: 24px;
-          font-weight: 700;
-          color: #0f172a;
-          text-align: center;
-          margin-bottom: 8px;
-          letter-spacing: -0.5px;
+        .vf-icon-wrap.done { background: #f0fdf4; border-color: #bbf7d0; }
+
+        .vf-wrap h1 {
+          font-size: 22px; font-weight: 700; color: #0f172a;
+          text-align: center; margin-bottom: 8px; letter-spacing: -0.5px;
         }
 
-        .verify-wrap > p {
-          text-align: center;
-          font-size: 13px;
-          color: #6b7280;
-          margin-bottom: 24px;
-          line-height: 1.6;
+        .vf-wrap > p {
+          text-align: center; font-size: 13px; color: #6b7280;
+          margin-bottom: 28px; line-height: 1.6;
         }
 
-        .verify-card {
-          background: #ffffff;
-          border-radius: 16px;
-          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
-          padding: 32px;
+        .vf-card {
+          background: #fff;
+          border-radius: 14px;
+          box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+          border: 1px solid #e5e7eb;
+          padding: 28px;
         }
 
-        .verify-error {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 12px 14px;
-          background: #fef2f2;
-          border: 1px solid #fecaca;
-          border-radius: 8px;
-          color: #dc2626;
-          font-size: 13px;
+        .vf-error {
+          display: flex; align-items: center; gap: 8px;
+          padding: 11px 13px;
+          background: #fef2f2; border: 1px solid #fecaca;
+          border-radius: 8px; color: #dc2626; font-size: 13px;
           margin-bottom: 16px;
         }
 
-        .verify-error svg {
-          flex-shrink: 0;
-        }
-
-        .verify-debug {
-          padding: 12px 14px;
-          background: #f0f4ff;
-          border: 1px solid #bfdbfe;
-          border-radius: 8px;
-          color: #1e40af;
-          font-size: 11px;
-          font-family: 'Courier New', monospace;
-          margin-bottom: 16px;
-          line-height: 1.6;
-          white-space: pre-wrap;
-        }
-
-        .form-group {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
+        .vf-success {
+          display: flex; align-items: center; gap: 8px;
+          padding: 11px 13px;
+          background: #f0fdf4; border: 1px solid #bbf7d0;
+          border-radius: 8px; color: #15803d; font-size: 13px;
           margin-bottom: 16px;
         }
 
-        .form-label {
-          font-size: 12px;
-          font-weight: 600;
-          color: #374151;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
+        .vf-label {
+          font-size: 11px; font-weight: 600; color: #374151;
+          text-transform: uppercase; letter-spacing: 0.05em;
+          display: block; margin-bottom: 8px;
         }
 
-        .verify-input {
-          padding: 14px 16px;
-          border: 1px solid #d1d5db;
-          border-radius: 8px;
-          font-size: 18px;
-          color: #0f172a;
-          font-family: 'Courier New', monospace;
-          letter-spacing: 8px;
-          text-align: center;
-          transition: all 0.2s;
-          background: #fafbfc;
+        .vf-input {
+          width: 100%; padding: 14px 16px;
+          border: 1.5px solid #e5e7eb; border-radius: 8px;
+          font-size: 20px; font-family: 'Courier New', monospace;
+          letter-spacing: 10px; text-align: center;
+          color: #0f172a; background: #f9fafb;
+          outline: none; transition: all 0.15s;
+          margin-bottom: 16px;
         }
 
-        .verify-input:focus {
-          outline: none;
-          border-color: #2563eb;
-          background: #ffffff;
-          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        .vf-input:focus {
+          border-color: #2563eb; background: #fff;
+          box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
         }
 
-        .verify-input::placeholder {
-          color: #d1d5db;
-          letter-spacing: 0;
+        .vf-input::placeholder { color: #d1d5db; letter-spacing: 0; }
+        .vf-input:disabled { opacity: 0.5; }
+
+        .vf-btn {
+          width: 100%; padding: 12px;
+          background: #0c1220; border: none;
+          color: #fff; border-radius: 8px;
+          font-size: 14px; font-weight: 600;
+          font-family: 'DM Sans', sans-serif;
+          cursor: pointer; display: flex;
+          align-items: center; justify-content: center; gap: 8px;
+          transition: background 0.15s;
         }
 
-        .btn-primary {
-          width: 100%;
-          padding: 12px 16px;
-          background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-          color: #ffffff;
-          border: none;
-          border-radius: 8px;
-          font-size: 14px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          font-family: inherit;
+        .vf-btn:hover:not(:disabled) { background: #1a2540; }
+        .vf-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .vf-spinner {
+          width: 14px; height: 14px;
+          border: 2px solid rgba(255,255,255,0.3);
+          border-top-color: #fff; border-radius: 50%;
+          animation: vf-spin 0.6s linear infinite;
         }
+        @keyframes vf-spin { to { transform: rotate(360deg); } }
 
-        .btn-primary:hover:not(:disabled) {
-          background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
-          box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-        }
-
-        .btn-primary:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .btn-spinner {
-          width: 14px;
-          height: 14px;
-          border: 2px solid rgba(255, 255, 255, 0.3);
-          border-top-color: #ffffff;
-          border-radius: 50%;
-          animation: spin 0.6s linear infinite;
-        }
-
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-
-        .verify-info {
-          margin-top: 20px;
-          padding: 14px;
-          background: #fef3c7;
-          border: 1px solid #fbbf24;
-          border-radius: 8px;
-          font-size: 12px;
-          color: #92400e;
-          text-align: center;
-        }
-
-        @media (max-width: 480px) {
-          .verify-card {
-            padding: 24px;
-          }
-
-          .verify-wrap h1 {
-            font-size: 20px;
-          }
-
-          .verify-input {
-            font-size: 16px;
-          }
+        .vf-hint {
+          margin-top: 16px; padding: 12px 14px;
+          background: #fffbeb; border: 1px solid #fde68a;
+          border-radius: 8px; font-size: 12px; color: #92400e;
+          text-align: center; line-height: 1.5;
         }
       `}</style>
 
-      <div className="verify-page">
-        <div className="verify-logo">
-          <div className="verify-logo-icon"><Building2 size={18} color="#fff" /></div>
+      <div className="vf-page">
+        <div className="vf-logo">
+          <div className="vf-logo-icon">
+            <Building2 size={18} color="#fff" />
+          </div>
           <span>eGov Portal</span>
         </div>
 
-        <div className="verify-wrap">
-          <div className="verify-icon-wrap">
-            <Mail size={28} color="#2563eb" />
+        <div className="vf-wrap">
+          <div className={`vf-icon-wrap ${done ? 'done' : ''}`}>
+            {done
+              ? <Check size={28} color="#16a34a" />
+              : <Mail  size={28} color="#2563eb" />
+            }
           </div>
 
-          <h1>Verifiko emailin</h1>
-          <p>Kemi dërguar kodin 6-shifror në emailin tuaj. Vendoseni më poshtë për të përfunduar regjistrimin.</p>
+          <h1>{done ? 'Email i verifikuar!' : 'Verifiko emailin'}</h1>
+          <p>
+            {done
+              ? 'Regjistrimi u krye. Po të ridrejtojmë...'
+              : 'Kemi dërguar kodin 6-shifror në emailin tuaj.'
+            }
+          </p>
 
-          <div className="verify-card">
+          <div className="vf-card">
             {error && (
-              <div className="verify-error">
+              <div className="vf-error">
                 <AlertCircle size={14} />
                 <span>{error}</span>
               </div>
             )}
 
-            {debugInfo && (
-              <div className="verify-debug">{debugInfo}</div>
+            {done && (
+              <div className="vf-success">
+                <Check size={14} />
+                <span>Regjistrimi u krye me sukses!</span>
+              </div>
             )}
 
-            <form onSubmit={handleVerify}>
-              <div className="form-group">
-                <label className="form-label">Kodi i verifikimit</label>
+            {!done && (
+              <form onSubmit={handleVerify}>
+                <label className="vf-label">Kodi i verifikimit</label>
                 <input
                   type="text"
-                  className="verify-input"
+                  className="vf-input"
                   value={code}
                   placeholder="000000"
                   maxLength={6}
-                  onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+                  onChange={e => setCode(e.target.value.replace(/\D/g, ''))}
                   disabled={loading}
                   autoFocus
                 />
+                <button
+                  type="submit"
+                  className="vf-btn"
+                  disabled={loading || code.length !== 6}
+                >
+                  {loading
+                    ? <><div className="vf-spinner" /> Duke verifikuar...</>
+                    : <><Check size={15} /> Verifiko emailin</>
+                  }
+                </button>
+              </form>
+            )}
+
+            {!done && (
+              <div className="vf-hint">
+                💡 Nëse nuk keni marrë kodin, kontrolloni klasën spam.
               </div>
-
-              <button
-                type="submit"
-                className="btn-primary"
-                disabled={loading || code.length !== 6}
-              >
-                {loading ? (
-                  <>
-                    <div className="btn-spinner" />
-                    Duke verifikuar...
-                  </>
-                ) : (
-                  <>
-                    <Check size={16} />
-                    Verifiko emailin
-                  </>
-                )}
-              </button>
-            </form>
-
-            <div className="verify-info">
-              💡 Nëse nuk keni marrë kodin, kontrolloni klasën e spam-it ose kërkoni të përsëndatat.
-            </div>
+            )}
           </div>
         </div>
       </div>

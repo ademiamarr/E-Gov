@@ -57,23 +57,23 @@ const GjobaPanel = () => {
         .gj-toast.err { background: #fef2f2; border-color: #fecaca; color: #dc2626; }
 
         .gj-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-        .gj-header h1 { font-size: 18px; font-weight: 700; color: #0c1220; letter-spacing: -0.02em; }
+        .gj-header h1 { font-size: 18px; font-weight: 700; color: #1e3a8a; letter-spacing: -0.02em; }
         .gj-header p { font-size: 13px; color: #8a929e; margin-top: 2px; }
 
         .gj-add-btn {
           display: flex; align-items: center; gap: 6px;
-          background: #0c1220; color: #fff;
+          background: #1e3a8a; color: #fff;
           border: none; border-radius: 8px;
           padding: 9px 16px; font-size: 13px; font-weight: 600;
           cursor: pointer; font-family: 'DM Sans', sans-serif;
           transition: background 0.1s;
         }
-        .gj-add-btn:hover { background: #1a2540; }
+        .gj-add-btn:hover { background: #1d4ed8; }
 
         .gj-loading { display: flex; justify-content: center; padding: 80px 0; }
         .gj-spinner {
           width: 24px; height: 24px;
-          border: 2px solid #e5e7eb; border-top-color: #0c1220;
+          border: 2px solid #e5e7eb; border-top-color: #1e3a8a;
           border-radius: 50%; animation: gj-spin 0.6s linear infinite;
         }
         @keyframes gj-spin { to { transform: rotate(360deg); } }
@@ -114,7 +114,7 @@ const GjobaPanel = () => {
         .gj-user-name  { font-size: 13px; font-weight: 600; color: #111827; }
         .gj-user-email { font-size: 11px; color: #9ca3af; margin-top: 2px; }
         .gj-type       { font-size: 13px; color: #374151; font-weight: 500; }
-        .gj-amount     { font-size: 13px; font-weight: 700; color: #0c1220; }
+        .gj-amount     { font-size: 13px; font-weight: 700; color: #1e3a8a; }
         .gj-date       { font-size: 12px; color: #6b7280; }
 
         .gj-badge-paid    { display: inline-flex; align-items: center; gap: 5px; background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; border-radius: 20px; padding: 3px 10px; font-size: 11px; font-weight: 600; }
@@ -125,7 +125,7 @@ const GjobaPanel = () => {
         /* Modal */
         .gj-overlay {
           position: fixed; inset: 0;
-          background: rgba(12,18,32,0.5); backdrop-filter: blur(2px);
+          background: rgba(30,58,138,0.5); backdrop-filter: blur(2px);
           display: flex; align-items: center; justify-content: center;
           z-index: 1000; padding: 24px;
         }
@@ -138,7 +138,7 @@ const GjobaPanel = () => {
           display: flex; align-items: center; justify-content: space-between;
           padding: 18px 22px; border-bottom: 1px solid #f3f4f6;
         }
-        .gj-modal-header h3 { font-size: 15px; font-weight: 700; color: #0c1220; }
+        .gj-modal-header h3 { font-size: 15px; font-weight: 700; color: #1e3a8a; }
         .gj-modal-close {
           background: #f5f6f8; border: none; border-radius: 6px;
           color: #6b7280; padding: 6px; cursor: pointer; display: flex;
@@ -149,7 +149,7 @@ const GjobaPanel = () => {
         .gj-modal-body { padding: 22px; display: flex; flex-direction: column; gap: 14px; }
 
         .gj-form-group { display: flex; flex-direction: column; gap: 5px; }
-        .gj-form-label { font-size: 11px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.04em; }
+        .gj-form-label { font-size: 11px; font-weight: 600; color: #1e3a8a; text-transform: uppercase; letter-spacing: 0.04em; }
 
         .gj-select, .gj-input {
           width: 100%;
@@ -162,7 +162,7 @@ const GjobaPanel = () => {
           transition: border-color 0.15s, background 0.15s;
           appearance: none;
         }
-        .gj-select:focus, .gj-input:focus { border-color: #0c1220; background: #fff; }
+        .gj-select:focus, .gj-input:focus { border-color: #1e3a8a; background: #fff; }
         .gj-input::placeholder { color: #d1d5db; }
 
         .gj-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -179,11 +179,11 @@ const GjobaPanel = () => {
         .gj-btn-cancel:hover { background: #f9fafb; }
         .gj-btn-confirm {
           flex: 2; display: flex; align-items: center; justify-content: center; gap: 6px;
-          padding: 10px; background: #0c1220; border: none;
+          padding: 10px; background: #1e3a8a; border: none;
           color: #fff; border-radius: 8px; font-size: 13px; font-weight: 600;
           cursor: pointer; font-family: 'DM Sans', sans-serif; transition: background 0.1s;
         }
-        .gj-btn-confirm:hover { background: #1a2540; }
+        .gj-btn-confirm:hover { background: #1d4ed8; }
       `}</style>
 
       <div className="gj-root">

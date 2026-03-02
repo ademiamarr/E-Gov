@@ -79,7 +79,7 @@ const Register = () => {
 
         /* Left */
         .reg-left {
-          background: #0c1220;
+          background: #1e3a8a;
           display: flex;
           flex-direction: column;
           justify-content: space-between;
@@ -142,8 +142,8 @@ const Register = () => {
           transition: all 0.2s;
         }
 
-        .reg-step-circle.done { background: rgba(255,255,255,0.9); color: #0c1220; }
-        .reg-step-circle.active { background: #fff; color: #0c1220; box-shadow: 0 0 0 4px rgba(255,255,255,0.15); }
+        .reg-step-circle.done { background: rgba(255,255,255,0.9); color: #1e3a8a; }
+        .reg-step-circle.active { background: #fff; color: #1e3a8a; box-shadow: 0 0 0 4px rgba(255,255,255,0.15); }
         .reg-step-circle.pending { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.3); border: 1px solid rgba(255,255,255,0.1); }
 
         .reg-step-text { font-size: 13px; font-weight: 500; }
@@ -196,9 +196,9 @@ const Register = () => {
           font-family: 'DM Sans', sans-serif;
           padding: 0;
         }
-        .reg-right-back:hover { color: #0c1220; }
+        .reg-right-back:hover { color: #1e3a8a; }
 
-        .reg-heading { font-size: 22px; font-weight: 700; color: #0c1220; letter-spacing: -0.02em; margin-bottom: 4px; }
+        .reg-heading { font-size: 22px; font-weight: 700; color: #1e3a8a; letter-spacing: -0.02em; margin-bottom: 4px; }
         .reg-subheading { font-size: 13px; color: #8a929e; margin-bottom: 28px; }
 
         .reg-error {
@@ -219,7 +219,7 @@ const Register = () => {
         .rg-group { display: flex; flex-direction: column; gap: 5px; }
 
         .rg-label {
-          font-size: 11px; font-weight: 600; color: #374151;
+          font-size: 11px; font-weight: 600; color: #1e3a8a;
           letter-spacing: 0.02em; text-transform: uppercase;
         }
 
@@ -228,7 +228,7 @@ const Register = () => {
           padding: 10px 12px;
           font-size: 14px;
           font-family: 'DM Sans', sans-serif;
-          color: #0c1220;
+          color: #1e3a8a;
           background: #f7f8fa;
           border: 1.5px solid #e8eaee;
           border-radius: 8px;
@@ -236,7 +236,7 @@ const Register = () => {
           transition: border-color 0.15s, background 0.15s;
         }
         .rg-input::placeholder { color: #b0b8c4; }
-        .rg-input:focus { background: #fff; border-color: #0c1220; }
+        .rg-input:focus { background: #fff; border-color: #1e3a8a; }
 
         .rg-input-wrap { position: relative; }
         .rg-input-icon {
@@ -250,7 +250,7 @@ const Register = () => {
           background: none; border: none; color: #b0b8c4; cursor: pointer; padding: 2px;
           display: flex; align-items: center;
         }
-        .rg-eye:hover { color: #6b7280; }
+        .rg-eye:hover { color: #2563eb; }
 
         /* Photo upload */
         .rg-photo-label {
@@ -280,7 +280,7 @@ const Register = () => {
         .rg-submit {
           width: 100%;
           padding: 12px 16px;
-          background: #0c1220;
+          background: #1e3a8a;
           color: #fff;
           border: none; border-radius: 8px;
           font-size: 14px; font-weight: 600;
@@ -291,11 +291,11 @@ const Register = () => {
           transition: background 0.15s;
           margin-top: 4px;
         }
-        .rg-submit:hover:not(:disabled) { background: #1a2540; }
+        .rg-submit:hover:not(:disabled) { background: #1d4ed8; }
         .rg-submit:disabled { opacity: 0.5; cursor: not-allowed; }
         .rg-submit.secondary {
           background: #f7f8fa;
-          color: #374151;
+          color: #1e3a8a;
           border: 1.5px solid #e8eaee;
         }
         .rg-submit.secondary:hover:not(:disabled) { background: #eef0f4; }
@@ -309,7 +309,7 @@ const Register = () => {
         @keyframes rg-spin { to { transform: rotate(360deg); } }
 
         .rg-footer { margin-top: 22px; text-align: center; font-size: 13px; color: #8a929e; }
-        .rg-footer a { color: #0c1220; font-weight: 600; text-decoration: none; }
+        .rg-footer a { color: #1e3a8a; font-weight: 600; text-decoration: none; }
         .rg-footer a:hover { text-decoration: underline; }
 
         @media (max-width: 900px) {
@@ -327,7 +327,7 @@ const Register = () => {
         <div className="reg-left">
           <div className="reg-left-brand">
             <div className="reg-left-logo">
-              <svg viewBox="0 0 24 24" fill="none"><path d="M3 22V10L12 3L21 10V22H15V16H9V22H3Z" fill="#0c1220"/></svg>
+              <svg viewBox="0 0 24 24" fill="none"><path d="M3 22V10L12 3L21 10V22H15V16H9V22H3Z" fill="#1e3a8a"/></svg>
             </div>
             <span className="reg-left-name">eGov Portal</span>
           </div>

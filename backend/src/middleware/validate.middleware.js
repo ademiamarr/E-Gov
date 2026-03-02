@@ -1,13 +1,32 @@
-const { ROLES, ADMIN_ROLES } = require('../config/clerk')
+const { z } = require('zod')
 
-const requireRole = (...allowedRoles) => (req, res, next) => {
-  if (!req.userRole) return res.status(401).json({ success: false, message: 'Nuk jeni të autorizuar' })
-  if (!allowedRoles.includes(req.userRole)) return res.status(403).json({ success: false, message: 'Nuk keni leje' })
-  next()
+const validate = (schema, source = 'body') => (req, res, next) => {
+  try {
+    const data = source === 'body'   ? req.body
+               : source === 'query'  ? req.query
+               : source === 'params' ? req.params
+               : req.body
+
+    const parsed = schema.parse(data)
+
+    if (source === 'body')   req.body   = parsed
+    if (source === 'query')  req.query  = parsed
+    if (source === 'params') req.params = parsed
+
+    next()
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return res.status(400).json({
+        success: false,
+        message: 'Të dhënat e dërguara nuk janë të vlefshme',
+        errors: err.errors.map(e => ({
+          field:   e.path.join('.'),
+          message: e.message,
+        })),
+      })
+    }
+    next(err)
+  }
 }
 
-const requireAdmin = requireRole(...ADMIN_ROLES)
-const requireSuperAdmin = requireRole(ROLES.SUPER_ADMIN)
-const requireApproved = requireRole(ROLES.USER, ...ADMIN_ROLES)
-
-module.exports = { requireRole, requireAdmin, requireSuperAdmin, requireApproved }
+module.exports = { validate }

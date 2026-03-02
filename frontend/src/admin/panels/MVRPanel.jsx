@@ -51,7 +51,7 @@ const MVRPanel = () => {
         .ap-toast.err { background: #fef2f2; border-color: #fecaca; color: #dc2626; }
 
         .ap-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-        .ap-header h1 { font-size: 18px; font-weight: 700; color: #0c1220; letter-spacing: -0.02em; }
+        .ap-header h1 { font-size: 18px; font-weight: 700; color: #1e3a8a; letter-spacing: -0.02em; }
         .ap-header p { font-size: 13px; color: #8a929e; margin-top: 2px; }
 
         .ap-count-badge {
@@ -65,7 +65,7 @@ const MVRPanel = () => {
         .ap-loading { display: flex; justify-content: center; padding: 80px 0; }
         .ap-spinner {
           width: 24px; height: 24px;
-          border: 2px solid #e5e7eb; border-top-color: #0c1220;
+          border: 2px solid #e5e7eb; border-top-color: #1e3a8a;
           border-radius: 50%; animation: ap-spin 0.6s linear infinite;
         }
         @keyframes ap-spin { to { transform: rotate(360deg); } }
@@ -117,17 +117,17 @@ const MVRPanel = () => {
 
         .ap-btn-manage {
           background: #f5f6f8; border: 1px solid #e5e7eb;
-          color: #374151; border-radius: 6px;
+          color: #1e3a8a; border-radius: 6px;
           padding: 6px 12px; font-size: 12px; font-weight: 600;
           cursor: pointer; font-family: 'DM Sans', sans-serif;
           transition: all 0.1s;
         }
-        .ap-btn-manage:hover { background: #eaecf0; border-color: #d1d5db; }
+        .ap-btn-manage:hover { background: #eff6ff; border-color: #bfdbfe; }
 
         /* Modal */
         .ap-overlay {
           position: fixed; inset: 0;
-          background: rgba(12,18,32,0.5); backdrop-filter: blur(2px);
+          background: rgba(30,58,138,0.5); backdrop-filter: blur(2px);
           display: flex; align-items: center; justify-content: center;
           z-index: 1000; padding: 24px;
         }
@@ -140,7 +140,7 @@ const MVRPanel = () => {
           display: flex; align-items: center; justify-content: space-between;
           padding: 18px 22px; border-bottom: 1px solid #f3f4f6;
         }
-        .ap-modal-header h3 { font-size: 15px; font-weight: 700; color: #0c1220; }
+        .ap-modal-header h3 { font-size: 15px; font-weight: 700; color: #1e3a8a; }
         .ap-modal-close {
           background: #f5f6f8; border: none; border-radius: 6px;
           color: #6b7280; padding: 6px; cursor: pointer; display: flex;
@@ -154,10 +154,10 @@ const MVRPanel = () => {
           background: #f9fafb; border: 1px solid #f3f4f6; border-radius: 8px;
           padding: 12px 14px; display: flex; flex-direction: column; gap: 6px;
         }
-        .ap-modal-info span { font-size: 13px; color: #374151; display: flex; align-items: center; gap: 6px; }
+        .ap-modal-info span { font-size: 13px; color: #1e3a8a; }
 
         .ap-form-group { display: flex; flex-direction: column; gap: 5px; }
-        .ap-form-label { font-size: 11px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.04em; }
+        .ap-form-label { font-size: 11px; font-weight: 600; color: #1e3a8a; text-transform: uppercase; letter-spacing: 0.04em; }
 
         .ap-select, .ap-input {
           width: 100%; padding: 10px 12px;
@@ -167,11 +167,12 @@ const MVRPanel = () => {
           transition: border-color 0.15s, background 0.15s;
           appearance: none;
         }
-        .ap-select:focus, .ap-input:focus { border-color: #0c1220; background: #fff; }
+        .ap-select:focus, .ap-input:focus { border-color: #1e3a8a; background: #fff; }
         .ap-input::placeholder { color: #d1d5db; }
 
         .ap-modal-footer {
-          display: flex; gap: 8px; padding: 16px 22px; border-top: 1px solid #f3f4f6;
+          display: flex; gap: 8px; padding: 16px 22px;
+          border-top: 1px solid #f3f4f6;
         }
         .ap-btn-cancel {
           flex: 1; padding: 10px; background: #fff; border: 1px solid #e5e7eb;
@@ -181,11 +182,11 @@ const MVRPanel = () => {
         .ap-btn-cancel:hover { background: #f9fafb; }
         .ap-btn-confirm {
           flex: 2; display: flex; align-items: center; justify-content: center; gap: 6px;
-          padding: 10px; background: #0c1220; border: none;
+          padding: 10px; background: #1e3a8a; border: none;
           color: #fff; border-radius: 8px; font-size: 13px; font-weight: 600;
           cursor: pointer; font-family: 'DM Sans', sans-serif; transition: background 0.1s;
         }
-        .ap-btn-confirm:hover { background: #1a2540; }
+        .ap-btn-confirm:hover { background: #1d4ed8; }
       `}</style>
 
       <div className="ap-root">
