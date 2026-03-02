@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useSocket } from '../../context/SocketContext'
+import { useClerk } from '@clerk/clerk-react'
 import API from '../../api/axios'
+import LanguageSwitcher from '../../components/LanguageSwitcher'
+import { useTranslation } from 'react-i18next'
 import {
   LayoutDashboard, Calendar, AlertTriangle,
   CreditCard, User, LogOut, CheckCircle,
-  XCircle, Plus, ChevronRight, Building2,
-  Check, X, Clock
+  XCircle, Plus, ChevronRight, Check, X,
+  Clock, Mail, Hash, Shield, Eye, EyeOff,
+  Lock, KeyRound, BadgeCheck, AlertCircle
 } from 'lucide-react'
 
 const SERVICES = {
@@ -29,7 +33,9 @@ const TIME_SLOTS = ['08:30','09:00','09:30','10:00','10:30','11:00','12:00','13:
 
 const Dashboard = () => {
   const { user, logout }        = useAuth()
+  const { t } = useTranslation();
   const { liveNotif }           = useSocket()
+  const { client }              = useClerk()
   const [activeTab, setActiveTab]       = useState('overview')
   const [appointments, setAppointments] = useState([])
   const [fines, setFines]               = useState([])
@@ -38,12 +44,20 @@ const Dashboard = () => {
   const [showPayModal, setShowPayModal]   = useState(null)
   const [toast, setToast]               = useState(null)
 
+  // Appointment wizard
   const [step, setStep]                   = useState(1)
   const [apptInstitution, setApptInstitution] = useState('')
   const [apptService, setApptService]     = useState('')
   const [apptDate, setApptDate]           = useState(null)
   const [apptTime, setApptTime]           = useState('')
   const [payForm, setPayForm] = useState({ card_number:'', card_holder:'', expiry:'', cvv:'' })
+
+  // Password change state
+  const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' })
+  const [pwShow, setPwShow] = useState({ current: false, next: false, confirm: false })
+  const [pwLoading, setPwLoading] = useState(false)
+  const [pwError, setPwError]     = useState('')
+  const [pwSuccess, setPwSuccess] = useState(false)
 
   const workDays = getWorkDays()
 
@@ -85,6 +99,38 @@ const Dashboard = () => {
     } catch (e) { showToast(e.response?.data?.message || 'Pagesa dështoi.', 'error') }
   }
 
+  const changePassword = async () => {
+    setPwError('')
+    setPwSuccess(false)
+    if (!pwForm.current || !pwForm.next || !pwForm.confirm) return setPwError('Plotëso të gjitha fushat')
+    if (pwForm.next.length < 8) return setPwError('Fjalëkalimi i ri duhet të ketë min. 8 karaktere')
+    if (pwForm.next !== pwForm.confirm) return setPwError('Fjalëkalimet e reja nuk përputhen')
+    setPwLoading(true)
+    try {
+      // Clerk password update
+      const sessions = client?.activeSessions || []
+      const activeSession = sessions[0]
+      if (activeSession?.user) {
+        await activeSession.user.updatePassword({
+          currentPassword: pwForm.current,
+          newPassword: pwForm.next,
+        })
+      } else {
+        // fallback: try via clerk user directly
+        throw new Error('Sesioni nuk u gjet. Provoni të kyçeni përsëri.')
+      }
+      setPwSuccess(true)
+      setPwForm({ current: '', next: '', confirm: '' })
+      showToast('Fjalëkalimi u ndryshua me sukses.')
+      setTimeout(() => setPwSuccess(false), 4000)
+    } catch (err) {
+      const msg = err.errors?.[0]?.message || err.message || 'Gabim gjatë ndryshimit'
+      setPwError(msg)
+    } finally {
+      setPwLoading(false)
+    }
+  }
+
   const canNext = () => {
     if (step === 1) return !!apptInstitution
     if (step === 2) return !!apptService
@@ -121,48 +167,41 @@ const Dashboard = () => {
 
   const S = {
     root: { display:'flex', minHeight:'100vh', background:'#f5f6f8', fontFamily:"'DM Sans', sans-serif" },
-
-    /* sidebar */
     sidebar: { width:220, flexShrink:0, background:'#fff', borderRight:'1px solid #eaecf0', display:'flex', flexDirection:'column', height:'100vh', position:'sticky', top:0 },
     sidebarHeader: { padding:'20px 16px 16px', borderBottom:'1px solid #eaecf0', display:'flex', alignItems:'center', gap:10 },
     logoBox: { width:30, height:30, background:'#1e3a8a', borderRadius:7, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 },
     brandName: { fontSize:13, fontWeight:700, color:'#1e3a8a', letterSpacing:'-0.01em' },
     brandSub: { fontSize:10, color:'#8a929e' },
     nav: { flex:1, padding:'10px 8px', display:'flex', flexDirection:'column', gap:2 },
-    navBtn: (active) => ({
+    navBtn: (isAct) => ({
       display:'flex', alignItems:'center', gap:8, padding:'8px 10px',
-      borderRadius:7, border:'none', background: active ? '#eff6ff' : 'transparent',
+      borderRadius:7, border:'none', background: isAct ? '#eff6ff' : 'transparent',
       cursor:'pointer', fontFamily:"'DM Sans', sans-serif",
       transition:'background .1s', textAlign:'left', width:'100%', position:'relative'
     }),
-    navIcon: (active) => ({
+    navIcon: (isAct) => ({
       width:28, height:28, borderRadius:6, display:'flex', alignItems:'center', justifyContent:'center',
-      background: active ? '#1e3a8a' : '#f5f6f8', color: active ? '#fff' : '#6b7280', flexShrink:0
+      background: isAct ? '#1e3a8a' : '#f5f6f8', color: isAct ? '#fff' : '#6b7280', flexShrink:0
     }),
-    navLabel: (active) => ({ fontSize:13, fontWeight:600, color: active ? '#1e3a8a' : '#374151', display:'block' }),
+    navLabel: (isAct) => ({ fontSize:13, fontWeight:600, color: isAct ? '#1e3a8a' : '#374151', display:'block' }),
     navBadge: { position:'absolute', right:10, background:'#ef4444', color:'#fff', fontSize:10, fontWeight:700, padding:'1px 6px', borderRadius:10 },
     sidebarFooter: { padding:'12px 14px', borderTop:'1px solid #eaecf0', display:'flex', alignItems:'center', gap:10 },
     userAvatar: { width:32, height:32, borderRadius:'50%', background:'#1e3a8a', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color:'#fff', flexShrink:0 },
     userName: { fontSize:13, fontWeight:600, color:'#1e3a8a', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', display:'block' },
     userRole: { fontSize:10, color:'#8a929e', display:'block' },
     logoutBtn: { background:'none', border:'none', color:'#9ca3af', cursor:'pointer', padding:4, borderRadius:6, display:'flex', alignItems:'center', transition:'color .1s' },
-
-    /* main */
     main: { flex:1, display:'flex', flexDirection:'column', minWidth:0 },
     topbar: { background:'#fff', borderBottom:'1px solid #eaecf0', padding:'0 24px', height:52, display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 },
+    topbarLeft: { display:'flex', alignItems:'center', gap:10 },
+    topbarRight: { display:'flex', alignItems:'center', gap:10 },
     pageTitle: { fontSize:15, fontWeight:700, color:'#1e3a8a', letterSpacing:'-0.01em' },
-    pageSub: { fontSize:12, color:'#8a929e', marginTop:2 },
     topbarAvatar: { width:32, height:32, borderRadius:'50%', background:'#1e3a8a', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color:'#fff' },
     content: { flex:1, padding:'24px', overflowY:'auto' },
-
-    /* stats */
     statsGrid: { display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12, marginBottom:20 },
     statCard: { background:'#fff', border:'1px solid #e5e7eb', borderRadius:10, padding:16, display:'flex', alignItems:'center', gap:12 },
     statIcon: (color) => ({ width:38, height:38, borderRadius:9, background:`${color}15`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }),
     statNum: { fontSize:'1.4rem', fontWeight:800, color:'#1e3a8a', lineHeight:1, letterSpacing:'-0.03em' },
     statLabel: { fontSize:11, color:'#8a929e', marginTop:3 },
-
-    /* cards */
     card: { background:'#fff', border:'1px solid #e5e7eb', borderRadius:10, overflow:'hidden' },
     cardHeader: { display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 18px', borderBottom:'1px solid #f3f4f6' },
     cardTitle: { fontSize:13, fontWeight:700, color:'#1e3a8a' },
@@ -170,11 +209,7 @@ const Dashboard = () => {
     tableRow: { display:'flex', alignItems:'center', justifyContent:'space-between', padding:'11px 18px', borderBottom:'1px solid #f9fafb' },
     tableRowTitle: { fontSize:13, fontWeight:600, color:'#111827' },
     tableRowSub: { fontSize:11, color:'#9ca3af', marginTop:1 },
-
-    /* empty */
     emptyMsg: { textAlign:'center', color:'#9ca3af', fontSize:13, padding:'28px 0' },
-
-    /* modal overlay */
     overlay: { position:'fixed', inset:0, background:'rgba(30,58,138,0.45)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000, padding:24 },
     modal: { background:'#fff', border:'1px solid #e5e7eb', borderRadius:14, width:'100%', maxWidth:440, boxShadow:'0 20px 60px rgba(0,0,0,.12)', overflow:'hidden' },
     modalHeader: { display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 20px', borderBottom:'1px solid #f3f4f6' },
@@ -182,8 +217,6 @@ const Dashboard = () => {
     modalClose: { background:'#f5f6f8', border:'none', borderRadius:6, color:'#6b7280', padding:6, cursor:'pointer', display:'flex' },
     modalBody: { padding:'18px 20px' },
     modalFooter: { display:'flex', gap:8, padding:'14px 20px', borderTop:'1px solid #f3f4f6' },
-
-    /* wizard step indicator */
     wzSteps: { display:'flex', alignItems:'center', marginBottom:18, gap:0 },
     wzDot: (state) => ({
       width:24, height:24, borderRadius:'50%', border:'1.5px solid',
@@ -194,58 +227,25 @@ const Dashboard = () => {
                                { background:'#f5f6f8', borderColor:'#e5e7eb', color:'#9ca3af' })
     }),
     wzLine: (done) => ({ flex:1, height:1.5, background: done ? '#1e3a8a' : '#e5e7eb', margin:'0 4px' }),
-
-    /* wizard content */
     instGrid: { display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 },
-    instCard: (sel) => ({
-      border:`1.5px solid ${sel ? '#1e3a8a' : '#e5e7eb'}`,
-      borderRadius:10, padding:'16px 12px', textAlign:'center', cursor:'pointer',
-      background: sel ? '#1e3a8a' : '#fff', transition:'all .1s'
-    }),
+    instCard: (sel) => ({ border:`1.5px solid ${sel ? '#1e3a8a' : '#e5e7eb'}`, borderRadius:10, padding:'16px 12px', textAlign:'center', cursor:'pointer', background: sel ? '#1e3a8a' : '#fff', transition:'all .1s' }),
     instIcon: { fontSize:24, display:'block', marginBottom:8 },
     instName: (sel) => ({ fontSize:13, fontWeight:700, color: sel ? '#fff' : '#111827' }),
     instSub: (sel) => ({ fontSize:11, color: sel ? 'rgba(255,255,255,.5)' : '#9ca3af', marginTop:2 }),
-
     svcList: { border:'1px solid #e5e7eb', borderRadius:9, overflow:'hidden' },
-    svcItem: (sel) => ({
-      display:'flex', alignItems:'center', gap:10,
-      padding:'11px 14px', fontSize:13, fontWeight:500,
-      color: sel ? '#1e3a8a' : '#6b7280',
-      background: sel ? '#eff6ff' : '#fff',
-      cursor:'pointer', transition:'background .1s',
-      borderBottom:'1px solid #f3f4f6'
-    }),
-    svcRadio: (sel) => ({
-      width:14, height:14, borderRadius:'50%',
-      border:`1.5px solid ${sel ? '#1e3a8a' : '#d1d5db'}`,
-      display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0
-    }),
-
+    svcItem: (sel) => ({ display:'flex', alignItems:'center', gap:10, padding:'11px 14px', fontSize:13, fontWeight:500, color: sel ? '#1e3a8a' : '#6b7280', background: sel ? '#eff6ff' : '#fff', cursor:'pointer', transition:'background .1s', borderBottom:'1px solid #f3f4f6' }),
+    svcRadio: (sel) => ({ width:14, height:14, borderRadius:'50%', border:`1.5px solid ${sel ? '#1e3a8a' : '#d1d5db'}`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }),
     dateGrid: { display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:6 },
-    dateCard: (sel) => ({
-      border:`1.5px solid ${sel ? '#1e3a8a' : '#e5e7eb'}`,
-      borderRadius:8, padding:'9px 4px', textAlign:'center', cursor:'pointer',
-      background: sel ? '#1e3a8a' : '#fff', transition:'all .1s'
-    }),
+    dateCard: (sel) => ({ border:`1.5px solid ${sel ? '#1e3a8a' : '#e5e7eb'}`, borderRadius:8, padding:'9px 4px', textAlign:'center', cursor:'pointer', background: sel ? '#1e3a8a' : '#fff', transition:'all .1s' }),
     dateDW: (sel) => ({ fontSize:9, fontWeight:700, color: sel ? 'rgba(255,255,255,.5)' : '#9ca3af', textTransform:'uppercase', letterSpacing:'.05em', marginBottom:3 }),
     dateNum: (sel) => ({ fontSize:16, fontWeight:800, color: sel ? '#fff' : '#111827', lineHeight:1 }),
     dateMo: (sel) => ({ fontSize:9, color: sel ? 'rgba(255,255,255,.5)' : '#9ca3af', marginTop:2 }),
-
     summary: { background:'#f9fafb', border:'1px solid #f3f4f6', borderRadius:8, padding:'12px 14px', marginBottom:14 },
     sumRow: { display:'flex', justifyContent:'space-between', fontSize:12, marginBottom:6 },
     sumKey: { color:'#9ca3af' },
     sumVal: { color:'#111827', fontWeight:600, textAlign:'right' },
-
     timeGrid: { display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:7 },
-    timeBtn: (sel) => ({
-      border:`1.5px solid ${sel ? '#1e3a8a' : '#e5e7eb'}`,
-      borderRadius:7, padding:'8px 4px', textAlign:'center',
-      cursor:'pointer', background: sel ? '#1e3a8a' : '#fff',
-      fontSize:13, fontWeight:600, color: sel ? '#fff' : '#374151',
-      fontFamily:"'DM Sans', sans-serif", transition:'all .1s'
-    }),
-
-    /* pay modal */
+    timeBtn: (sel) => ({ border:`1.5px solid ${sel ? '#1e3a8a' : '#e5e7eb'}`, borderRadius:7, padding:'8px 4px', textAlign:'center', cursor:'pointer', background: sel ? '#1e3a8a' : '#fff', fontSize:13, fontWeight:600, color: sel ? '#fff' : '#374151', fontFamily:"'DM Sans', sans-serif", transition:'all .1s' }),
     piLabel: { fontSize:11, fontWeight:600, color:'#1e3a8a', textTransform:'uppercase', letterSpacing:'.04em', display:'block', marginBottom:5 },
     piInput: { width:'100%', background:'#f9fafb', border:'1.5px solid #e5e7eb', color:'#111827', borderRadius:8, padding:'10px 12px', fontSize:13, outline:'none', fontFamily:"'DM Sans', sans-serif", marginBottom:12, transition:'border .15s' },
   }
@@ -260,15 +260,211 @@ const Dashboard = () => {
 
   const pageTitles = { overview:'Pasqyrë', appointments:'Terminët e mia', fines:'Gjobat e mia', payments:'Pagesat e mia', profile:'Profili im' }
 
+  const initials = `${user?.first_name?.[0] || ''}${user?.last_name?.[0] || ''}`
+
   return (
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
         @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
         * { margin:0; padding:0; box-sizing:border-box; }
         .dash-logout-btn:hover { color: #ef4444 !important; }
         .dash-card-link:hover { opacity: 0.7; }
         .dash-nav-btn:hover .dash-nav-icon-inner { background: #eaecf0 !important; }
+
+        /* Language Switcher overrides for light topbar */
+        .dash-topbar .lang-switcher-btn {
+          background: #f5f6f8 !important;
+          border: 1px solid #e5e7eb !important;
+          color: #374151 !important;
+          font-size: 12px !important;
+          padding: 6px 10px !important;
+        }
+        .dash-topbar .lang-switcher-btn:hover {
+          background: #eaecf0 !important;
+          border-color: #d1d5db !important;
+        }
+        .dash-topbar .lang-switcher-btn.active {
+          background: #eff6ff !important;
+          border-color: #bfdbfe !important;
+          color: #1e40af !important;
+        }
+        .dash-topbar .lang-dropdown {
+          background: #fff !important;
+          border: 1px solid #e5e7eb !important;
+          box-shadow: 0 8px 24px rgba(0,0,0,0.10) !important;
+        }
+        .dash-topbar .lang-dropdown-item { color: #374151 !important; }
+        .dash-topbar .lang-dropdown-item:hover { background: #f5f6f8 !important; color: #111827 !important; }
+        .dash-topbar .lang-dropdown-item.active { background: #eff6ff !important; color: #1e40af !important; }
+        .dash-topbar .lang-country { color: #9ca3af !important; }
+        .dash-topbar .lang-checkmark { color: #1e40af !important; }
+
+        /* Profile card */
+        .profile-hero {
+          background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 60%, #2563eb 100%);
+          border-radius: 14px;
+          padding: 28px 28px 0;
+          position: relative;
+          overflow: hidden;
+          margin-bottom: 0;
+        }
+        .profile-hero::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+          pointer-events: none;
+        }
+        .profile-avatar-wrap {
+          display: flex;
+          align-items: flex-end;
+          gap: 20px;
+          position: relative;
+          z-index: 2;
+        }
+        .profile-avatar-circle {
+          width: 72px; height: 72px;
+          border-radius: 50%;
+          background: rgba(255,255,255,0.15);
+          border: 3px solid rgba(255,255,255,0.3);
+          display: flex; align-items: center; justify-content: center;
+          font-size: 24px; font-weight: 800; color: #fff;
+          letter-spacing: -0.02em;
+          flex-shrink: 0;
+          backdrop-filter: blur(4px);
+        }
+        .profile-hero-info { padding-bottom: 20px; }
+        .profile-hero-name {
+          font-size: 18px; font-weight: 700; color: #fff;
+          letter-spacing: -0.02em; margin-bottom: 4px;
+        }
+        .profile-hero-sub {
+          font-size: 12px; color: rgba(255,255,255,0.55);
+          display: flex; align-items: center; gap: 6px;
+        }
+        .profile-status-pill {
+          display: inline-flex; align-items: center; gap: 5px;
+          background: rgba(34,197,94,0.2);
+          border: 1px solid rgba(34,197,94,0.35);
+          color: #4ade80;
+          border-radius: 20px; padding: 3px 10px;
+          font-size: 11px; font-weight: 600;
+        }
+        .profile-status-dot { width:5px; height:5px; border-radius:50%; background:#4ade80; }
+
+        .profile-info-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 10px;
+          padding: 20px 0 0;
+          animation: fadeIn 0.3s ease;
+        }
+
+        .profile-info-card {
+          background: #fff;
+          border: 1px solid #e5e7eb;
+          border-radius: 10px;
+          padding: 14px 16px;
+          display: flex;
+          align-items: flex-start;
+          gap: 12px;
+        }
+        .profile-info-icon {
+          width: 32px; height: 32px;
+          border-radius: 8px;
+          background: #eff6ff;
+          display: flex; align-items: center; justify-content: center;
+          flex-shrink: 0;
+          color: #1e3a8a;
+        }
+        .profile-info-label {
+          font-size: 10px; font-weight: 600; color: #9ca3af;
+          text-transform: uppercase; letter-spacing: 0.06em;
+          display: block; margin-bottom: 3px;
+        }
+        .profile-info-value {
+          font-size: 13px; font-weight: 600; color: #111827;
+          display: block;
+        }
+        .profile-info-value.mono { font-family: 'Courier New', monospace; letter-spacing: 0.04em; color: #1e3a8a; }
+
+        /* Password section */
+        .pw-section {
+          background: #fff;
+          border: 1px solid #e5e7eb;
+          border-radius: 12px;
+          overflow: hidden;
+          animation: fadeIn 0.3s ease;
+        }
+        .pw-section-header {
+          padding: 16px 20px;
+          border-bottom: 1px solid #f3f4f6;
+          display: flex; align-items: center; gap: 10px;
+        }
+        .pw-section-icon {
+          width: 32px; height: 32px; border-radius: 8px;
+          background: #fef3c7; display: flex; align-items: center; justify-content: center;
+          color: #d97706;
+        }
+        .pw-section-title { font-size: 14px; font-weight: 700; color: #1e3a8a; }
+        .pw-section-sub { font-size: 11px; color: #9ca3af; margin-top: 1px; }
+        .pw-section-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+
+        .pw-group { display: flex; flex-direction: column; gap: 5px; }
+        .pw-label { font-size: 11px; font-weight: 600; color: #1e3a8a; text-transform: uppercase; letter-spacing: 0.04em; }
+        .pw-input-wrap { position: relative; }
+        .pw-input {
+          width: 100%; padding: 10px 38px 10px 12px;
+          font-size: 14px; font-family: 'DM Sans', sans-serif;
+          color: #111827; background: #f9fafb;
+          border: 1.5px solid #e5e7eb; border-radius: 8px; outline: none;
+          transition: border-color 0.15s, background 0.15s;
+        }
+        .pw-input:focus { border-color: #1e3a8a; background: #fff; }
+        .pw-input::placeholder { color: #d1d5db; }
+        .pw-eye {
+          position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+          background: none; border: none; color: #9ca3af; cursor: pointer;
+          display: flex; align-items: center; padding: 2px;
+        }
+        .pw-eye:hover { color: #1e3a8a; }
+
+        .pw-error {
+          display: flex; align-items: center; gap: 8px;
+          padding: 10px 13px; background: #fef2f2; border: 1px solid #fecaca;
+          border-radius: 8px; color: #dc2626; font-size: 13px;
+        }
+        .pw-success {
+          display: flex; align-items: center; gap: 8px;
+          padding: 10px 13px; background: #f0fdf4; border: 1px solid #bbf7d0;
+          border-radius: 8px; color: #15803d; font-size: 13px;
+        }
+
+        .pw-btn {
+          display: flex; align-items: center; justify-content: center; gap: 7px;
+          width: 100%; padding: 11px 16px;
+          background: #1e3a8a; border: none; color: #fff;
+          border-radius: 9px; font-size: 13px; font-weight: 600;
+          font-family: 'DM Sans', sans-serif; cursor: pointer;
+          transition: background 0.15s;
+        }
+        .pw-btn:hover:not(:disabled) { background: #1d4ed8; }
+        .pw-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .pw-spinner {
+          width: 13px; height: 13px;
+          border: 2px solid rgba(255,255,255,0.3);
+          border-top-color: #fff; border-radius: 50%;
+          animation: spin 0.6s linear infinite;
+        }
+        .pw-strength {
+          display: flex; gap: 4px; margin-top: 4px;
+        }
+        .pw-strength-bar {
+          height: 3px; flex: 1; border-radius: 3px;
+          transition: background 0.2s;
+        }
       `}</style>
 
       <div style={S.root}>
@@ -304,11 +500,11 @@ const Dashboard = () => {
 
           <nav style={S.nav}>
             {navItems.map(({ id, icon: Icon, label }) => {
-              const isActive = activeTab === id
+              const isAct = activeTab === id
               return (
-                <button key={id} className="dash-nav-btn" style={S.navBtn(isActive)} onClick={() => setActiveTab(id)}>
-                  <div className="dash-nav-icon-inner" style={S.navIcon(isActive)}><Icon size={14}/></div>
-                  <span style={S.navLabel(isActive)}>{label}</span>
+                <button key={id} className="dash-nav-btn" style={S.navBtn(isAct)} onClick={() => setActiveTab(id)}>
+                  <div className="dash-nav-icon-inner" style={S.navIcon(isAct)}><Icon size={14}/></div>
+                  <span style={S.navLabel(isAct)}>{label}</span>
                   {id === 'fines' && unpaid.length > 0 && <span style={S.navBadge}>{unpaid.length}</span>}
                 </button>
               )
@@ -316,22 +512,25 @@ const Dashboard = () => {
           </nav>
 
           <div style={S.sidebarFooter}>
-            <div style={S.userAvatar}>{user?.first_name?.[0]}{user?.last_name?.[0]}</div>
+            <div style={S.userAvatar}>{initials}</div>
             <div style={{ flex:1, overflow:'hidden' }}>
               <span style={S.userName}>{user?.first_name} {user?.last_name}</span>
               <span style={S.userRole}>Qytetar</span>
             </div>
-            <button className="dash-logout-btn" style={S.logoutBtn} onClick={logout} title="Dil"><LogOut size={14}/></button>
+            <button className="dash-logout-btn" style={S.logoutBtn} onClick={logout} title={t("logout")}><LogOut size={14}/></button>
           </div>
         </aside>
 
         {/* MAIN */}
         <main style={S.main}>
-          <div style={S.topbar}>
-            <div>
+          <div className="dash-topbar" style={S.topbar}>
+            <div style={S.topbarLeft}>
               <div style={S.pageTitle}>{pageTitles[activeTab]}</div>
             </div>
-            <div style={S.topbarAvatar}>{user?.first_name?.[0]}{user?.last_name?.[0]}</div>
+            <div style={S.topbarRight}>
+              <LanguageSwitcher />
+              <div style={S.topbarAvatar}>{initials}</div>
+            </div>
           </div>
 
           <div style={S.content}>
@@ -354,7 +553,6 @@ const Dashboard = () => {
                     </div>
                   ))}
                 </div>
-
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
                   {[
                     { title:'Terminët e fundit', data:appointments.slice(0,4), tab:'appointments', getTitle:a=>a.institution, getSub:a=>a.reason, getStatus:a=>a.status, empty:'Nuk keni terminë' },
@@ -455,29 +653,169 @@ const Dashboard = () => {
 
             {/* ── PROFILE ── */}
             {activeTab === 'profile' && (
-              <div style={{ maxWidth:380 }}>
-                <div style={{ ...S.card, padding:24, display:'flex', flexDirection:'column', alignItems:'center', marginBottom:16 }}>
-                  <div style={{ width:56, height:56, borderRadius:'50%', background:'#1e3a8a', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, fontWeight:700, color:'#fff', marginBottom:12 }}>
-                    {user?.first_name?.[0]}{user?.last_name?.[0]}
-                  </div>
-                  <h2 style={{ fontSize:'1.05rem', fontWeight:700, color:'#1e3a8a', letterSpacing:'-0.02em' }}>
-                    {user?.first_name} {user?.last_name}
-                  </h2>
-                </div>
-                <div style={S.card}>
-                  {[['Email', user?.email], ['EMBG', user?.personal_id], ['Roli', user?.role], ['Statusi', user?.verification_status]].map(([k, v]) => (
-                    <div key={k} style={{ display:'flex', justifyContent:'space-between', padding:'12px 18px', borderBottom:'1px solid #f9fafb', alignItems:'center' }}>
-                      <span style={{ fontSize:11, fontWeight:600, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'.06em' }}>{k}</span>
-                      <span style={{ fontSize:13, color:'#111827', fontWeight:500 }}>{v}</span>
+              <div style={{ maxWidth: 560, display:'flex', flexDirection:'column', gap:16 }}>
+
+                {/* Hero Card */}
+                <div className="profile-hero">
+                  <div className="profile-avatar-wrap">
+                    <div className="profile-avatar-circle">{initials}</div>
+                    <div className="profile-hero-info">
+                      <div className="profile-hero-name">{user?.first_name} {user?.last_name}</div>
+                      <div className="profile-hero-sub">
+                        <span>Qytetar i regjistruar</span>
+                        <span style={{ opacity:0.3 }}>·</span>
+                        <span className="profile-status-pill">
+                          <span className="profile-status-dot"/>
+                          Aktiv
+                        </span>
+                      </div>
                     </div>
-                  ))}
+                  </div>
+
+                  {/* Info Grid inside hero */}
+                  <div className="profile-info-grid">
+                    {[
+                      { icon: Mail,       label: 'Email',   value: user?.email,                  mono: false },
+                      { icon: Hash,       label: 'EMBG',    value: user?.personal_id,             mono: true  },
+                      { icon: BadgeCheck, label: 'Roli',    value: user?.role || 'user',          mono: false },
+                      { icon: Shield,     label: 'Statusi', value: user?.verification_status,     mono: false },
+                    ].map(({ icon: Icon, label, value, mono }) => (
+                      <div key={label} className="profile-info-card">
+                        <div className="profile-info-icon"><Icon size={14}/></div>
+                        <div>
+                          <span className="profile-info-label">{label}</span>
+                          <span className={`profile-info-value ${mono ? 'mono' : ''}`}>{value || '—'}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Registered date row */}
+                  <div style={{ padding:'14px 0 18px', display:'flex', alignItems:'center', gap:6, position:'relative', zIndex:2 }}>
+                    <Clock size={12} color="rgba(255,255,255,0.3)"/>
+                    <span style={{ fontSize:11, color:'rgba(255,255,255,0.35)' }}>
+                      Regjistruar:{' '}
+                      {user?.created_at
+                        ? new Date(user.created_at).toLocaleDateString('sq-AL', { day:'2-digit', month:'long', year:'numeric' })
+                        : '—'}
+                    </span>
+                  </div>
                 </div>
+
+                {/* Password Change Card */}
+                <div className="pw-section">
+                  <div className="pw-section-header">
+                    <div className="pw-section-icon"><KeyRound size={15}/></div>
+                    <div>
+                      <div className="pw-section-title">Ndryshimi i fjalëkalimit</div>
+                      <div className="pw-section-sub">Ndryshoni fjalëkalimin e llogarisë suaj</div>
+                    </div>
+                  </div>
+
+                  <div className="pw-section-body">
+                    {pwError && (
+                      <div className="pw-error">
+                        <AlertCircle size={13}/>
+                        <span>{pwError}</span>
+                      </div>
+                    )}
+                    {pwSuccess && (
+                      <div className="pw-success">
+                        <CheckCircle size={13}/>
+                        <span>Fjalëkalimi u ndryshua me sukses!</span>
+                      </div>
+                    )}
+
+                    {/* Current password */}
+                    <div className="pw-group">
+                      <label className="pw-label">Fjalëkalimi aktual</label>
+                      <div className="pw-input-wrap">
+                        <input
+                          type={pwShow.current ? 'text' : 'password'}
+                          className="pw-input"
+                          placeholder="Fjalëkalimi juaj aktual"
+                          value={pwForm.current}
+                          onChange={e => { setPwError(''); setPwForm(p => ({...p, current: e.target.value})) }}
+                        />
+                        <button type="button" className="pw-eye" onClick={() => setPwShow(s => ({...s, current: !s.current}))}>
+                          {pwShow.current ? <EyeOff size={14}/> : <Eye size={14}/>}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* New password */}
+                    <div className="pw-group">
+                      <label className="pw-label">Fjalëkalimi i ri</label>
+                      <div className="pw-input-wrap">
+                        <input
+                          type={pwShow.next ? 'text' : 'password'}
+                          className="pw-input"
+                          placeholder="Min. 8 karaktere"
+                          value={pwForm.next}
+                          onChange={e => { setPwError(''); setPwForm(p => ({...p, next: e.target.value})) }}
+                        />
+                        <button type="button" className="pw-eye" onClick={() => setPwShow(s => ({...s, next: !s.next}))}>
+                          {pwShow.next ? <EyeOff size={14}/> : <Eye size={14}/>}
+                        </button>
+                      </div>
+                      {/* Strength indicator */}
+                      {pwForm.next && (
+                        <div className="pw-strength">
+                          {[1,2,3,4].map(i => {
+                            const len = pwForm.next.length
+                            const hasUpper = /[A-Z]/.test(pwForm.next)
+                            const hasNum = /[0-9]/.test(pwForm.next)
+                            const hasSpec = /[^A-Za-z0-9]/.test(pwForm.next)
+                            const score = (len >= 8 ? 1 : 0) + (hasUpper ? 1 : 0) + (hasNum ? 1 : 0) + (hasSpec ? 1 : 0)
+                            const color = score >= i
+                              ? score <= 1 ? '#ef4444' : score === 2 ? '#f59e0b' : score === 3 ? '#3b82f6' : '#22c55e'
+                              : '#e5e7eb'
+                            return <div key={i} className="pw-strength-bar" style={{ background: color }}/>
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Confirm password */}
+                    <div className="pw-group">
+                      <label className="pw-label">Konfirmo fjalëkalimin e ri</label>
+                      <div className="pw-input-wrap">
+                        <input
+                          type={pwShow.confirm ? 'text' : 'password'}
+                          className="pw-input"
+                          placeholder="Përsërit fjalëkalimin e ri"
+                          value={pwForm.confirm}
+                          onChange={e => { setPwError(''); setPwForm(p => ({...p, confirm: e.target.value})) }}
+                          style={pwForm.confirm && pwForm.confirm !== pwForm.next ? { borderColor:'#fca5a5' } : {}}
+                        />
+                        <button type="button" className="pw-eye" onClick={() => setPwShow(s => ({...s, confirm: !s.confirm}))}>
+                          {pwShow.confirm ? <EyeOff size={14}/> : <Eye size={14}/>}
+                        </button>
+                      </div>
+                      {pwForm.confirm && pwForm.confirm !== pwForm.next && (
+                        <span style={{ fontSize:11, color:'#ef4444', marginTop:3 }}>Fjalëkalimet nuk përputhen</span>
+                      )}
+                    </div>
+
+                    <button
+                      className="pw-btn"
+                      onClick={changePassword}
+                      disabled={pwLoading || !pwForm.current || !pwForm.next || !pwForm.confirm}
+                    >
+                      {pwLoading
+                        ? <><div className="pw-spinner"/> Duke ndryshuar...</>
+                        : <><Lock size={13}/> Ndrysho fjalëkalimin</>
+                      }
+                    </button>
+                  </div>
+                </div>
+
               </div>
             )}
           </div>
         </main>
 
-        {/* ── APPOINTMENT MODAL (4 hapa) ── */}
+        {/* ── APPOINTMENT MODAL ── */}
         {showApptModal && (
           <div style={S.overlay} onClick={() => setShowApptModal(false)}>
             <div style={S.modal} onClick={e => e.stopPropagation()}>
@@ -488,9 +826,7 @@ const Dashboard = () => {
                 </div>
                 <button style={S.modalClose} onClick={() => setShowApptModal(false)}><X size={15}/></button>
               </div>
-
               <div style={S.modalBody}>
-                {/* Step indicator */}
                 <div style={S.wzSteps}>
                   {[1,2,3,4].map((n,i) => (
                     <React.Fragment key={n}>
@@ -501,8 +837,6 @@ const Dashboard = () => {
                     </React.Fragment>
                   ))}
                 </div>
-
-                {/* Step 1 */}
                 {step === 1 && (
                   <div style={S.instGrid}>
                     {[
@@ -520,14 +854,12 @@ const Dashboard = () => {
                     })}
                   </div>
                 )}
-
-                {/* Step 2 */}
                 {step === 2 && (
                   <div style={S.svcList}>
                     {SERVICES[apptInstitution].map(svc => {
                       const sel = apptService === svc
                       return (
-                        <div key={svc} style={{ ...S.svcItem(sel), lastChild: { borderBottom:'none' } }} onClick={() => setApptService(svc)}>
+                        <div key={svc} style={S.svcItem(sel)} onClick={() => setApptService(svc)}>
                           <div style={S.svcRadio(sel)}>
                             {sel && <div style={{ width:6, height:6, borderRadius:'50%', background:'#1e3a8a' }}/>}
                           </div>
@@ -537,8 +869,6 @@ const Dashboard = () => {
                     })}
                   </div>
                 )}
-
-                {/* Step 3 */}
                 {step === 3 && (
                   <div style={S.dateGrid}>
                     {workDays.map((d, i) => {
@@ -553,8 +883,6 @@ const Dashboard = () => {
                     })}
                   </div>
                 )}
-
-                {/* Step 4 */}
                 {step === 4 && (
                   <>
                     <div style={S.summary}>
@@ -578,7 +906,6 @@ const Dashboard = () => {
                   </>
                 )}
               </div>
-
               <div style={S.modalFooter}>
                 <button
                   style={{ flex:1, padding:10, background:'#fff', border:'1px solid #e5e7eb', color:'#6b7280', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:"'DM Sans', sans-serif" }}
@@ -622,17 +949,17 @@ const Dashboard = () => {
                   </div>
                 </div>
                 <label style={S.piLabel}>Numri i kartës</label>
-                <input style={S.piInput} className="pay-input" value={payForm.card_number} placeholder="1234 5678 9012 3456" maxLength={19} onChange={e=>setPayForm({...payForm,card_number:e.target.value})}/>
+                <input style={S.piInput} value={payForm.card_number} placeholder="1234 5678 9012 3456" maxLength={19} onChange={e=>setPayForm({...payForm,card_number:e.target.value})}/>
                 <label style={S.piLabel}>Emri në kartë</label>
-                <input style={S.piInput} className="pay-input" value={payForm.card_holder} placeholder="EMRI MBIEMRI" onChange={e=>setPayForm({...payForm,card_holder:e.target.value.toUpperCase()})}/>
+                <input style={S.piInput} value={payForm.card_holder} placeholder="EMRI MBIEMRI" onChange={e=>setPayForm({...payForm,card_holder:e.target.value.toUpperCase()})}/>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
                   <div>
                     <label style={S.piLabel}>Data skadimit</label>
-                    <input style={{...S.piInput, marginBottom:0}} className="pay-input" value={payForm.expiry} placeholder="MM/YY" maxLength={5} onChange={e=>setPayForm({...payForm,expiry:e.target.value})}/>
+                    <input style={{...S.piInput, marginBottom:0}} value={payForm.expiry} placeholder="MM/YY" maxLength={5} onChange={e=>setPayForm({...payForm,expiry:e.target.value})}/>
                   </div>
                   <div>
                     <label style={S.piLabel}>CVV</label>
-                    <input style={{...S.piInput, marginBottom:0}} className="pay-input" value={payForm.cvv} placeholder="123" maxLength={3} type="password" onChange={e=>setPayForm({...payForm,cvv:e.target.value})}/>
+                    <input style={{...S.piInput, marginBottom:0}} value={payForm.cvv} placeholder="123" maxLength={3} type="password" onChange={e=>setPayForm({...payForm,cvv:e.target.value})}/>
                   </div>
                 </div>
               </div>

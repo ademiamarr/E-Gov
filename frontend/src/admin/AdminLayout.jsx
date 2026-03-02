@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Routes, Route, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { UserCheck, AlertTriangle, Calendar, MapPin, LogOut, ChevronRight, Menu, X } from 'lucide-react'
+import LanguageSwitcher from '../components/LanguageSwitcher'
 import RegistrationPanel from './panels/RegistrationPanel.jsx'
 import MVRPanel          from './panels/MVRPanel.jsx'
 import KomunaPanel       from './panels/KomunaPanel.jsx'
@@ -147,6 +148,7 @@ const AdminLayout = () => {
         }
 
         .adm-topbar-left { display: flex; align-items: center; gap: 12px; }
+        .adm-topbar-right { display: flex; align-items: center; gap: 10px; }
 
         .adm-menu-btn {
           display: none; background: none; border: none;
@@ -159,6 +161,46 @@ const AdminLayout = () => {
           font-size: 11px; font-weight: 600; color: #374151;
           background: #f5f6f8; border: 1px solid #e5e7eb;
           border-radius: 20px; padding: 4px 12px;
+        }
+
+        /* Override LanguageSwitcher for light topbar */
+        .adm-topbar .lang-switcher-btn {
+          background: #f5f6f8 !important;
+          border: 1px solid #e5e7eb !important;
+          color: #374151 !important;
+          font-size: 12px !important;
+          padding: 6px 10px !important;
+        }
+        .adm-topbar .lang-switcher-btn:hover {
+          background: #eaecf0 !important;
+          border-color: #d1d5db !important;
+        }
+        .adm-topbar .lang-switcher-btn.active {
+          background: #eff6ff !important;
+          border-color: #bfdbfe !important;
+          color: #1e40af !important;
+        }
+        .adm-topbar .lang-dropdown {
+          background: #fff !important;
+          border: 1px solid #e5e7eb !important;
+          box-shadow: 0 8px 24px rgba(0,0,0,0.10) !important;
+        }
+        .adm-topbar .lang-dropdown-item {
+          color: #374151 !important;
+        }
+        .adm-topbar .lang-dropdown-item:hover {
+          background: #f5f6f8 !important;
+          color: #111827 !important;
+        }
+        .adm-topbar .lang-dropdown-item.active {
+          background: #eff6ff !important;
+          color: #1e40af !important;
+        }
+        .adm-topbar .lang-country {
+          color: #9ca3af !important;
+        }
+        .adm-topbar .lang-checkmark {
+          color: #1e40af !important;
         }
 
         .adm-content { flex: 1; padding: 28px; overflow-y: auto; }
@@ -240,7 +282,8 @@ const AdminLayout = () => {
               </button>
               <h1 className="adm-page-title">{PAGE_TITLES[active]}</h1>
             </div>
-            <div>
+            <div className="adm-topbar-right">
+              <LanguageSwitcher />
               <span className="adm-role-badge">{ROLE_LABELS[user?.role] || user?.role}</span>
             </div>
           </div>
