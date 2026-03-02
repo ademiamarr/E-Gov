@@ -6,15 +6,14 @@ import API, { setTokenGetter } from '../api/axios'
 const AuthContext = createContext(null)
 
 export const AuthProvider = ({ children }) => {
-  const { getToken, signOut, isLoaded, isSignedIn, user: clerkUser } = useClerkAuth()
+  const { getToken, signOut, isLoaded, isSignedIn } = useClerkAuth()
   const [dbUser, setDbUser]   = useState(null)
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
 
-  // ✅ Setup token getter za Axios - CORRECT WAY
+  // Setup token getter për Axios
   useEffect(() => {
     if (isLoaded) {
-      // ✅ Pass a function that RETURNS a promise
       setTokenGetter(async () => {
         try {
           const token = await getToken()
@@ -28,15 +27,11 @@ export const AuthProvider = ({ children }) => {
     }
   }, [isLoaded, getToken])
 
-  // ✅ Merr user data nga backend
+  // Merr user data nga backend
   useEffect(() => {
-    if (!isLoaded) {
-      console.log('⏳ Clerk is loading...')
-      return
-    }
+    if (!isLoaded) return
 
     if (!isSignedIn) {
-      console.log('ℹ️ User not signed in')
       setDbUser(null)
       setLoading(false)
       return
@@ -45,31 +40,41 @@ export const AuthProvider = ({ children }) => {
     const fetchDbUser = async () => {
       try {
         console.log('🔍 Fetching user data from backend...')
-        
         const res = await API.get('/auth/me')
-        
+
         if (res.data?.success && res.data?.data) {
+          const userData = res.data.data
           console.log('✅ User data received:', {
-            email: res.data.data.email,
-            role: res.data.data.role,
-            status: res.data.data.verification_status
+            email: userData.email,
+            role: userData.role,
+            personal_id: userData.personal_id,
+            status: userData.verification_status
           })
-          setDbUser(res.data.data)
+          setDbUser(userData)
         } else {
-          console.error('❌ Invalid response format:', res.data)
           setDbUser(null)
         }
       } catch (err) {
         const status = err.response?.status
+        const code   = err.response?.data?.code
         const message = err.response?.data?.message || err.message
 
         console.error(`❌ Error fetching user (HTTP ${status}):`, message)
-        console.error('❌ Full error:', err)
 
-        // If 401 Unauthorized, logout
+        // 404 USER_NOT_REGISTERED - useri është në Clerk por nuk ka bërë register
+        // Ridrejtojmë në /register
+        if (status === 404 && code === 'USER_NOT_REGISTERED') {
+          console.warn('⚠️ User not registered, redirecting to /register')
+          navigate('/register', { replace: true })
+          setDbUser(null)
+          setLoading(false)
+          return
+        }
+
+        // 401 - token invalid, logout
         if (status === 401) {
-          console.warn('⚠️ Token invalid or user not found, logging out...')
-          signOut()
+          console.warn('⚠️ Token invalid, logging out...')
+          await signOut()
         }
 
         setDbUser(null)
@@ -79,49 +84,39 @@ export const AuthProvider = ({ children }) => {
     }
 
     fetchDbUser()
-  }, [isLoaded, isSignedIn, signOut])
+  }, [isLoaded, isSignedIn, signOut, navigate])
 
-  // ✅ Redirekto bazuar në role
+  // Redirekto bazuar në role
   useEffect(() => {
-    if (loading || !isLoaded || !isSignedIn || !dbUser) {
-      return
-    }
+    if (loading || !isLoaded || !isSignedIn || !dbUser) return
 
     const { role, verification_status } = dbUser
     const currentPath = window.location.pathname
 
-    console.log(`🎯 User role: ${role}, status: ${verification_status}`)
+    console.log(`🎯 User role: ${role}, status: ${verification_status}, EMBG: ${dbUser.personal_id}`)
 
-    // Nëse pending
     if (verification_status === 'pending' && !currentPath.startsWith('/pending')) {
-      console.log('➡️ Redirect → /pending')
       navigate('/pending', { replace: true })
       return
     }
 
-    // Nëse rejected
     if (verification_status === 'rejected' && !currentPath.startsWith('/rejected')) {
-      console.log('➡️ Redirect → /rejected')
       navigate('/rejected', { replace: true })
       return
     }
 
-    // Nëse admin
-    if (['super_admin', 'admin_users', 'admin_fines', 'admin_appointments'].includes(role)) {
-      if (currentPath === '/login' || currentPath === '/register' || currentPath === '/dashboard') {
-        console.log('➡️ Redirect → /admin')
+    const adminRoles = ['super_admin', 'admin_users', 'admin_fines', 'admin_appointments']
+    if (adminRoles.includes(role)) {
+      if (['/login', '/register', '/dashboard'].includes(currentPath)) {
         navigate('/admin', { replace: true })
       }
       return
     }
 
-    // Nëse user normal
     if (role === 'user') {
       if (currentPath === '/login' || currentPath === '/register' || currentPath.startsWith('/admin')) {
-        console.log('➡️ Redirect → /dashboard')
         navigate('/dashboard', { replace: true })
       }
-      return
     }
   }, [dbUser, loading, isLoaded, isSignedIn, navigate])
 
@@ -141,8 +136,6 @@ export const AuthProvider = ({ children }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext)
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider')
-  }
+  if (!context) throw new Error('useAuth must be used within AuthProvider')
   return context
 }

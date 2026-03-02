@@ -1,5 +1,5 @@
 const { supabase } = require('../config/supabase')
-const resend = require('../config/resend')
+const { sendEmail } = require('../config/resend')
 const appointmentConfirmEmail = require('../email/templates/appointment-confirm.email')
 const appointmentReminderEmail = require('../email/templates/appointment-reminder.email')
 const { formatDate } = require('../utils/formatDate')
@@ -43,17 +43,22 @@ const bookAppointment = async ({ user_id, user_email, user_first_name, instituti
 
   if (error) throw { status: 500, message: error.message }
 
-  await resend.emails.send({
-    from: process.env.EMAIL_FROM,
-    to: user_email,
-    ...appointmentConfirmEmail({
-      first_name: user_first_name,
-      institution,
-      reason,
-      date: appointment_date ? formatDate(new Date(appointment_date)) : 'Do të konfirmohet',
-      reference_id: `APPT-${appt.id.slice(0, 8).toUpperCase()}`
+  // Dërgo email konfirmimi
+  try {
+    await sendEmail({
+      to: user_email,
+      ...appointmentConfirmEmail({
+        first_name: user_first_name,
+        institution,
+        reason,
+        date: appointment_date ? formatDate(new Date(appointment_date)) : 'Do të konfirmohet nga admini',
+        reference_id: `APPT-${appt.id.slice(0, 8).toUpperCase()}`
+      })
     })
-  })
+  } catch (emailErr) {
+    console.warn('⚠️ Email konfirmimi dështoi:', emailErr.message)
+    // Nuk hedhim error — termini u ruajt suksesshëm
+  }
 
   return appt
 }
@@ -61,7 +66,7 @@ const bookAppointment = async ({ user_id, user_email, user_first_name, instituti
 const updateAppointment = async (id, { status, admin_note, approved_date }) => {
   const { data: appt, error } = await supabase
     .from('appointments')
-    .update({ status, admin_note, approved_date })
+    .update({ status, admin_note, approved_date: approved_date || null })
     .eq('id', id)
     .select('*, users(first_name, last_name, email)')
     .single()
@@ -79,8 +84,7 @@ const sendReminder = async (appointment_id) => {
 
   if (error || !appt) throw { status: 404, message: 'Termini nuk u gjet' }
 
-  await resend.emails.send({
-    from: process.env.EMAIL_FROM,
+  await sendEmail({
     to: appt.users.email,
     ...appointmentReminderEmail({
       first_name: appt.users.first_name,
