@@ -9,7 +9,8 @@ import {
   CreditCard, User, LogOut, CheckCircle,
   XCircle, Plus, ChevronRight, Check, X,
   Clock, Mail, Hash, Shield, Eye, EyeOff,
-  Lock, KeyRound, BadgeCheck, AlertCircle
+  Lock, KeyRound, BadgeCheck, AlertCircle,
+  Trash2
 } from 'lucide-react'
 
 const SERVICES = {
@@ -58,6 +59,11 @@ const Dashboard = () => {
   const [pwError, setPwError]     = useState('')
   const [pwSuccess, setPwSuccess] = useState(false)
 
+  // AppointmentsPage state
+  const [selectedToCancel, setSelectedToCancel] = useState(null)
+  const [selectedToReschedule, setSelectedToReschedule] = useState(null)
+  const [rescheduleForm, setRescheduleForm] = useState({ new_date: '', new_time: '' })
+
   const workDays = getWorkDays()
 
   useEffect(() => { fetchAll() }, [])
@@ -100,7 +106,7 @@ const Dashboard = () => {
     } catch (e) { showToast(e.response?.data?.message || t('pay_failed'), 'error') }
   }
 
-  // ✅ PASSWORD CHANGE - BACKEND API
+  // ✅ PASSWORD CHANGE
   const changePassword = async () => {
     setPwError('')
     setPwSuccess(false)
@@ -141,6 +147,44 @@ const Dashboard = () => {
     }
   }
 
+  // ✅ CANCEL APPOINTMENT
+  const handleCancelAppointment = async (appointmentId) => {
+    try {
+      await API.delete(`/appointments/${appointmentId}`)
+      setAppointments(appointments.filter(a => a.id !== appointmentId))
+      setSelectedToCancel(null)
+      showToast('Termini u anulua me sukses')
+    } catch (err) {
+      console.error('Error canceling appointment:', err)
+      showToast(err.response?.data?.message || 'Gabim gjatë anulimit të termini', 'error')
+    }
+  }
+
+  // ✅ RESCHEDULE APPOINTMENT
+  const handleRescheduleAppointment = async () => {
+    if (!rescheduleForm.new_date) {
+      showToast('Zgjidhni datën e re', 'error')
+      return
+    }
+
+    try {
+      const res = await API.put(`/appointments/${selectedToReschedule.id}/reschedule`, {
+        new_date: rescheduleForm.new_date,
+        new_time: rescheduleForm.new_time || null,
+      })
+
+      if (res.data?.success) {
+        setAppointments(appointments.map(a => a.id === selectedToReschedule.id ? res.data.data : a))
+        setSelectedToReschedule(null)
+        setRescheduleForm({ new_date: '', new_time: '' })
+        showToast('Termini u riprogramua me sukses')
+      }
+    } catch (err) {
+      console.error('Error rescheduling appointment:', err)
+      showToast(err.response?.data?.message || 'Gabim gjatë riprogramimit', 'error')
+    }
+  }
+
   const canNext = () => {
     if (step === 1) return !!apptInstitution
     if (step === 2) return !!apptService
@@ -150,6 +194,59 @@ const Dashboard = () => {
 
   const unpaid = fines.filter(f => f.status === 'unpaid')
   const active = appointments.filter(a => a.status !== 'cancelled')
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '—'
+    const date = new Date(dateString)
+    return date.toLocaleDateString('sq-AL', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    })
+  }
+
+  const canCancel = (appointment) => {
+    if (!appointment.status) return false
+    return ['pending', 'approved'].includes(appointment.status.toLowerCase())
+  }
+
+  const canReschedule = (appointment) => {
+    if (!appointment.status) return false
+    return ['pending', 'approved'].includes(appointment.status.toLowerCase())
+  }
+
+  const getStatusColor = (status) => {
+    if (!status) return { bg: '#f5f6f8', border: '#e5e7eb', color: '#6b7280', dot: '#9ca3af' }
+
+    const st = status.toLowerCase()
+    switch (st) {
+      case 'pending':
+        return { bg: '#fffbeb', border: '#fde68a', color: '#92400e', dot: '#f59e0b' }
+      case 'approved':
+        return { bg: '#f0fdf4', border: '#bbf7d0', color: '#15803d', dot: '#22c55e' }
+      case 'cancelled':
+        return { bg: '#fef2f2', border: '#fecaca', color: '#dc2626', dot: '#ef4444' }
+      default:
+        return { bg: '#f5f6f8', border: '#e5e7eb', color: '#6b7280', dot: '#9ca3af' }
+    }
+  }
+
+  const getStatusLabel = (status) => {
+    if (!status) return 'Nuk dihet'
+
+    const st = status.toLowerCase()
+    switch (st) {
+      case 'pending':
+        return '⏳ Në pritje'
+      case 'approved':
+        return '✅ Aprovuar'
+      case 'cancelled':
+        return '❌ Anuluar'
+      default:
+        return status
+    }
+  }
 
   const StatusBadge = ({ status }) => {
     const cfg = {
@@ -273,7 +370,7 @@ const Dashboard = () => {
         .dash-logout-btn:hover { color: #ef4444 !important; }
         .dash-card-link:hover  { opacity: 0.7; }
 
-        /* Language Switcher overrides for light topbar */
+        /* Language Switcher overrides */
         .dash-topbar .lang-switcher-btn {
           background: #f5f6f8 !important; border: 1px solid #e5e7eb !important;
           color: #374151 !important; font-size: 12px !important; padding: 6px 10px !important;
@@ -358,8 +455,106 @@ const Dashboard = () => {
         .pw-strength { display:flex; gap:4px; margin-top:4px; }
         .pw-strength-bar { height:3px; flex:1; border-radius:3px; transition:background 0.2s; }
 
+        /* AppointmentsPage styles */
+        .appt-card {
+          background: #fff;
+          border: 1px solid #e5e7eb;
+          border-radius: 12px;
+          padding: 16px;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          transition: box-shadow 0.15s;
+          margin-bottom: 12px;
+        }
+        .appt-card:hover { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06); }
+        .appt-card-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 12px;
+        }
+        .appt-card-title { font-size: 15px; font-weight: 700; color: #1e3a8a; }
+        .appt-card-institution { font-size: 12px; color: #6b7280; margin-top: 3px; }
+        .appt-card-details {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 10px;
+        }
+        .appt-detail-item {
+          display: flex;
+          align-items: flex-start;
+          gap: 8px;
+        }
+        .appt-detail-icon {
+          width: 24px;
+          height: 24px;
+          border-radius: 6px;
+          background: #eff6ff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          color: #1e3a8a;
+        }
+        .appt-detail-label {
+          font-size: 10px;
+          font-weight: 600;
+          color: #9ca3af;
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+          display: block;
+          margin-bottom: 2px;
+        }
+        .appt-detail-value {
+          font-size: 13px;
+          font-weight: 600;
+          color: #1e3a8a;
+          display: block;
+        }
+        .appt-card-actions {
+          display: flex;
+          gap: 8px;
+          padding-top: 8px;
+          border-top: 1px solid #f3f4f6;
+        }
+        .appt-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 5px;
+          padding: 8px 12px;
+          border: none;
+          border-radius: 6px;
+          font-size: 12px;
+          font-weight: 600;
+          cursor: pointer;
+          font-family: 'DM Sans', sans-serif;
+          transition: all 0.15s;
+          flex: 1;
+        }
+        .appt-btn-reschedule {
+          background: #f5f6f8;
+          color: #1e3a8a;
+          border: 1px solid #e5e7eb;
+        }
+        .appt-btn-reschedule:hover {
+          background: #eef0f4;
+          border-color: #d1d5db;
+        }
+        .appt-btn-cancel {
+          background: #fef2f2;
+          color: #dc2626;
+          border: 1px solid #fecaca;
+        }
+        .appt-btn-cancel:hover:not(:disabled) {
+          background: #fee2e2;
+        }
+
         @media (max-width: 768px) {
           .profile-info-grid { grid-template-columns: 1fr; }
+          .appt-card-details { grid-template-columns: 1fr; }
+          .appt-card-actions { flex-direction: column; }
         }
       `}</style>
 
@@ -478,7 +673,7 @@ const Dashboard = () => {
               </>
             )}
 
-            {/* ── APPOINTMENTS ── */}
+            {/* ── APPOINTMENTS (WITH CANCEL/RESCHEDULE) ── */}
             {activeTab === 'appointments' && (
               <>
                 <button
@@ -487,19 +682,88 @@ const Dashboard = () => {
                 >
                   <Plus size={14}/> {t('book_new_appointment')}
                 </button>
-                <div style={S.card}>
-                  {appointments.length === 0
-                    ? <div style={S.emptyMsg}>{t('no_appointments_registered')}</div>
-                    : appointments.map(a => (
-                      <div key={a.id} style={S.tableRow}>
-                        <div>
-                          <div style={S.tableRowTitle}>{a.institution}</div>
-                          <div style={S.tableRowSub}>{a.reason}</div>
-                        </div>
-                        <StatusBadge status={a.status}/>
-                      </div>
-                    ))}
-                </div>
+                {appointments.length === 0
+                  ? <div style={S.card}><div style={S.emptyMsg}>{t('no_appointments_registered')}</div></div>
+                  : (
+                    <div>
+                      {appointments.map(appt => {
+                        const colors = getStatusColor(appt.status)
+                        return (
+                          <div key={appt.id} className="appt-card">
+                            <div className="appt-card-header">
+                              <div>
+                                <div className="appt-card-title">{appt.reason || appt.service_type || 'Termin'}</div>
+                                {appt.institution && <div className="appt-card-institution">📍 {appt.institution}</div>}
+                              </div>
+                              <div
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 5,
+                                  padding: '4px 10px',
+                                  borderRadius: 20,
+                                  fontSize: 11,
+                                  fontWeight: 600,
+                                  border: `1px solid ${colors.border}`,
+                                  background: colors.bg,
+                                  color: colors.color,
+                                  whiteSpace: 'nowrap',
+                                }}
+                              >
+                                <span style={{ width: 5, height: 5, borderRadius: '50%', background: colors.dot }} />
+                                {getStatusLabel(appt.status)}
+                              </div>
+                            </div>
+
+                            <div className="appt-card-details">
+                              <div className="appt-detail-item">
+                                <div className="appt-detail-icon"><Calendar size={12} /></div>
+                                <div>
+                                  <span className="appt-detail-label">Data</span>
+                                  <span className="appt-detail-value">{formatDate(appt.appointment_date || appt.approved_date)}</span>
+                                </div>
+                              </div>
+
+                              <div className="appt-detail-item">
+                                <div className="appt-detail-icon"><Clock size={12} /></div>
+                                <div>
+                                  <span className="appt-detail-label">Ora</span>
+                                  <span className="appt-detail-value">
+                                    {appt.appointment_time ? appt.appointment_time : appt.approved_date
+                                      ? new Date(appt.approved_date).toLocaleTimeString('sq-AL', { hour: '2-digit', minute: '2-digit' })
+                                      : '—'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="appt-card-actions">
+                              {canReschedule(appt) && (
+                                <button
+                                  className="appt-btn appt-btn-reschedule"
+                                  onClick={() => {
+                                    setSelectedToReschedule(appt)
+                                    setRescheduleForm({ new_date: '', new_time: '' })
+                                  }}
+                                >
+                                  📅 Riprogramo
+                                </button>
+                              )}
+                              {canCancel(appt) && (
+                                <button
+                                  className="appt-btn appt-btn-cancel"
+                                  onClick={() => setSelectedToCancel(appt)}
+                                >
+                                  <Trash2 size={12} />
+                                  Anullo
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
               </>
             )}
 
@@ -706,7 +970,7 @@ const Dashboard = () => {
           </div>
         </main>
 
-        {/* ── APPOINTMENT MODAL ── */}
+        {/* ── APPOINTMENT BOOKING MODAL ── */}
         {showApptModal && (
           <div style={S.overlay} onClick={() => setShowApptModal(false)}>
             <div style={S.modal} onClick={e => e.stopPropagation()}>
@@ -819,6 +1083,113 @@ const Dashboard = () => {
                     {t('appt_confirm')}
                   </button>
                 )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── CANCEL APPOINTMENT MODAL ── */}
+        {selectedToCancel && (
+          <div style={S.overlay} onClick={() => setSelectedToCancel(null)}>
+            <div style={S.modal} onClick={(e) => e.stopPropagation()}>
+              <div style={S.modalHeader}>
+                <div style={S.modalTitle}>Anulo termin?</div>
+                <button style={S.modalClose} onClick={() => setSelectedToCancel(null)}><X size={15}/></button>
+              </div>
+              <div style={S.modalBody}>
+                <div style={{ background:'#f9fafb', border:'1px solid #f3f4f6', borderRadius:8, padding:'12px 14px', display:'flex', flexDirection:'column', gap:'8px', marginBottom:14 }}>
+                  <span style={{ fontSize:13, color:'#1e3a8a', fontWeight:500 }}>
+                    <strong>Shërbimi:</strong> {selectedToCancel.reason || selectedToCancel.service_type}
+                  </span>
+                  <span style={{ fontSize:13, color:'#1e3a8a', fontWeight:500 }}>
+                    <strong>Data:</strong> {formatDate(selectedToCancel.appointment_date || selectedToCancel.approved_date)}
+                  </span>
+                  {selectedToCancel.institution && (
+                    <span style={{ fontSize:13, color:'#1e3a8a', fontWeight:500 }}>
+                      <strong>Institucioni:</strong> {selectedToCancel.institution}
+                    </span>
+                  )}
+                </div>
+                <p style={{ fontSize:'13px', color:'#6b7280', lineHeight:'1.6', marginBottom:0 }}>
+                  Nëse anuloni këtë termin, do t'ju duhet të rezervoni një termin të ri më vonë.
+                </p>
+              </div>
+              <div style={S.modalFooter}>
+                <button
+                  style={{ flex:1, padding:10, background:'#fff', border:'1px solid #e5e7eb', color:'#6b7280', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:"'DM Sans', sans-serif" }}
+                  onClick={() => setSelectedToCancel(null)}
+                >
+                  Provo përsëri
+                </button>
+                <button
+                  style={{ flex:2, padding:10, background:'#dc2626', border:'none', color:'#fff', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:"'DM Sans', sans-serif" }}
+                  onClick={() => handleCancelAppointment(selectedToCancel.id)}
+                >
+                  Po, anullo
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── RESCHEDULE APPOINTMENT MODAL ── */}
+        {selectedToReschedule && (
+          <div style={S.overlay} onClick={() => setSelectedToReschedule(null)}>
+            <div style={S.modal} onClick={(e) => e.stopPropagation()}>
+              <div style={S.modalHeader}>
+                <div style={S.modalTitle}>Riprogramo termin</div>
+                <button style={S.modalClose} onClick={() => setSelectedToReschedule(null)}><X size={15}/></button>
+              </div>
+              <div style={S.modalBody}>
+                <div style={{ background:'#f9fafb', border:'1px solid #f3f4f6', borderRadius:8, padding:'12px 14px', display:'flex', flexDirection:'column', gap:'8px', marginBottom:16 }}>
+                  <span style={{ fontSize:13, color:'#1e3a8a', fontWeight:500 }}>
+                    <strong>Shërbimi:</strong> {selectedToReschedule.reason || selectedToReschedule.service_type}
+                  </span>
+                  <span style={{ fontSize:13, color:'#1e3a8a', fontWeight:500 }}>
+                    <strong>Data aktuale:</strong> {formatDate(selectedToReschedule.appointment_date || selectedToReschedule.approved_date)}
+                  </span>
+                  {selectedToReschedule.institution && (
+                    <span style={{ fontSize:13, color:'#1e3a8a', fontWeight:500 }}>
+                      <strong>Institucioni:</strong> {selectedToReschedule.institution}
+                    </span>
+                  )}
+                </div>
+
+                <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+                  <div>
+                    <label style={S.piLabel}>Data e re</label>
+                    <input
+                      type="date"
+                      style={S.piInput}
+                      value={rescheduleForm.new_date}
+                      onChange={(e) => setRescheduleForm({ ...rescheduleForm, new_date: e.target.value })}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={S.piLabel}>Ora (opsionale)</label>
+                    <input
+                      type="time"
+                      style={S.piInput}
+                      value={rescheduleForm.new_time}
+                      onChange={(e) => setRescheduleForm({ ...rescheduleForm, new_time: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div style={S.modalFooter}>
+                <button
+                  style={{ flex:1, padding:10, background:'#fff', border:'1px solid #e5e7eb', color:'#6b7280', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:"'DM Sans', sans-serif" }}
+                  onClick={() => setSelectedToReschedule(null)}
+                >
+                  Anulo
+                </button>
+                <button
+                  style={{ flex:2, padding:10, background:'#1e3a8a', border:'none', color:'#fff', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:"'DM Sans', sans-serif" }}
+                  onClick={handleRescheduleAppointment}
+                >
+                  Riprogramo
+                </button>
               </div>
             </div>
           </div>

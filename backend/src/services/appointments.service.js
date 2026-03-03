@@ -43,7 +43,6 @@ const bookAppointment = async ({ user_id, user_email, user_first_name, instituti
 
   if (error) throw { status: 500, message: error.message }
 
-  // Dërgo email konfirmimi
   try {
     await sendEmail({
       to: user_email,
@@ -57,7 +56,6 @@ const bookAppointment = async ({ user_id, user_email, user_first_name, instituti
     })
   } catch (emailErr) {
     console.warn('⚠️ Email konfirmimi dështoi:', emailErr.message)
-    // Nuk hedhim error — termini u ruajt suksesshëm
   }
 
   return appt
@@ -73,6 +71,87 @@ const updateAppointment = async (id, { status, admin_note, approved_date }) => {
 
   if (error) throw { status: 500, message: error.message }
   return appt
+}
+
+// ✅ CANCEL APPOINTMENT (per qytetari)
+const cancelAppointment = async (appointment_id, user_id, reason = null) => {
+  // Kontrollo pronësinë
+  const { data: appt, error: fetchErr } = await supabase
+    .from('appointments')
+    .select('user_id, status')
+    .eq('id', appointment_id)
+    .single()
+
+  if (fetchErr || !appt) throw { status: 404, message: 'Termini nuk u gjet' }
+  if (appt.user_id !== user_id) throw { status: 403, message: 'Nuk keni akses' }
+  
+  // Vetëm pending/approved mund të anulohen
+  if (!['pending', 'approved'].includes(appt.status)) {
+    throw { status: 400, message: 'Ky termin nuk mund të anulohet' }
+  }
+
+  // Ažuroni statusin
+  const { data: updated, error } = await supabase
+    .from('appointments')
+    .update({ 
+      status: 'cancelled', 
+      cancelled_at: new Date().toISOString(),
+      notes: reason || null 
+    })
+    .eq('id', appointment_id)
+    .select()
+    .single()
+
+  if (error) throw { status: 500, message: error.message }
+  return updated
+}
+
+// ✅ RESCHEDULE APPOINTMENT (per qytetari)
+const rescheduleAppointment = async (appointment_id, user_id, newDate, newTime = null) => {
+  // Kontrollo pronësinë
+  const { data: appt, error: fetchErr } = await supabase
+    .from('appointments')
+    .select('user_id, status, appointment_date')
+    .eq('id', appointment_id)
+    .single()
+
+  if (fetchErr || !appt) throw { status: 404, message: 'Termini nuk u gjet' }
+  if (appt.user_id !== user_id) throw { status: 403, message: 'Nuk keni akses' }
+  
+  // Vetëm pending/approved mund të riprogramohen
+  if (!['pending', 'approved'].includes(appt.status)) {
+    throw { status: 400, message: 'Ky termin nuk mund të riprogramohet' }
+  }
+
+  // Validimi i datës
+  const newDateObj = new Date(newDate)
+  if (isNaN(newDateObj.getTime())) {
+    throw { status: 400, message: 'Data e pavlefshme' }
+  }
+
+  // Kombinironi datën dhe orën
+  let finalDateTime = newDateObj
+  if (newTime) {
+    const [h, m] = newTime.split(':')
+    if (!isNaN(+h) && !isNaN(+m)) {
+      finalDateTime.setHours(+h, +m, 0, 0)
+    }
+  }
+
+  // Ažuroni
+  const { data: updated, error } = await supabase
+    .from('appointments')
+    .update({ 
+      appointment_date: finalDateTime.toISOString(),
+      rescheduled_at: new Date().toISOString(),
+      rescheduled_count: (appt.rescheduled_count || 0) + 1
+    })
+    .eq('id', appointment_id)
+    .select()
+    .single()
+
+  if (error) throw { status: 500, message: error.message }
+  return updated
 }
 
 const sendReminder = async (appointment_id) => {
@@ -98,4 +177,12 @@ const sendReminder = async (appointment_id) => {
   return { sent: true }
 }
 
-module.exports = { getMyAppointments, getAllAppointments, bookAppointment, updateAppointment, sendReminder }
+module.exports = { 
+  getMyAppointments, 
+  getAllAppointments, 
+  bookAppointment, 
+  updateAppointment, 
+  cancelAppointment,        // ✅ NEW
+  rescheduleAppointment,    // ✅ NEW
+  sendReminder 
+}

@@ -1,18 +1,21 @@
-const router  = require('express').Router()
+const router = require('express').Router()
 const {
   getMyAppointments, getAllAppointments,
-  bookAppointment, updateAppointment, sendReminder
+  bookAppointment, updateAppointment, cancelAppointment, rescheduleAppointment,
+  sendReminder
 } = require('../controllers/appointments.controller')
-const { protect }      = require('../middleware/auth.middleware')
-const { requireRole }  = require('../middleware/role.middleware')
+const { protect } = require('../middleware/auth.middleware')
+const { requireRole } = require('../middleware/role.middleware')
 
 router.use(protect)
 
-// Qytetari — rezervo dhe shiko terminet e veta
+// Qytetari — rezervo, shiko, anullo, riprogramo terminet e veta
 router.get('/my', getMyAppointments)
-router.post('/',  bookAppointment)
+router.post('/', bookAppointment)
+router.delete('/:id', cancelAppointment)                    // ✅ NEW
+router.put('/:id/reschedule', rescheduleAppointment)        // ✅ NEW
 
-// Admin — shiko termine (filtrohet automatikisht sipas rolit)
+// Admin — shiko termine (filtrohet sipas rolit)
 router.get('/',
   requireRole('super_admin', 'admin_mvr', 'admin_komuna'),
   enforceInstitutionFilter,
@@ -36,7 +39,7 @@ module.exports = router
 
 // ── Middleware: forcon filtrin sipas rolit ──────────────────
 function enforceInstitutionFilter(req, res, next) {
-  if      (req.userRole === 'admin_mvr')    req.query.institution = 'MVR'
+  if (req.userRole === 'admin_mvr') req.query.institution = 'MVR'
   else if (req.userRole === 'admin_komuna') req.query.institution = 'Komuna'
   next()
 }
