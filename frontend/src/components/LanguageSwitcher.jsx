@@ -64,6 +64,7 @@ const LanguageSwitcher = () => {
           transition: all 0.2s ease;
           font-family: inherit;
           white-space: nowrap;
+          border: 1px solid black;
         }
 
         .lang-switcher-btn:hover {

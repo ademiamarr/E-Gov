@@ -1,5 +1,4 @@
 import { useAuth } from '../context/AuthContext'
-import { Building2, Clock, Mail, LogOut } from 'lucide-react'
 
 const Pending = () => {
   const { user, logout } = useAuth()
@@ -7,258 +6,161 @@ const Pending = () => {
   return (
     <>
       <style>{`
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-          background: linear-gradient(135deg, #ffffff 0%, #f8fafc 50%, #ffffff 100%);
-          min-height: 100vh;
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Plus Jakarta Sans',sans-serif; background:#f4f6fb; }
+
+        .pd { min-height:100dvh; display:flex; flex-direction:column; background:#f4f6fb; }
+
+        .pd-top {
+          display:flex; align-items:center; gap:10px;
+          padding:16px 20px; background:#fff; border-bottom:1px solid #eaecf0;
+        }
+        .pd-brand { display:flex; align-items:center; gap:8px; }
+        .pd-brand-icon {
+          width:32px; height:32px; background:#1e3a8a; border-radius:8px;
+          display:flex; align-items:center; justify-content:center;
+        }
+        .pd-brand-name { font-size:14px; font-weight:800; color:#1e3a8a; letter-spacing:-0.02em; }
+
+        .pd-body {
+          flex:1; display:flex; flex-direction:column;
+          padding:28px 20px 40px;
         }
 
-        .status-page {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          min-height: 100vh;
-          padding: 20px;
+        /* Status icon */
+        .pd-icon-wrap {
+          width:76px; height:76px; border-radius:50%;
+          background:linear-gradient(135deg,#fef9c3,#fde68a);
+          border:2px solid #fbbf24;
+          display:flex; align-items:center; justify-content:center;
+          font-size:34px; margin:0 auto 20px;
         }
 
-        .status-logo {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          margin-bottom: 40px;
-          font-size: 13px;
-          font-weight: 700;
-          color: #0f172a;
+        .pd-title {
+          font-size:24px; font-weight:800; color:#0f1728;
+          letter-spacing:-0.03em; text-align:center; margin-bottom:6px;
+        }
+        .pd-sub {
+          font-size:13px; color:#6b7280; text-align:center;
+          line-height:1.6; margin-bottom:28px;
         }
 
-        .status-logo-icon {
-          width: 36px;
-          height: 36px;
-          border-radius: 10px;
-          background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-          display: flex;
-          align-items: center;
-          justify-content: center;
+        /* Steps card */
+        .pd-card {
+          background:#fff; border-radius:18px; border:1.5px solid #eaecf0;
+          overflow:hidden; margin-bottom:14px;
+        }
+        .pd-step {
+          display:flex; align-items:flex-start; gap:12px;
+          padding:16px; border-bottom:1px solid #f1f5f9;
+        }
+        .pd-step:last-child { border-bottom:none; }
+
+        .pd-step-dot {
+          width:28px; height:28px; border-radius:50%; flex-shrink:0;
+          display:flex; align-items:center; justify-content:center;
+          font-size:12px; font-weight:800;
+        }
+        .pd-step-dot.done { background:#1e3a8a; color:#fff; }
+        .pd-step-dot.active {
+          background:#f59e0b; color:#fff;
+          box-shadow:0 0 0 4px rgba(245,158,11,0.2);
+          animation:pdpulse 2s infinite;
+        }
+        .pd-step-dot.pending { background:#e5e7eb; color:#9ca3af; }
+        @keyframes pdpulse {
+          0%,100% { box-shadow:0 0 0 0 rgba(245,158,11,0.4); }
+          50% { box-shadow:0 0 0 8px rgba(245,158,11,0); }
         }
 
-        .status-wrap {
-          width: 100%;
-          max-width: 480px;
-          text-align: center;
-        }
+        .pd-step-info { flex:1; }
+        .pd-step-title { font-size:14px; font-weight:700; color:#0f1728; display:block; margin-bottom:2px; }
+        .pd-step-sub { font-size:12px; color:#6b7280; display:block; }
 
-        .status-icon {
-          width: 80px;
-          height: 80px;
-          border-radius: 20px;
-          background: linear-gradient(135deg, #f5931415 0%, #f0b61a15 100%);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin: 0 auto 24px;
-          border: 1px solid rgba(245, 147, 20, 0.2);
+        /* Info chips */
+        .pd-chips { display:flex; flex-direction:column; gap:8px; margin-bottom:20px; }
+        .pd-chip {
+          display:flex; align-items:center; gap:9px;
+          padding:12px 14px; border-radius:12px;
+          font-size:13px; font-weight:600;
         }
+        .pd-chip.blue { background:#eff6ff; border:1.5px solid #bfdbfe; color:#1e40af; }
+        .pd-chip.amber { background:#fffbeb; border:1.5px solid #fde68a; color:#92400e; }
 
-        .status-wrap h1 {
-          font-size: 24px;
-          font-weight: 700;
-          color: #0f172a;
-          margin-bottom: 8px;
-          letter-spacing: -0.5px;
+        /* Logout */
+        .pd-logout {
+          width:100%; padding:14px; border-radius:14px;
+          background:#fff; border:1.5px solid #fecaca;
+          color:#ef4444; font-size:14px; font-weight:800;
+          font-family:'Plus Jakarta Sans',sans-serif; cursor:pointer;
+          display:flex; align-items:center; justify-content:center; gap:8px;
+          -webkit-tap-highlight-color:transparent; transition:background 0.12s;
+          -webkit-appearance:none;
         }
-
-        .status-wrap > p {
-          font-size: 13px;
-          color: #6b7280;
-          margin-bottom: 28px;
-          line-height: 1.6;
-        }
-
-        .status-card {
-          background: #ffffff;
-          border-radius: 16px;
-          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
-          padding: 32px;
-          margin-bottom: 20px;
-        }
-
-        .status-step {
-          display: flex;
-          align-items: flex-start;
-          gap: 12px;
-          padding: 16px 0;
-          border-bottom: 1px solid #e5e7eb;
-        }
-
-        .status-step:last-child {
-          border-bottom: none;
-        }
-
-        .step-dot {
-          width: 24px;
-          height: 24px;
-          border-radius: 50%;
-          background: #e5e7eb;
-          border: 2px solid #ffffff;
-          flex-shrink: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 12px;
-          margin-top: 2px;
-        }
-
-        .step-dot.done {
-          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-          color: #ffffff;
-          font-weight: 700;
-        }
-
-        .step-dot.active {
-          background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-          color: #ffffff;
-          font-weight: 700;
-          animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
-          50% { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); }
-        }
-
-        .step-info {
-          flex: 1;
-        }
-
-        .step-title {
-          display: block;
-          font-size: 13px;
-          font-weight: 600;
-          color: #0f172a;
-          margin-bottom: 4px;
-        }
-
-        .step-sub {
-          display: block;
-          font-size: 12px;
-          color: #6b7280;
-        }
-
-        .status-email {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          padding: 12px 16px;
-          background: #f0f4ff;
-          border: 1px solid #bfdbfe;
-          border-radius: 8px;
-          font-size: 12px;
-          color: #1e40af;
-          margin-bottom: 20px;
-        }
-
-        .status-time {
-          padding: 12px 16px;
-          background: #fef3c7;
-          border: 1px solid #fbbf24;
-          border-radius: 8px;
-          font-size: 12px;
-          color: #92400e;
-          font-weight: 500;
-          margin-bottom: 20px;
-        }
-
-        .status-logout {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          width: 100%;
-          padding: 12px 16px;
-          background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-          color: #ffffff;
-          border: none;
-          border-radius: 8px;
-          font-size: 14px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
-          font-family: inherit;
-        }
-
-        .status-logout:hover {
-          background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
-          box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-        }
-
-        @media (max-width: 480px) {
-          .status-card {
-            padding: 24px;
-          }
-
-          .status-wrap h1 {
-            font-size: 20px;
-          }
-        }
+        .pd-logout:active { background:#fef2f2; }
       `}</style>
 
-      <div className="status-page">
-        <div className="status-logo">
-          <div className="status-logo-icon"><Building2 size={18} color="#fff" /></div>
-          <span>eGov Portal</span>
+      <div className="pd">
+        <div className="pd-top">
+          <div className="pd-brand">
+            <div className="pd-brand-icon">
+              <svg viewBox="0 0 24 24" fill="none" width={16} height={16}>
+                <path d="M3 22V10L12 3L21 10V22H15V16H9V22H3Z" fill="#fff"/>
+              </svg>
+            </div>
+            <span className="pd-brand-name">eGov Portal</span>
+          </div>
         </div>
 
-        <div className="status-wrap">
-          <div className="status-icon">
-            <Clock size={40} color="#f59e0b" />
-          </div>
+        <div className="pd-body">
+          <div className="pd-icon-wrap">⏳</div>
+          <h1 className="pd-title">Llogaria në pritje</h1>
+          <p className="pd-sub">
+            Dokumentet tuaja janë duke u shqyrtuar nga ekipi administrativ.
+          </p>
 
-          <h1>Llogaria në pritje</h1>
-          <p>Dokumentet tuaja janë duke u shqyrtuar nga ekipi ynë administrativ.</p>
-
-          <div className="status-card">
-            <div className="status-step">
-              <div className="step-dot done">✓</div>
-              <div className="step-info">
-                <span className="step-title">Regjistrimi u krye</span>
-                <span className="step-sub">Llogaria u krijua me sukses</span>
+          {/* Steps */}
+          <div className="pd-card">
+            <div className="pd-step">
+              <div className="pd-step-dot done">✓</div>
+              <div className="pd-step-info">
+                <span className="pd-step-title">Regjistrimi u krye</span>
+                <span className="pd-step-sub">Llogaria u krijua me sukses</span>
               </div>
             </div>
-
-            <div className="status-step">
-              <div className="step-dot active">•</div>
-              <div className="step-info">
-                <span className="step-title">Shqyrtim i dokumenteve</span>
-                <span className="step-sub">Ekipi ynë po shqyrton dokumentet tuaja</span>
+            <div className="pd-step">
+              <div className="pd-step-dot active">•</div>
+              <div className="pd-step-info">
+                <span className="pd-step-title">Shqyrtim i dokumenteve</span>
+                <span className="pd-step-sub">Ekipi ynë po shqyrton dokumentet tuaja</span>
               </div>
             </div>
-
-            <div className="status-step">
-              <div className="step-dot">3</div>
-              <div className="step-info">
-                <span className="step-title">Aktivizim i llogarisë</span>
-                <span className="step-sub">Do të njoftoheni me email</span>
+            <div className="pd-step">
+              <div className="pd-step-dot pending">3</div>
+              <div className="pd-step-info">
+                <span className="pd-step-title">Aktivizim i llogarisë</span>
+                <span className="pd-step-sub">Do të njoftoheni me email</span>
               </div>
             </div>
           </div>
 
-          {user?.email && (
-            <div className="status-email">
-              <Mail size={14} />
-              <span>Njoftimi do të dërgohet te: <strong>{user.email}</strong></span>
+          {/* Info chips */}
+          <div className="pd-chips">
+            {user?.email && (
+              <div className="pd-chip blue">
+                <span>📧</span>
+                <span>Njoftimi te: <strong>{user.email}</strong></span>
+              </div>
+            )}
+            <div className="pd-chip amber">
+              <span>⏱</span>
+              <span>Koha e pritjes: <strong>1-2 ditë pune</strong></span>
             </div>
-          )}
-
-          <div className="status-time">
-            ⏱ Koha e pritjes: 1-2 ditë pune
           </div>
 
-          <button className="status-logout" onClick={logout}>
-            <LogOut size={16} />
-            Dil nga llogaria
+          <button className="pd-logout" onClick={logout}>
+            🚪 Dil nga llogaria
           </button>
         </div>
       </div>

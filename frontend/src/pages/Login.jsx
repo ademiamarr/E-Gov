@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import { useSignIn } from '@clerk/clerk-react'
 import { useTranslation } from 'react-i18next'
 import LanguageSwitcher from '../components/LanguageSwitcher'
-import { Mail, Lock, Eye, EyeOff, AlertCircle, ArrowRight } from 'lucide-react'
 
 const Login = () => {
   const [form, setForm] = useState({ email: '', password: '' })
@@ -31,437 +30,194 @@ const Login = () => {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Plus Jakarta Sans',sans-serif; background:#f4f6fb; }
 
-        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        .lg { min-height:100dvh; display:flex; flex-direction:column; background:#f4f6fb; }
 
-        .login-root {
-          min-height: 100vh;
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          font-family: 'DM Sans', sans-serif;
-          background: #fff;
+        .lg-top {
+          display:flex; align-items:center; justify-content:space-between;
+          padding:16px 20px; background:#fff; border-bottom:1px solid #eaecf0;
+        }
+        .lg-brand { display:flex; align-items:center; gap:9px; }
+        .lg-brand-icon {
+          width:34px; height:34px; background:#1e3a8a; border-radius:9px;
+          display:flex; align-items:center; justify-content:center;
+        }
+        .lg-brand-name { font-size:14px; font-weight:800; color:#1e3a8a; letter-spacing:-0.02em; }
+
+        .lg-hero {
+          background:linear-gradient(135deg,#1e3a8a 0%,#2563eb 100%);
+          padding:32px 20px 52px;
+        }
+        .lg-hero-flag {
+          display:inline-flex; align-items:center; gap:6px;
+          background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.2);
+          border-radius:20px; padding:5px 12px;
+          font-size:11px; font-weight:600; color:rgba(255,255,255,0.85);
+          letter-spacing:0.02em; margin-bottom:16px;
+        }
+        .lg-hero-title {
+          font-size:30px; font-weight:800; color:#fff;
+          letter-spacing:-0.03em; line-height:1.15; margin-bottom:6px;
+        }
+        .lg-hero-sub { font-size:13px; color:rgba(255,255,255,0.6); font-weight:500; }
+
+        .lg-card {
+          background:#fff; margin:-20px 16px 0;
+          border-radius:20px; padding:24px 20px 28px;
+          box-shadow:0 4px 24px rgba(0,0,0,0.09);
+          position:relative; z-index:2;
         }
 
-        /* Left panel */
-        .login-left {
-          background: #1e3a8a;
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
-          padding: 48px 56px;
-          position: relative;
-          overflow: hidden;
+        .lg-error {
+          display:flex; align-items:center; gap:8px;
+          padding:11px 13px; background:#fef2f2; border:1.5px solid #fecaca;
+          border-radius:10px; color:#dc2626; font-size:13px; font-weight:600;
+          margin-bottom:16px;
         }
 
-        .login-left::before {
-          content: '';
-          position: absolute;
-          top: 0; left: 0; right: 0; bottom: 0;
-          background: repeating-linear-gradient(
-            0deg,
-            transparent,
-            transparent 79px,
-            rgba(255,255,255,0.025) 79px,
-            rgba(255,255,255,0.025) 80px
-          ),
-          repeating-linear-gradient(
-            90deg,
-            transparent,
-            transparent 79px,
-            rgba(255,255,255,0.025) 79px,
-            rgba(255,255,255,0.025) 80px
-          );
-          pointer-events: none;
+        .lg-form { display:flex; flex-direction:column; gap:14px; }
+        .lg-group { display:flex; flex-direction:column; gap:5px; }
+        .lg-label { font-size:11px; font-weight:700; color:#1e3a8a; letter-spacing:0.04em; text-transform:uppercase; }
+
+        .lg-input-wrap { position:relative; }
+        .lg-input {
+          width:100%; padding:13px 14px;
+          font-size:15px; font-family:'Plus Jakarta Sans',sans-serif;
+          color:#0f1728; background:#f7f9fc;
+          border:1.5px solid #e5e7eb; border-radius:12px;
+          outline:none; transition:border-color 0.15s, background 0.15s;
+          -webkit-appearance:none;
+        }
+        .lg-input::placeholder { color:#c4c9d4; }
+        .lg-input:focus { border-color:#1e3a8a; background:#fff; }
+        .lg-input-pr { padding-right:46px; }
+
+        .lg-eye {
+          position:absolute; right:14px; top:50%; transform:translateY(-50%);
+          background:none; border:none; color:#9ca3af; cursor:pointer;
+          padding:4px; display:flex; align-items:center; font-size:17px;
+          -webkit-tap-highlight-color:transparent;
         }
 
-        .login-left-brand {
-          position: relative;
-          z-index: 2;
-          display: flex;
-          align-items: center;
-          gap: 12px;
+        .lg-submit {
+          width:100%; padding:14px; background:#1e3a8a; color:#fff;
+          border:none; border-radius:12px; font-size:15px; font-weight:700;
+          font-family:'Plus Jakarta Sans',sans-serif; cursor:pointer;
+          display:flex; align-items:center; justify-content:center; gap:8px;
+          transition:transform 0.1s; -webkit-appearance:none; margin-top:4px;
+          letter-spacing:-0.01em;
         }
+        .lg-submit:active { transform:scale(0.98); }
+        .lg-submit:disabled { opacity:0.55; cursor:not-allowed; }
 
-        .login-left-logo {
-          width: 36px;
-          height: 36px;
-          background: #fff;
-          border-radius: 8px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
+        .lg-spinner {
+          width:16px; height:16px;
+          border:2px solid rgba(255,255,255,0.3); border-top-color:#fff;
+          border-radius:50%; animation:lgspin 0.6s linear infinite;
         }
+        @keyframes lgspin { to { transform:rotate(360deg); } }
 
-        .login-left-logo svg {
-          width: 20px;
-          height: 20px;
+        .lg-divider { display:flex; align-items:center; gap:10px; margin:20px 0; }
+        .lg-divider-line { flex:1; height:1px; background:#e5e7eb; }
+        .lg-divider-text { font-size:11px; color:#9ca3af; font-weight:600; }
+
+        .lg-footer { text-align:center; font-size:14px; color:#6b7280; }
+        .lg-footer a { color:#1e3a8a; font-weight:700; text-decoration:none; }
+
+        .lg-trust {
+          display:flex; justify-content:center; gap:28px;
+          padding:20px 20px 16px;
         }
-
-        .login-left-name {
-          font-size: 15px;
-          font-weight: 600;
-          color: #fff;
-          letter-spacing: -0.01em;
-        }
-
-        .login-left-content {
-          position: relative;
-          z-index: 2;
-        }
-
-        .login-left-tag {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          background: rgba(255,255,255,0.08);
-          border: 1px solid rgba(255,255,255,0.12);
-          color: rgba(255,255,255,0.6);
-          font-size: 11px;
-          font-weight: 500;
-          padding: 5px 12px;
-          border-radius: 20px;
-          letter-spacing: 0.04em;
-          text-transform: uppercase;
-          margin-bottom: 24px;
-        }
-
-        .login-left-title {
-          font-family: 'DM Serif Display', serif;
-          font-size: 2.6rem;
-          color: #fff;
-          line-height: 1.15;
-          letter-spacing: -0.02em;
-          margin-bottom: 20px;
-        }
-
-        .login-left-title em {
-          color: rgba(255,255,255,0.4);
-          font-style: italic;
-        }
-
-        .login-left-desc {
-          font-size: 14px;
-          color: rgba(255,255,255,0.4);
-          line-height: 1.7;
-          max-width: 340px;
-        }
-
-        .login-left-stats {
-          position: relative;
-          z-index: 2;
-          display: flex;
-          gap: 32px;
-          padding-top: 32px;
-          border-top: 1px solid rgba(255,255,255,0.08);
-        }
-
-        .login-stat-item {}
-        .login-stat-num {
-          font-size: 22px;
-          font-weight: 700;
-          color: #fff;
-          letter-spacing: -0.03em;
-        }
-        .login-stat-label {
-          font-size: 11px;
-          color: rgba(255,255,255,0.35);
-          margin-top: 2px;
-          letter-spacing: 0.02em;
-        }
-
-        /* Right panel */
-        .login-right {
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
-          padding: 48px 72px;
-          background: #fff;
-        }
-
-        .login-right-inner {
-          width: 100%;
-          max-width: 380px;
-        }
-
-        .login-right-top {
-          display: flex;
-          justify-content: flex-end;
-          margin-bottom: 48px;
-        }
-
-        .login-heading {
-          font-size: 24px;
-          font-weight: 700;
-          color: #1e3a8a;
-          letter-spacing: -0.03em;
-          margin-bottom: 6px;
-        }
-
-        .login-subheading {
-          font-size: 13px;
-          color: #8a929e;
-          margin-bottom: 36px;
-          line-height: 1.5;
-        }
-
-        .login-error {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 12px 14px;
-          background: #fef2f2;
-          border: 1px solid #fde8e8;
-          border-radius: 8px;
-          color: #c0392b;
-          font-size: 13px;
-          margin-bottom: 20px;
-        }
-
-        .login-form {
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-        }
-
-        .lf-group {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-        }
-
-        .lf-label {
-          font-size: 12px;
-          font-weight: 600;
-          color: #1e3a8a;
-          letter-spacing: 0.02em;
-        }
-
-        .lf-input-wrap {
-          position: relative;
-        }
-
-        .lf-icon {
-          position: absolute;
-          left: 13px;
-          top: 50%;
-          transform: translateY(-50%);
-          color: #b0b8c4;
-          pointer-events: none;
-        }
-
-        .lf-input {
-          width: 100%;
-          padding: 11px 13px 11px 38px;
-          font-size: 14px;
-          font-family: 'DM Sans', sans-serif;
-          color: #1e3a8a;
-          background: #f7f8fa;
-          border: 1.5px solid #e8eaee;
-          border-radius: 8px;
-          outline: none;
-          transition: border-color 0.15s, background 0.15s;
-        }
-
-        .lf-input::placeholder { color: #b0b8c4; }
-
-        .lf-input:focus {
-          background: #fff;
-          border-color: #1e3a8a;
-        }
-
-        .lf-eye {
-          position: absolute;
-          right: 12px;
-          top: 50%;
-          transform: translateY(-50%);
-          background: none;
-          border: none;
-          color: #b0b8c4;
-          cursor: pointer;
-          padding: 2px;
-          display: flex;
-          align-items: center;
-        }
-
-        .lf-eye:hover { color: #2563eb; }
-
-        .lf-submit {
-          margin-top: 8px;
-          width: 100%;
-          padding: 12px 16px;
-          background: #1e3a8a;
-          color: #fff;
-          border: none;
-          border-radius: 8px;
-          font-size: 14px;
-          font-weight: 600;
-          font-family: 'DM Sans', sans-serif;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          letter-spacing: -0.01em;
-          transition: background 0.15s;
-        }
-
-        .lf-submit:hover:not(:disabled) { background: #1d4ed8; }
-        .lf-submit:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        .lf-spinner {
-          width: 14px;
-          height: 14px;
-          border: 2px solid rgba(255,255,255,0.3);
-          border-top-color: #fff;
-          border-radius: 50%;
-          animation: lf-spin 0.6s linear infinite;
-        }
-        @keyframes lf-spin { to { transform: rotate(360deg); } }
-
-        .login-footer {
-          margin-top: 24px;
-          text-align: center;
-          font-size: 13px;
-          color: #8a929e;
-        }
-
-        .login-footer a {
-          color: #1e3a8a;
-          font-weight: 600;
-          text-decoration: none;
-        }
-        .login-footer a:hover { text-decoration: underline; }
-
-        .login-secure {
-          margin-top: 32px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 6px;
-          font-size: 11px;
-          color: #c4c9d4;
-        }
-
-        @media (max-width: 900px) {
-          .login-root { grid-template-columns: 1fr; }
-          .login-left { display: none; }
-          .login-right { padding: 40px 24px; }
-        }
+        .lg-trust-item { display:flex; flex-direction:column; align-items:center; gap:4px; }
+        .lg-trust-icon { font-size:20px; }
+        .lg-trust-label { font-size:10px; font-weight:600; color:#94a3b8; letter-spacing:0.02em; }
       `}</style>
 
-      <div className="login-root">
-        {/* Left decorative panel */}
-        <div className="login-left">
-          <div className="login-left-brand">
-            <div className="login-left-logo">
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M3 22V10L12 3L21 10V22H15V16H9V22H3Z" fill="#1e3a8a"/>
+      <div className="lg">
+        <div className="lg-top">
+          <div className="lg-brand">
+            <div className="lg-brand-icon">
+              <svg viewBox="0 0 24 24" fill="none" width={18} height={18}>
+                <path d="M3 22V10L12 3L21 10V22H15V16H9V22H3Z" fill="#fff"/>
               </svg>
             </div>
-            <span className="login-left-name">eGov Portal</span>
+            <span className="lg-brand-name">eGov Portal</span>
           </div>
-
-          <div className="login-left-content">
-            <div className="login-left-tag">
-              <span>🇲🇰</span>
-              Republika e Maqedonisë së Veriut
-            </div>
-            <h2 className="login-left-title">
-              Shërbime<br/>
-              qeveritare<br/>
-              <em>online.</em>
-            </h2>
-            <p className="login-left-desc">
-              Aksesoni gjitha shërbimet administrative nga një vend — me siguri, shpejtësi dhe transparencë.
-            </p>
-          </div>
-
-          <div className="login-left-stats">
-            <div className="login-stat-item">
-              <div className="login-stat-num">24/7</div>
-              <div className="login-stat-label">Shërbim i vazhdueshëm</div>
-            </div>
-            <div className="login-stat-item">
-              <div className="login-stat-num">SSL</div>
-              <div className="login-stat-label">Lidhje e enkriptuar</div>
-            </div>
-            <div className="login-stat-item">
-              <div className="login-stat-num">100%</div>
-              <div className="login-stat-label">Qeveritar zyrtar</div>
-            </div>
-          </div>
+          <LanguageSwitcher />
         </div>
 
-        {/* Right form panel */}
-        <div className="login-right">
-          <div className="login-right-inner">
-            <div className="login-right-top">
-              <LanguageSwitcher />
+        <div className="lg-hero">
+          <div className="lg-hero-flag">🇲🇰 Republika e Maqedonisë së Veriut</div>
+          <h1 className="lg-hero-title">Mirë se<br/>erdhët</h1>
+          <p className="lg-hero-sub">Kyçuni në llogarinë tuaj qeveritare</p>
+        </div>
+
+        <div className="lg-card">
+          {error && (
+            <div className="lg-error">
+              <span>⚠</span><span>{error}</span>
             </div>
-
-            <h1 className="login-heading">Mirë se erdhët</h1>
-            <p className="login-subheading">Kyçuni në llogarinë tuaj qeveritare</p>
-
-            {error && (
-              <div className="login-error">
-                <AlertCircle size={15} />
-                <span>{error}</span>
+          )}
+          <form className="lg-form" onSubmit={handleSubmit}>
+            <div className="lg-group">
+              <label className="lg-label">Email</label>
+              <div className="lg-input-wrap">
+                <input
+                  type="email" className="lg-input"
+                  placeholder="emri@shembull.mk"
+                  value={form.email}
+                  onChange={e => setForm({ ...form, email: e.target.value })}
+                  required autoComplete="email"
+                />
               </div>
-            )}
-
-            <form className="login-form" onSubmit={handleSubmit}>
-              <div className="lf-group">
-                <label className="lf-label">Email</label>
-                <div className="lf-input-wrap">
-                  <Mail size={15} className="lf-icon" />
-                  <input
-                    type="email"
-                    className="lf-input"
-                    placeholder="emri@shembull.mk"
-                    value={form.email}
-                    onChange={e => setForm({ ...form, email: e.target.value })}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="lf-group">
-                <label className="lf-label">Fjalëkalim</label>
-                <div className="lf-input-wrap">
-                  <Lock size={15} className="lf-icon" />
-                  <input
-                    type={showPass ? 'text' : 'password'}
-                    className="lf-input"
-                    placeholder="••••••••"
-                    value={form.password}
-                    onChange={e => setForm({ ...form, password: e.target.value })}
-                    required
-                  />
-                  <button type="button" className="lf-eye" onClick={() => setShowPass(!showPass)}>
-                    {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
-                  </button>
-                </div>
-              </div>
-
-              <button type="submit" className="lf-submit" disabled={loading || !isLoaded}>
-                {loading ? (
-                  <><div className="lf-spinner" /> Duke u kyçur...</>
-                ) : (
-                  <>Kyçu <ArrowRight size={15} /></>
-                )}
-              </button>
-            </form>
-
-            <p className="login-footer">
-              Nuk keni llogari? <Link to="/register">Regjistrohuni</Link>
-            </p>
-
-            <div className="login-secure">
-              <Lock size={11} />
-              <span>Lidhje e sigurt me enkriptim 256-bit</span>
             </div>
+            <div className="lg-group">
+              <label className="lg-label">Fjalëkalim</label>
+              <div className="lg-input-wrap">
+                <input
+                  type={showPass ? 'text' : 'password'}
+                  className="lg-input lg-input-pr"
+                  placeholder="••••••••"
+                  value={form.password}
+                  onChange={e => setForm({ ...form, password: e.target.value })}
+                  required autoComplete="current-password"
+                />
+                <button type="button" className="lg-eye" onClick={() => setShowPass(!showPass)}>
+                  {showPass ? '🙈' : '👁'}
+                </button>
+              </div>
+            </div>
+            <button type="submit" className="lg-submit" disabled={loading || !isLoaded}>
+              {loading ? <><div className="lg-spinner"/>Duke u kyçur...</> : 'Kyçu →'}
+            </button>
+          </form>
+
+          <div className="lg-divider">
+            <div className="lg-divider-line"/>
+            <span className="lg-divider-text">ose</span>
+            <div className="lg-divider-line"/>
+          </div>
+
+          <p className="lg-footer">
+            Nuk keni llogari? <Link to="/register">Regjistrohuni falas</Link>
+          </p>
+        </div>
+
+        <div className="lg-trust">
+          <div className="lg-trust-item">
+            <span className="lg-trust-icon">🔒</span>
+            <span className="lg-trust-label">SSL 256-bit</span>
+          </div>
+          <div className="lg-trust-item">
+            <span className="lg-trust-icon">🏛️</span>
+            <span className="lg-trust-label">Zyrtar</span>
+          </div>
+          <div className="lg-trust-item">
+            <span className="lg-trust-icon">⚡</span>
+            <span className="lg-trust-label">24/7</span>
           </div>
         </div>
       </div>

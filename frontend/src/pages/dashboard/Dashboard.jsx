@@ -1,1240 +1,318 @@
-import React, { useState, useEffect } from 'react'
-import { useAuth } from '../../context/AuthContext'
-import { useSocket } from '../../context/SocketContext'
-import API from '../../api/axios'
-import LanguageSwitcher from '../../components/LanguageSwitcher'
+import { useState, useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useUser, useClerk } from '@clerk/clerk-react'
 import { useTranslation } from 'react-i18next'
-import {
-  LayoutDashboard, Calendar, AlertTriangle,
-  CreditCard, User, LogOut, CheckCircle,
-  XCircle, Plus, ChevronRight, Check, X,
-  Clock, Mail, Hash, Shield, Eye, EyeOff,
-  Lock, KeyRound, BadgeCheck, AlertCircle,
-  Trash2
-} from 'lucide-react'
+import axios from 'axios'
 
-const SERVICES = {
-  MVR:    ['Pasaportë','Letërnjoftim (ID)','Licencë drejtimi','Regjistrim automjeti','Leje qëndrimi'],
-  Komuna: ['Certifikatë lindjeje','Certifikatë martese','Regjistrim adrese','Vërtetim vendbanimi','Leje ndërtimi'],
-}
+const API = import.meta.env.VITE_API_URL
 
-const getWorkDays = () => {
-  const days = []
-  let d = new Date()
-  d.setDate(d.getDate() + 1)
-  while (days.length < 10) {
-    if (d.getDay() !== 0 && d.getDay() !== 6) days.push(new Date(d))
-    d.setDate(d.getDate() + 1)
-  }
-  return days
-}
+const ICONS = { MVR:'🪪', Komuna:'🏛️', Gjykata:'⚖️', Spitali:'🏥', Taksave:'📋', Arsimi:'🎓', default:'📄' }
+const getIcon = i => ICONS[i] || ICONS.default
+const statusLabel = { pending:'Në pritje', approved:'Aprovuar', cancelled:'Anuluar', completed:'Kompletuar' }
+const statusClass = { pending:'badge-pend', approved:'badge-appr', cancelled:'badge-canc', completed:'badge-comp' }
 
-const TIME_SLOTS = ['08:30','09:00','09:30','10:00','10:30','11:00','12:00','13:00','13:30','14:00','14:30','15:00']
+export default function Dashboard() {
+  const { user } = useUser()
+  const navigate = useNavigate()
+  const { t } = useTranslation()
+  const [appointments, setAppointments] = useState([])
+  const [loading, setLoading] = useState(true)
 
-const Dashboard = () => {
-  const { user, logout }        = useAuth()
-  const { t }                   = useTranslation()
-  const { liveNotif }           = useSocket()
+  const firstName = user?.firstName || 'Qytetar'
+  const initials = (user?.firstName?.[0] || '') + (user?.lastName?.[0] || '')
 
-  const [activeTab, setActiveTab]         = useState('overview')
-  const [appointments, setAppointments]   = useState([])
-  const [fines, setFines]                 = useState([])
-  const [loading, setLoading]             = useState(true)
-  const [showApptModal, setShowApptModal] = useState(false)
-  const [showPayModal, setShowPayModal]   = useState(null)
-  const [toast, setToast]                 = useState(null)
-
-  // Appointment wizard
-  const [step, setStep]                       = useState(1)
-  const [apptInstitution, setApptInstitution] = useState('')
-  const [apptService, setApptService]         = useState('')
-  const [apptDate, setApptDate]               = useState(null)
-  const [apptTime, setApptTime]               = useState('')
-  const [payForm, setPayForm] = useState({ card_number:'', card_holder:'', expiry:'', cvv:'' })
-
-  // Password change state
-  const [pwForm, setPwForm]       = useState({ current: '', next: '', confirm: '' })
-  const [pwShow, setPwShow]       = useState({ current: false, next: false, confirm: false })
-  const [pwLoading, setPwLoading] = useState(false)
-  const [pwError, setPwError]     = useState('')
-  const [pwSuccess, setPwSuccess] = useState(false)
-
-  // AppointmentsPage state
-  const [selectedToCancel, setSelectedToCancel] = useState(null)
-  const [selectedToReschedule, setSelectedToReschedule] = useState(null)
-  const [rescheduleForm, setRescheduleForm] = useState({ new_date: '', new_time: '' })
-
-  const workDays = getWorkDays()
-
-  useEffect(() => { fetchAll() }, [])
-  useEffect(() => { if (liveNotif) showToast(liveNotif.message, liveNotif.type) }, [liveNotif])
-
-  const fetchAll = async () => {
-    try {
-      const [a, f] = await Promise.all([API.get('/appointments/my'), API.get('/fines/my')])
-      setAppointments(a.data.data || [])
-      setFines(f.data.data || [])
-    } catch (e) { console.error(e) }
-    finally { setLoading(false) }
-  }
-
-  const showToast = (msg, type = 'success') => {
-    setToast({ msg, type })
-    setTimeout(() => setToast(null), 3500)
-  }
-
-  const resetForm = () => { setStep(1); setApptInstitution(''); setApptService(''); setApptDate(null); setApptTime('') }
-
-  const bookAppointment = async () => {
-    try {
-      const dt = new Date(apptDate)
-      const [h, m] = apptTime.split(':')
-      dt.setHours(+h, +m, 0, 0)
-      await API.post('/appointments', { institution: apptInstitution, reason: apptService, appointment_date: dt.toISOString() })
-      setShowApptModal(false); resetForm(); fetchAll()
-      showToast(t('appt_success'))
-    } catch (e) { showToast(e.response?.data?.message || t('appt_error'), 'error') }
-  }
-
-  const payFine = async () => {
-    try {
-      await API.post('/payments/pay', { fine_id: showPayModal, ...payForm })
-      setShowPayModal(null)
-      setPayForm({ card_number:'', card_holder:'', expiry:'', cvv:'' })
-      fetchAll()
-      showToast(t('pay_success'))
-    } catch (e) { showToast(e.response?.data?.message || t('pay_failed'), 'error') }
-  }
-
-  // ✅ PASSWORD CHANGE
-  const changePassword = async () => {
-    setPwError('')
-    setPwSuccess(false)
-
-    if (!pwForm.current || !pwForm.next || !pwForm.confirm) {
-      return setPwError(t('fill_required'))
-    }
-    if (pwForm.next.length < 8) {
-      return setPwError(t('password_too_short'))
-    }
-    if (pwForm.next !== pwForm.confirm) {
-      return setPwError(t('password_mismatch'))
-    }
-
-    setPwLoading(true)
-    try {
-      const res = await API.post('/auth/change-password', {
-        currentPassword: pwForm.current,
-        newPassword:     pwForm.next,
-      })
-
-      if (res.data?.success) {
-        setPwSuccess(true)
-        setPwForm({ current: '', next: '', confirm: '' })
-        showToast(t('password_success'))
-        setTimeout(() => setPwSuccess(false), 4000)
-      } else {
-        setPwError(res.data?.message || 'Gabim i panjohur')
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const headers = window.__authToken ? { Authorization:`Bearer ${window.__authToken}` } : {}
+        const res = await axios.get(`${API}/api/appointments/my`, { headers })
+        setAppointments(res.data?.data || [])
+      } catch {
+        setAppointments([])
+      } finally {
+        setLoading(false)
       }
-    } catch (err) {
-      const msg = 
-        err.response?.data?.message || 
-        err.message || 
-        'Gabim gjatë ndryshimit të fjalëkalimit'
-      setPwError(msg)
-    } finally {
-      setPwLoading(false)
     }
+    load()
+  }, [])
+
+  const stats = {
+    total: appointments.length,
+    active: appointments.filter(a => ['pending','approved'].includes(a.status)).length,
+    done: appointments.filter(a => a.status === 'completed').length,
   }
 
-  // ✅ CANCEL APPOINTMENT
-  const handleCancelAppointment = async (appointmentId) => {
-    try {
-      await API.delete(`/appointments/${appointmentId}`)
-      setAppointments(appointments.filter(a => a.id !== appointmentId))
-      setSelectedToCancel(null)
-      showToast('Termini u anulua me sukses')
-    } catch (err) {
-      console.error('Error canceling appointment:', err)
-      showToast(err.response?.data?.message || 'Gabim gjatë anulimit të termini', 'error')
-    }
-  }
+  const recent = appointments.slice(0, 3)
 
-  // ✅ RESCHEDULE APPOINTMENT
-  const handleRescheduleAppointment = async () => {
-    if (!rescheduleForm.new_date) {
-      showToast('Zgjidhni datën e re', 'error')
-      return
-    }
-
-    try {
-      const res = await API.put(`/appointments/${selectedToReschedule.id}/reschedule`, {
-        new_date: rescheduleForm.new_date,
-        new_time: rescheduleForm.new_time || null,
-      })
-
-      if (res.data?.success) {
-        setAppointments(appointments.map(a => a.id === selectedToReschedule.id ? res.data.data : a))
-        setSelectedToReschedule(null)
-        setRescheduleForm({ new_date: '', new_time: '' })
-        showToast('Termini u riprogramua me sukses')
-      }
-    } catch (err) {
-      console.error('Error rescheduling appointment:', err)
-      showToast(err.response?.data?.message || 'Gabim gjatë riprogramimit', 'error')
-    }
-  }
-
-  const canNext = () => {
-    if (step === 1) return !!apptInstitution
-    if (step === 2) return !!apptService
-    if (step === 3) return !!apptDate
-    if (step === 4) return !!apptTime
-  }
-
-  const unpaid = fines.filter(f => f.status === 'unpaid')
-  const active = appointments.filter(a => a.status !== 'cancelled')
-
-  const formatDate = (dateString) => {
-    if (!dateString) return '—'
-    const date = new Date(dateString)
-    return date.toLocaleDateString('sq-AL', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    })
-  }
-
-  const canCancel = (appointment) => {
-    if (!appointment.status) return false
-    return ['pending', 'approved'].includes(appointment.status.toLowerCase())
-  }
-
-  const canReschedule = (appointment) => {
-    if (!appointment.status) return false
-    return ['pending', 'approved'].includes(appointment.status.toLowerCase())
-  }
-
-  const getStatusColor = (status) => {
-    if (!status) return { bg: '#f5f6f8', border: '#e5e7eb', color: '#6b7280', dot: '#9ca3af' }
-
-    const st = status.toLowerCase()
-    switch (st) {
-      case 'pending':
-        return { bg: '#fffbeb', border: '#fde68a', color: '#92400e', dot: '#f59e0b' }
-      case 'approved':
-        return { bg: '#f0fdf4', border: '#bbf7d0', color: '#15803d', dot: '#22c55e' }
-      case 'cancelled':
-        return { bg: '#fef2f2', border: '#fecaca', color: '#dc2626', dot: '#ef4444' }
-      default:
-        return { bg: '#f5f6f8', border: '#e5e7eb', color: '#6b7280', dot: '#9ca3af' }
-    }
-  }
-
-  const getStatusLabel = (status) => {
-    if (!status) return 'Nuk dihet'
-
-    const st = status.toLowerCase()
-    switch (st) {
-      case 'pending':
-        return '⏳ Në pritje'
-      case 'approved':
-        return '✅ Aprovuar'
-      case 'cancelled':
-        return '❌ Anuluar'
-      default:
-        return status
-    }
-  }
-
-  const StatusBadge = ({ status }) => {
-    const cfg = {
-      pending:  { bg:'#fffbeb', border:'#fde68a', color:'#92400e', dot:'#f59e0b', label: t('pending')  },
-      approved: { bg:'#f0fdf4', border:'#bbf7d0', color:'#15803d', dot:'#22c55e', label: t('approved') },
-      rejected: { bg:'#fef2f2', border:'#fecaca', color:'#dc2626', dot:'#ef4444', label: t('rejected') },
-      unpaid:   { bg:'#fffbeb', border:'#fde68a', color:'#92400e', dot:'#f59e0b', label: t('unpaid')   },
-      paid:     { bg:'#f0fdf4', border:'#bbf7d0', color:'#15803d', dot:'#22c55e', label: t('paid')     },
-    }
-    const c = cfg[status] || { bg:'#f5f6f8', border:'#e5e7eb', color:'#6b7280', dot:'#9ca3af', label: status }
-    return (
-      <span style={{ display:'inline-flex', alignItems:'center', gap:5, background:c.bg, border:`1px solid ${c.border}`, color:c.color, borderRadius:20, padding:'3px 10px', fontSize:11, fontWeight:600, whiteSpace:'nowrap' }}>
-        <span style={{ width:5, height:5, borderRadius:'50%', background:c.dot, flexShrink:0, display:'inline-block' }}/>
-        {c.label}
-      </span>
-    )
-  }
-
-  if (loading) return (
-    <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'#f5f6f8' }}>
-      <div style={{ width:24, height:24, border:'2px solid #e5e7eb', borderTopColor:'#1e3a8a', borderRadius:'50%', animation:'spin .6s linear infinite' }}/>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-    </div>
-  )
-
-  const S = {
-    root: { display:'flex', minHeight:'100vh', background:'#f5f6f8', fontFamily:"'DM Sans', sans-serif" },
-    sidebar: { width:220, flexShrink:0, background:'#fff', borderRight:'1px solid #eaecf0', display:'flex', flexDirection:'column', height:'100vh', position:'sticky', top:0 },
-    sidebarHeader: { padding:'20px 16px 16px', borderBottom:'1px solid #eaecf0', display:'flex', alignItems:'center', gap:10 },
-    logoBox: { width:30, height:30, background:'#1e3a8a', borderRadius:7, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 },
-    brandName: { fontSize:13, fontWeight:700, color:'#1e3a8a', letterSpacing:'-0.01em' },
-    brandSub: { fontSize:10, color:'#8a929e' },
-    nav: { flex:1, padding:'10px 8px', display:'flex', flexDirection:'column', gap:2 },
-    navBtn: (isAct) => ({ display:'flex', alignItems:'center', gap:8, padding:'8px 10px', borderRadius:7, border:'none', background: isAct ? '#eff6ff' : 'transparent', cursor:'pointer', fontFamily:"'DM Sans', sans-serif", transition:'background .1s', textAlign:'left', width:'100%', position:'relative' }),
-    navIcon: (isAct) => ({ width:28, height:28, borderRadius:6, display:'flex', alignItems:'center', justifyContent:'center', background: isAct ? '#1e3a8a' : '#f5f6f8', color: isAct ? '#fff' : '#6b7280', flexShrink:0 }),
-    navLabel: (isAct) => ({ fontSize:13, fontWeight:600, color: isAct ? '#1e3a8a' : '#374151', display:'block' }),
-    navBadge: { position:'absolute', right:10, background:'#ef4444', color:'#fff', fontSize:10, fontWeight:700, padding:'1px 6px', borderRadius:10 },
-    sidebarFooter: { padding:'12px 14px', borderTop:'1px solid #eaecf0', display:'flex', alignItems:'center', gap:10 },
-    userAvatar: { width:32, height:32, borderRadius:'50%', background:'#1e3a8a', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color:'#fff', flexShrink:0 },
-    userName: { fontSize:13, fontWeight:600, color:'#1e3a8a', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', display:'block' },
-    userRole: { fontSize:10, color:'#8a929e', display:'block' },
-    logoutBtn: { background:'none', border:'none', color:'#9ca3af', cursor:'pointer', padding:4, borderRadius:6, display:'flex', alignItems:'center', transition:'color .1s' },
-    main: { flex:1, display:'flex', flexDirection:'column', minWidth:0 },
-    topbar: { background:'#fff', borderBottom:'1px solid #eaecf0', padding:'0 24px', height:52, display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 },
-    topbarLeft: { display:'flex', alignItems:'center', gap:10 },
-    topbarRight: { display:'flex', alignItems:'center', gap:10 },
-    pageTitle: { fontSize:15, fontWeight:700, color:'#1e3a8a', letterSpacing:'-0.01em' },
-    topbarAvatar: { width:32, height:32, borderRadius:'50%', background:'#1e3a8a', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color:'#fff' },
-    content: { flex:1, padding:'24px', overflowY:'auto' },
-    statsGrid: { display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12, marginBottom:20 },
-    statCard: { background:'#fff', border:'1px solid #e5e7eb', borderRadius:10, padding:16, display:'flex', alignItems:'center', gap:12 },
-    statIcon: (color) => ({ width:38, height:38, borderRadius:9, background:`${color}15`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }),
-    statNum: { fontSize:'1.4rem', fontWeight:800, color:'#1e3a8a', lineHeight:1, letterSpacing:'-0.03em' },
-    statLabel: { fontSize:11, color:'#8a929e', marginTop:3 },
-    card: { background:'#fff', border:'1px solid #e5e7eb', borderRadius:10, overflow:'hidden' },
-    cardHeader: { display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 18px', borderBottom:'1px solid #f3f4f6' },
-    cardTitle: { fontSize:13, fontWeight:700, color:'#1e3a8a' },
-    cardLink: { display:'flex', alignItems:'center', gap:3, background:'none', border:'none', color:'#1e3a8a', fontSize:11, fontWeight:600, cursor:'pointer', fontFamily:"'DM Sans', sans-serif" },
-    tableRow: { display:'flex', alignItems:'center', justifyContent:'space-between', padding:'11px 18px', borderBottom:'1px solid #f9fafb' },
-    tableRowTitle: { fontSize:13, fontWeight:600, color:'#111827' },
-    tableRowSub: { fontSize:11, color:'#9ca3af', marginTop:1 },
-    emptyMsg: { textAlign:'center', color:'#9ca3af', fontSize:13, padding:'28px 0' },
-    overlay: { position:'fixed', inset:0, background:'rgba(30,58,138,0.45)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000, padding:24 },
-    modal: { background:'#fff', border:'1px solid #e5e7eb', borderRadius:14, width:'100%', maxWidth:440, boxShadow:'0 20px 60px rgba(0,0,0,.12)', overflow:'hidden' },
-    modalHeader: { display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 20px', borderBottom:'1px solid #f3f4f6' },
-    modalTitle: { fontSize:15, fontWeight:700, color:'#1e3a8a' },
-    modalClose: { background:'#f5f6f8', border:'none', borderRadius:6, color:'#6b7280', padding:6, cursor:'pointer', display:'flex' },
-    modalBody: { padding:'18px 20px' },
-    modalFooter: { display:'flex', gap:8, padding:'14px 20px', borderTop:'1px solid #f3f4f6' },
-    wzSteps: { display:'flex', alignItems:'center', marginBottom:18, gap:0 },
-    wzDot: (state) => ({ width:24, height:24, borderRadius:'50%', border:'1.5px solid', display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:700, flexShrink:0, ...(state==='done'?{background:'#1e3a8a',borderColor:'#1e3a8a',color:'#fff'}:state==='active'?{background:'#fff',borderColor:'#1e3a8a',color:'#1e3a8a'}:{background:'#f5f6f8',borderColor:'#e5e7eb',color:'#9ca3af'}) }),
-    wzLine: (done) => ({ flex:1, height:1.5, background: done ? '#1e3a8a' : '#e5e7eb', margin:'0 4px' }),
-    instGrid: { display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 },
-    instCard: (sel) => ({ border:`1.5px solid ${sel?'#1e3a8a':'#e5e7eb'}`, borderRadius:10, padding:'16px 12px', textAlign:'center', cursor:'pointer', background: sel?'#1e3a8a':'#fff', transition:'all .1s' }),
-    instIcon: { fontSize:24, display:'block', marginBottom:8 },
-    instName: (sel) => ({ fontSize:13, fontWeight:700, color: sel?'#fff':'#111827' }),
-    instSub: (sel) => ({ fontSize:11, color: sel?'rgba(255,255,255,.5)':'#9ca3af', marginTop:2 }),
-    svcList: { border:'1px solid #e5e7eb', borderRadius:9, overflow:'hidden' },
-    svcItem: (sel) => ({ display:'flex', alignItems:'center', gap:10, padding:'11px 14px', fontSize:13, fontWeight:500, color: sel?'#1e3a8a':'#6b7280', background: sel?'#eff6ff':'#fff', cursor:'pointer', transition:'background .1s', borderBottom:'1px solid #f3f4f6' }),
-    svcRadio: (sel) => ({ width:14, height:14, borderRadius:'50%', border:`1.5px solid ${sel?'#1e3a8a':'#d1d5db'}`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }),
-    dateGrid: { display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:6 },
-    dateCard: (sel) => ({ border:`1.5px solid ${sel?'#1e3a8a':'#e5e7eb'}`, borderRadius:8, padding:'9px 4px', textAlign:'center', cursor:'pointer', background: sel?'#1e3a8a':'#fff', transition:'all .1s' }),
-    dateDW: (sel) => ({ fontSize:9, fontWeight:700, color: sel?'rgba(255,255,255,.5)':'#9ca3af', textTransform:'uppercase', letterSpacing:'.05em', marginBottom:3 }),
-    dateNum: (sel) => ({ fontSize:16, fontWeight:800, color: sel?'#fff':'#111827', lineHeight:1 }),
-    dateMo: (sel) => ({ fontSize:9, color: sel?'rgba(255,255,255,.5)':'#9ca3af', marginTop:2 }),
-    summary: { background:'#f9fafb', border:'1px solid #f3f4f6', borderRadius:8, padding:'12px 14px', marginBottom:14 },
-    sumRow: { display:'flex', justifyContent:'space-between', fontSize:12, marginBottom:6 },
-    sumKey: { color:'#9ca3af' },
-    sumVal: { color:'#111827', fontWeight:600, textAlign:'right' },
-    timeGrid: { display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:7 },
-    timeBtn: (sel) => ({ border:`1.5px solid ${sel?'#1e3a8a':'#e5e7eb'}`, borderRadius:7, padding:'8px 4px', textAlign:'center', cursor:'pointer', background: sel?'#1e3a8a':'#fff', fontSize:13, fontWeight:600, color: sel?'#fff':'#374151', fontFamily:"'DM Sans', sans-serif", transition:'all .1s' }),
-    piLabel: { fontSize:11, fontWeight:600, color:'#1e3a8a', textTransform:'uppercase', letterSpacing:'.04em', display:'block', marginBottom:5 },
-    piInput: { width:'100%', background:'#f9fafb', border:'1.5px solid #e5e7eb', color:'#111827', borderRadius:8, padding:'10px 12px', fontSize:13, outline:'none', fontFamily:"'DM Sans', sans-serif", marginBottom:12, transition:'border .15s' },
-  }
-
-  const navItems = [
-    { id:'overview',     icon:LayoutDashboard, label: t('nav_overview')      },
-    { id:'appointments', icon:Calendar,        label: t('nav_appointments')  },
-    { id:'fines',        icon:AlertTriangle,   label: t('nav_fines')         },
-    { id:'payments',     icon:CreditCard,      label: t('nav_payments')      },
-    { id:'profile',      icon:User,            label: t('nav_profile')       },
+  const actions = [
+    { icon:'📅', bg:'#eff6ff', title:'Rezervo Termin', sub:'Çdo institucion', to:'/book-appointment' },
+    { icon:'📋', bg:'#fef9c3', title:'Terminet e Mia', sub:`${stats.active} aktive`, to:'/my-appointments' },
+    { icon:'💳', bg:'#f0fdf4', title:'Gjobat', sub:'Shiko e paguaj', to:'/fines' },
+    { icon:'👤', bg:'#fdf4ff', title:'Profili Im', sub:'Të dhënat', to:'/profile' },
   ]
 
-  const pageTitles = {
-    overview:     t('page_overview'),
-    appointments: t('page_appointments'),
-    fines:        t('page_fines'),
-    payments:     t('page_payments'),
-    profile:      t('page_profile'),
-  }
-
-  const initials = `${user?.first_name?.[0] || ''}${user?.last_name?.[0] || ''}`
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'Mirëmëngjes' : hour < 18 ? 'Mirëdita' : 'Mirëmbrëma'
 
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
-        @keyframes spin    { to { transform: rotate(360deg); } }
-        @keyframes fadeIn  { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
-        * { margin:0; padding:0; box-sizing:border-box; }
-        .dash-logout-btn:hover { color: #ef4444 !important; }
-        .dash-card-link:hover  { opacity: 0.7; }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Plus Jakarta Sans',sans-serif; background:#f4f6fb; }
 
-        /* Language Switcher overrides */
-        .dash-topbar .lang-switcher-btn {
-          background: #f5f6f8 !important; border: 1px solid #e5e7eb !important;
-          color: #374151 !important; font-size: 12px !important; padding: 6px 10px !important;
-        }
-        .dash-topbar .lang-switcher-btn:hover  { background: #eaecf0 !important; border-color: #d1d5db !important; }
-        .dash-topbar .lang-switcher-btn.active { background: #eff6ff !important; border-color: #bfdbfe !important; color: #1e40af !important; }
-        .dash-topbar .lang-dropdown            { background: #fff !important; border: 1px solid #e5e7eb !important; box-shadow: 0 8px 24px rgba(0,0,0,.10) !important; }
-        .dash-topbar .lang-dropdown-item       { color: #374151 !important; }
-        .dash-topbar .lang-dropdown-item:hover { background: #f5f6f8 !important; color: #111827 !important; }
-        .dash-topbar .lang-dropdown-item.active{ background: #eff6ff !important; color: #1e40af !important; }
-        .dash-topbar .lang-country   { color: #9ca3af !important; }
-        .dash-topbar .lang-checkmark { color: #1e40af !important; }
+        .dsh { min-height:100dvh; background:#f4f6fb; padding-bottom:80px; }
 
-        /* Profile */
-        .profile-hero {
-          background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 60%, #2563eb 100%);
-          border-radius: 14px; padding: 28px 28px 0;
-          position: relative; overflow: hidden; margin-bottom: 0;
+        /* Header */
+        .dsh-header {
+          background:#fff; padding:14px 20px;
+          display:flex; align-items:center; justify-content:space-between;
+          border-bottom:1px solid #eaecf0;
+          position:sticky; top:0; z-index:50;
         }
-        .profile-hero::before {
-          content:''; position:absolute; inset:0;
-          background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-          pointer-events:none;
+        .dsh-logo { display:flex; align-items:center; gap:9px; }
+        .dsh-logo-mark {
+          width:34px; height:34px; background:#1e3a8a; border-radius:9px;
+          display:flex; align-items:center; justify-content:center; flex-shrink:0;
         }
-        .profile-avatar-wrap  { display:flex; align-items:flex-end; gap:20px; position:relative; z-index:2; }
-        .profile-avatar-circle {
-          width:72px; height:72px; border-radius:50%;
-          background:rgba(255,255,255,0.15); border:3px solid rgba(255,255,255,0.3);
+        .dsh-logo-texts {}
+        .dsh-logo-name { font-size:14px; font-weight:800; color:#1e3a8a; letter-spacing:-0.02em; display:block; }
+        .dsh-logo-sub { font-size:9px; font-weight:600; color:#94a3b8; letter-spacing:0.03em; text-transform:uppercase; display:block; margin-top:-1px; }
+        .dsh-avatar {
+          width:36px; height:36px; border-radius:50%; background:#1e3a8a;
           display:flex; align-items:center; justify-content:center;
-          font-size:24px; font-weight:800; color:#fff; letter-spacing:-0.02em;
-          flex-shrink:0; backdrop-filter:blur(4px);
-        }
-        .profile-hero-info    { padding-bottom:20px; }
-        .profile-hero-name    { font-size:18px; font-weight:700; color:#fff; letter-spacing:-0.02em; margin-bottom:4px; }
-        .profile-hero-sub     { font-size:12px; color:rgba(255,255,255,0.55); display:flex; align-items:center; gap:6px; }
-        .profile-status-pill  { display:inline-flex; align-items:center; gap:5px; background:rgba(34,197,94,0.2); border:1px solid rgba(34,197,94,0.35); color:#4ade80; border-radius:20px; padding:3px 10px; font-size:11px; font-weight:600; }
-        .profile-status-dot   { width:5px; height:5px; border-radius:50%; background:#4ade80; }
-        .profile-info-grid    { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:20px 0 0; animation:fadeIn 0.3s ease; }
-        .profile-info-card    { background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:14px 16px; display:flex; align-items:flex-start; gap:12px; }
-        .profile-info-icon    { width:32px; height:32px; border-radius:8px; background:#eff6ff; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#1e3a8a; }
-        .profile-info-label   { font-size:10px; font-weight:600; color:#9ca3af; text-transform:uppercase; letter-spacing:0.06em; display:block; margin-bottom:3px; }
-        .profile-info-value   { font-size:13px; font-weight:600; color:#111827; display:block; }
-        .profile-info-value.mono { font-family:'Courier New',monospace; letter-spacing:0.04em; color:#1e3a8a; }
-
-        /* Password section */
-        .pw-section { background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; animation:fadeIn 0.3s ease; }
-        .pw-section-header { padding:16px 20px; border-bottom:1px solid #f3f4f6; display:flex; align-items:center; gap:10px; }
-        .pw-section-icon   { width:32px; height:32px; border-radius:8px; background:#fef3c7; display:flex; align-items:center; justify-content:center; color:#d97706; }
-        .pw-section-title  { font-size:14px; font-weight:700; color:#1e3a8a; }
-        .pw-section-sub    { font-size:11px; color:#9ca3af; margin-top:1px; }
-        .pw-section-body   { padding:20px; display:flex; flex-direction:column; gap:14px; }
-        .pw-group          { display:flex; flex-direction:column; gap:5px; }
-        .pw-label          { font-size:11px; font-weight:600; color:#1e3a8a; text-transform:uppercase; letter-spacing:0.04em; }
-        .pw-input-wrap     { position:relative; }
-        .pw-input {
-          width:100%; padding:10px 38px 10px 12px;
-          font-size:14px; font-family:'DM Sans',sans-serif;
-          color:#111827; background:#f9fafb;
-          border:1.5px solid #e5e7eb; border-radius:8px; outline:none;
-          transition:border-color 0.15s,background 0.15s;
-        }
-        .pw-input:focus       { border-color:#1e3a8a; background:#fff; }
-        .pw-input::placeholder{ color:#d1d5db; }
-        .pw-eye {
-          position:absolute; right:10px; top:50%; transform:translateY(-50%);
-          background:none; border:none; color:#9ca3af; cursor:pointer;
-          display:flex; align-items:center; padding:2px;
-        }
-        .pw-eye:hover { color:#1e3a8a; }
-        .pw-error   { display:flex; align-items:center; gap:8px; padding:10px 13px; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; color:#dc2626; font-size:13px; }
-        .pw-success { display:flex; align-items:center; gap:8px; padding:10px 13px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; color:#15803d; font-size:13px; }
-        .pw-btn {
-          display:flex; align-items:center; justify-content:center; gap:7px;
-          width:100%; padding:11px 16px;
-          background:#1e3a8a; border:none; color:#fff;
-          border-radius:9px; font-size:13px; font-weight:600;
-          font-family:'DM Sans',sans-serif; cursor:pointer; transition:background 0.15s;
-        }
-        .pw-btn:hover:not(:disabled) { background:#1d4ed8; }
-        .pw-btn:disabled { opacity:0.5; cursor:not-allowed; }
-        .pw-spinner { width:13px; height:13px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.6s linear infinite; }
-        .pw-strength { display:flex; gap:4px; margin-top:4px; }
-        .pw-strength-bar { height:3px; flex:1; border-radius:3px; transition:background 0.2s; }
-
-        /* AppointmentsPage styles */
-        .appt-card {
-          background: #fff;
-          border: 1px solid #e5e7eb;
-          border-radius: 12px;
-          padding: 16px;
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-          transition: box-shadow 0.15s;
-          margin-bottom: 12px;
-        }
-        .appt-card:hover { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06); }
-        .appt-card-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          gap: 12px;
-        }
-        .appt-card-title { font-size: 15px; font-weight: 700; color: #1e3a8a; }
-        .appt-card-institution { font-size: 12px; color: #6b7280; margin-top: 3px; }
-        .appt-card-details {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 10px;
-        }
-        .appt-detail-item {
-          display: flex;
-          align-items: flex-start;
-          gap: 8px;
-        }
-        .appt-detail-icon {
-          width: 24px;
-          height: 24px;
-          border-radius: 6px;
-          background: #eff6ff;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-          color: #1e3a8a;
-        }
-        .appt-detail-label {
-          font-size: 10px;
-          font-weight: 600;
-          color: #9ca3af;
-          text-transform: uppercase;
-          letter-spacing: 0.04em;
-          display: block;
-          margin-bottom: 2px;
-        }
-        .appt-detail-value {
-          font-size: 13px;
-          font-weight: 600;
-          color: #1e3a8a;
-          display: block;
-        }
-        .appt-card-actions {
-          display: flex;
-          gap: 8px;
-          padding-top: 8px;
-          border-top: 1px solid #f3f4f6;
-        }
-        .appt-btn {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 5px;
-          padding: 8px 12px;
-          border: none;
-          border-radius: 6px;
-          font-size: 12px;
-          font-weight: 600;
-          cursor: pointer;
-          font-family: 'DM Sans', sans-serif;
-          transition: all 0.15s;
-          flex: 1;
-        }
-        .appt-btn-reschedule {
-          background: #f5f6f8;
-          color: #1e3a8a;
-          border: 1px solid #e5e7eb;
-        }
-        .appt-btn-reschedule:hover {
-          background: #eef0f4;
-          border-color: #d1d5db;
-        }
-        .appt-btn-cancel {
-          background: #fef2f2;
-          color: #dc2626;
-          border: 1px solid #fecaca;
-        }
-        .appt-btn-cancel:hover:not(:disabled) {
-          background: #fee2e2;
+          font-size:13px; font-weight:800; color:#fff; cursor:pointer;
+          -webkit-tap-highlight-color:transparent; text-transform:uppercase;
         }
 
-        @media (max-width: 768px) {
-          .profile-info-grid { grid-template-columns: 1fr; }
-          .appt-card-details { grid-template-columns: 1fr; }
-          .appt-card-actions { flex-direction: column; }
+        /* Hero */
+        .dsh-hero {
+          background:linear-gradient(135deg,#1e3a8a 0%,#1e40af 55%,#2563eb 100%);
+          padding:24px 20px 60px; position:relative; overflow:hidden;
         }
+        .dsh-hero::after {
+          content:''; position:absolute; bottom:-2px; left:0; right:0; height:40px;
+          background:#f4f6fb; border-radius:50% 50% 0 0 / 100% 100% 0 0;
+        }
+        .dsh-greeting { font-size:12px; font-weight:600; color:rgba(255,255,255,0.6); margin-bottom:3px; }
+        .dsh-name { font-size:26px; font-weight:800; color:#fff; letter-spacing:-0.03em; line-height:1.2; margin-bottom:14px; }
+        .dsh-chips { display:flex; gap:7px; flex-wrap:wrap; position:relative; z-index:2; }
+        .dsh-chip {
+          display:inline-flex; align-items:center; gap:5px;
+          background:rgba(255,255,255,0.14); border:1px solid rgba(255,255,255,0.22);
+          border-radius:20px; padding:5px 11px;
+          font-size:11px; font-weight:600; color:rgba(255,255,255,0.88);
+        }
+
+        /* Content */
+        .dsh-content { padding:0 16px; margin-top:-28px; position:relative; z-index:1; }
+
+        /* Stats */
+        .dsh-stats { display:grid; grid-template-columns:1fr 1fr 1fr; gap:9px; margin-bottom:22px; }
+        .dsh-stat {
+          background:#fff; border-radius:14px; padding:14px 10px;
+          border:1.5px solid #eaecf0; text-align:center;
+        }
+        .dsh-stat-num { font-size:22px; font-weight:800; color:#0f1728; letter-spacing:-0.03em; display:block; }
+        .dsh-stat-label { font-size:9px; font-weight:700; color:#94a3b8; margin-top:2px; display:block; text-transform:uppercase; letter-spacing:0.04em; }
+
+        /* Section */
+        .dsh-sec { font-size:11px; font-weight:700; color:#94a3b8; letter-spacing:0.06em; text-transform:uppercase; margin-bottom:10px; }
+
+        /* Actions grid */
+        .dsh-actions { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-bottom:24px; }
+        .dsh-action {
+          background:#fff; border-radius:16px; padding:16px 14px;
+          border:1.5px solid #eaecf0; cursor:pointer; text-decoration:none; display:block;
+          -webkit-tap-highlight-color:transparent;
+        }
+        .dsh-action:active { border-color:#93c5fd; box-shadow:0 0 0 3px #dbeafe; }
+        .dsh-action-icon {
+          width:38px; height:38px; border-radius:11px;
+          display:flex; align-items:center; justify-content:center;
+          font-size:17px; margin-bottom:9px;
+        }
+        .dsh-action-title { font-size:13px; font-weight:700; color:#0f1728; display:block; margin-bottom:1px; }
+        .dsh-action-sub { font-size:11px; font-weight:500; color:#94a3b8; display:block; }
+
+        /* Appointment cards */
+        .dsh-appts { display:flex; flex-direction:column; gap:9px; margin-bottom:24px; }
+        .dsh-appt {
+          background:#fff; border-radius:14px; padding:14px;
+          border:1.5px solid #eaecf0; display:flex; align-items:center; gap:12px;
+        }
+        .dsh-appt-icon {
+          width:42px; height:42px; border-radius:12px; background:#eff6ff;
+          display:flex; align-items:center; justify-content:center; font-size:19px; flex-shrink:0;
+        }
+        .dsh-appt-info { flex:1; min-width:0; }
+        .dsh-appt-inst { font-size:14px; font-weight:700; color:#0f1728; display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .dsh-appt-reason { font-size:12px; color:#6b7280; display:block; margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .dsh-appt-date { font-size:11px; font-weight:600; color:#94a3b8; display:block; margin-top:3px; }
+
+        /* Badges */
+        .dsh-badge { padding:4px 9px; border-radius:20px; font-size:11px; font-weight:700; flex-shrink:0; }
+        .badge-pend { background:#fef9c3; color:#a16207; }
+        .badge-appr { background:#dcfce7; color:#166534; }
+        .badge-canc { background:#f1f5f9; color:#94a3b8; }
+        .badge-comp { background:#eff6ff; color:#1e40af; }
+
+        /* Empty */
+        .dsh-empty {
+          background:#fff; border-radius:16px; padding:28px 16px;
+          border:1.5px dashed #e2e8f0; text-align:center;
+        }
+        .dsh-empty-icon { font-size:32px; display:block; margin-bottom:8px; }
+        .dsh-empty-title { font-size:14px; font-weight:700; color:#374151; margin-bottom:3px; }
+        .dsh-empty-sub { font-size:12px; color:#9ca3af; margin-bottom:14px; }
+        .dsh-empty-btn {
+          display:inline-flex; align-items:center; gap:5px;
+          background:#1e3a8a; color:#fff; text-decoration:none;
+          padding:9px 18px; border-radius:10px; font-size:13px; font-weight:700;
+        }
+
+        /* Spinner */
+        .dsh-spinner { display:flex; align-items:center; justify-content:center; padding:32px; }
+        .spinner { width:22px; height:22px; border:2.5px solid #e5e7eb; border-top-color:#1e3a8a; border-radius:50%; animation:dspin 0.6s linear infinite; }
+        @keyframes dspin { to { transform:rotate(360deg); } }
+
+        /* Bottom nav */
+        .dsh-nav {
+          position:fixed; bottom:0; left:0; right:0;
+          background:#fff; border-top:1px solid #eaecf0;
+          display:flex; padding:8px 0 env(safe-area-inset-bottom,0); z-index:100;
+        }
+        .dsh-nav-item {
+          flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;
+          padding:6px 0; cursor:pointer; text-decoration:none;
+          -webkit-tap-highlight-color:transparent;
+        }
+        .dsh-nav-icon { font-size:20px; }
+        .dsh-nav-label { font-size:9px; font-weight:700; color:#94a3b8; letter-spacing:0.02em; text-transform:uppercase; }
+        .dsh-nav-item.active .dsh-nav-label { color:#1e3a8a; }
+        .dsh-nav-dot { width:4px; height:4px; border-radius:50%; background:#1e3a8a; display:none; }
+        .dsh-nav-item.active .dsh-nav-dot { display:block; }
       `}</style>
 
-      <div style={S.root}>
-
-        {/* Toast */}
-        {toast && (
-          <div style={{
-            position:'fixed', top:18, right:18, zIndex:9999,
-            display:'flex', alignItems:'center', gap:8,
-            padding:'10px 15px', borderRadius:8, fontSize:13, fontWeight:500,
-            boxShadow:'0 4px 16px rgba(0,0,0,.08)', border:'1px solid',
-            fontFamily:"'DM Sans', sans-serif",
-            ...(toast.type==='error'
-              ? { background:'#fef2f2', borderColor:'#fecaca', color:'#dc2626' }
-              : { background:'#f0fdf4', borderColor:'#bbf7d0', color:'#15803d' })
-          }}>
-            {toast.type==='error' ? <XCircle size={14}/> : <CheckCircle size={14}/>}
-            {toast.msg}
-          </div>
-        )}
-
-        {/* SIDEBAR */}
-        <aside style={S.sidebar}>
-          <div style={S.sidebarHeader}>
-            <div style={S.logoBox}>
-              <svg viewBox="0 0 24 24" fill="none" width={16} height={16}><path d="M3 22V10L12 3L21 10V22H15V16H9V22H3Z" fill="#fff"/></svg>
+      <div className="dsh">
+        {/* Header */}
+        <header className="dsh-header">
+          <div className="dsh-logo">
+            <div className="dsh-logo-mark">
+              <svg viewBox="0 0 24 24" fill="none" width={18} height={18}>
+                <path d="M3 22V10L12 3L21 10V22H15V16H9V22H3Z" fill="#fff"/>
+              </svg>
             </div>
-            <div>
-              <div style={S.brandName}>{t('egov_portal')}</div>
-              <div style={S.brandSub}>{t('gov_gateway')}</div>
+            <div className="dsh-logo-texts">
+              <span className="dsh-logo-name">eGov Portal</span>
+              <span className="dsh-logo-sub">Republika e Maqedonisë SV</span>
             </div>
           </div>
-
-          <nav style={S.nav}>
-            {navItems.map(({ id, icon: Icon, label }) => {
-              const isAct = activeTab === id
-              return (
-                <button key={id} style={S.navBtn(isAct)} onClick={() => setActiveTab(id)}>
-                  <div style={S.navIcon(isAct)}><Icon size={14}/></div>
-                  <span style={S.navLabel(isAct)}>{label}</span>
-                  {id === 'fines' && unpaid.length > 0 && <span style={S.navBadge}>{unpaid.length}</span>}
-                </button>
-              )
-            })}
-          </nav>
-
-          <div style={S.sidebarFooter}>
-            <div style={S.userAvatar}>{initials}</div>
-            <div style={{ flex:1, overflow:'hidden' }}>
-              <span style={S.userName}>{user?.first_name} {user?.last_name}</span>
-              <span style={S.userRole}>{t('citizen')}</span>
-            </div>
-            <button className="dash-logout-btn" style={S.logoutBtn} onClick={logout} title={t('logout')}><LogOut size={14}/></button>
+          <div className="dsh-avatar" onClick={() => navigate('/profile')}>
+            {initials || firstName[0]}
           </div>
-        </aside>
+        </header>
 
-        {/* MAIN */}
-        <main style={S.main}>
-          <div className="dash-topbar" style={S.topbar}>
-            <div style={S.topbarLeft}>
-              <div style={S.pageTitle}>{pageTitles[activeTab]}</div>
+        {/* Hero */}
+        <div className="dsh-hero">
+          <p className="dsh-greeting">{greeting},</p>
+          <h1 className="dsh-name">{firstName} 👋</h1>
+          <div className="dsh-chips">
+            <span className="dsh-chip">✅ Llogari aktive</span>
+            {stats.active > 0 && (
+              <span className="dsh-chip">🕐 {stats.active} termin aktiv</span>
+            )}
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="dsh-content">
+
+          {/* Stats */}
+          <div className="dsh-stats">
+            <div className="dsh-stat">
+              <span className="dsh-stat-num">{stats.total}</span>
+              <span className="dsh-stat-label">Gjithsej</span>
             </div>
-            <div style={S.topbarRight}>
-              <LanguageSwitcher />
-              <div style={S.topbarAvatar}>{initials}</div>
+            <div className="dsh-stat">
+              <span className="dsh-stat-num">{stats.active}</span>
+              <span className="dsh-stat-label">Aktive</span>
+            </div>
+            <div className="dsh-stat">
+              <span className="dsh-stat-num">{stats.done}</span>
+              <span className="dsh-stat-label">Komplet.</span>
             </div>
           </div>
 
-          <div style={S.content}>
+          {/* Quick actions */}
+          <p className="dsh-sec">Veprime të shpejta</p>
+          <div className="dsh-actions">
+            {actions.map(a => (
+              <Link key={a.to} to={a.to} className="dsh-action">
+                <div className="dsh-action-icon" style={{ background: a.bg }}>{a.icon}</div>
+                <span className="dsh-action-title">{a.title}</span>
+                <span className="dsh-action-sub">{a.sub}</span>
+              </Link>
+            ))}
+          </div>
 
-            {/* ── OVERVIEW ── */}
-            {activeTab === 'overview' && (
-              <>
-                <div style={S.statsGrid}>
-                  {[
-                    { label: t('active_appointments'), val:active.length,                            icon:Calendar,       color:'#1e3a8a' },
-                    { label: t('unpaid_fines'),         val:unpaid.length,                            icon:AlertTriangle,  color:'#d97706' },
-                    { label: t('total_payments'),       val:fines.filter(f=>f.status==='paid').length, icon:CreditCard,    color:'#16a34a' },
-                  ].map(({ label, val, icon:Icon, color }) => (
-                    <div key={label} style={S.statCard}>
-                      <div style={S.statIcon(color)}><Icon size={17} color={color}/></div>
-                      <div>
-                        <div style={S.statNum}>{val}</div>
-                        <div style={S.statLabel}>{label}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
-                  {[
-                    { title: t('recent_appointments_title'), data:appointments.slice(0,4), tab:'appointments', getTitle:a=>a.institution, getSub:a=>a.reason,     getStatus:a=>a.status, empty: t('no_appointments_registered') },
-                    { title: t('recent_fines'),              data:fines.slice(0,4),        tab:'fines',        getTitle:f=>f.type,        getSub:f=>`${f.amount} MKD`, getStatus:f=>f.status, empty: t('no_fines_registered') },
-                  ].map(({ title, data, tab, getTitle, getSub, getStatus, empty }) => (
-                    <div key={title} style={S.card}>
-                      <div style={S.cardHeader}>
-                        <span style={S.cardTitle}>{title}</span>
-                        <button className="dash-card-link" style={S.cardLink} onClick={() => setActiveTab(tab)}>
-                          {t('view_all')} <ChevronRight size={12}/>
-                        </button>
-                      </div>
-                      {data.length === 0
-                        ? <div style={S.emptyMsg}>{empty}</div>
-                        : data.map(item => (
-                          <div key={item.id} style={S.tableRow}>
-                            <div>
-                              <div style={S.tableRowTitle}>{getTitle(item)}</div>
-                              <div style={S.tableRowSub}>{getSub(item)}</div>
-                            </div>
-                            <StatusBadge status={getStatus(item)}/>
-                          </div>
-                        ))}
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-
-            {/* ── APPOINTMENTS (WITH CANCEL/RESCHEDULE) ── */}
-            {activeTab === 'appointments' && (
-              <>
-                <button
-                  onClick={() => { resetForm(); setShowApptModal(true) }}
-                  style={{ display:'flex', alignItems:'center', gap:6, background:'#1e3a8a', color:'#fff', border:'none', padding:'9px 16px', borderRadius:8, fontSize:13, fontWeight:600, marginBottom:16, cursor:'pointer', fontFamily:"'DM Sans', sans-serif" }}
-                >
-                  <Plus size={14}/> {t('book_new_appointment')}
-                </button>
-                {appointments.length === 0
-                  ? <div style={S.card}><div style={S.emptyMsg}>{t('no_appointments_registered')}</div></div>
-                  : (
-                    <div>
-                      {appointments.map(appt => {
-                        const colors = getStatusColor(appt.status)
-                        return (
-                          <div key={appt.id} className="appt-card">
-                            <div className="appt-card-header">
-                              <div>
-                                <div className="appt-card-title">{appt.reason || appt.service_type || 'Termin'}</div>
-                                {appt.institution && <div className="appt-card-institution">📍 {appt.institution}</div>}
-                              </div>
-                              <div
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: 5,
-                                  padding: '4px 10px',
-                                  borderRadius: 20,
-                                  fontSize: 11,
-                                  fontWeight: 600,
-                                  border: `1px solid ${colors.border}`,
-                                  background: colors.bg,
-                                  color: colors.color,
-                                  whiteSpace: 'nowrap',
-                                }}
-                              >
-                                <span style={{ width: 5, height: 5, borderRadius: '50%', background: colors.dot }} />
-                                {getStatusLabel(appt.status)}
-                              </div>
-                            </div>
-
-                            <div className="appt-card-details">
-                              <div className="appt-detail-item">
-                                <div className="appt-detail-icon"><Calendar size={12} /></div>
-                                <div>
-                                  <span className="appt-detail-label">Data</span>
-                                  <span className="appt-detail-value">{formatDate(appt.appointment_date || appt.approved_date)}</span>
-                                </div>
-                              </div>
-
-                              <div className="appt-detail-item">
-                                <div className="appt-detail-icon"><Clock size={12} /></div>
-                                <div>
-                                  <span className="appt-detail-label">Ora</span>
-                                  <span className="appt-detail-value">
-                                    {appt.appointment_time ? appt.appointment_time : appt.approved_date
-                                      ? new Date(appt.approved_date).toLocaleTimeString('sq-AL', { hour: '2-digit', minute: '2-digit' })
-                                      : '—'}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="appt-card-actions">
-                              {canReschedule(appt) && (
-                                <button
-                                  className="appt-btn appt-btn-reschedule"
-                                  onClick={() => {
-                                    setSelectedToReschedule(appt)
-                                    setRescheduleForm({ new_date: '', new_time: '' })
-                                  }}
-                                >
-                                  📅 Riprogramo
-                                </button>
-                              )}
-                              {canCancel(appt) && (
-                                <button
-                                  className="appt-btn appt-btn-cancel"
-                                  onClick={() => setSelectedToCancel(appt)}
-                                >
-                                  <Trash2 size={12} />
-                                  Anullo
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )}
-              </>
-            )}
-
-            {/* ── FINES ── */}
-            {activeTab === 'fines' && (
-              <div style={S.card}>
-                {fines.length === 0
-                  ? <div style={S.emptyMsg}>{t('no_fines_registered')}</div>
-                  : fines.map(f => (
-                    <div key={f.id} style={S.tableRow}>
-                      <div>
-                        <div style={S.tableRowTitle}>{f.type}</div>
-                        <div style={S.tableRowSub}>{f.amount} MKD</div>
-                      </div>
-                      <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                        <StatusBadge status={f.status}/>
-                        {f.status === 'unpaid' && (
-                          <button
-                            onClick={() => setShowPayModal(f.id)}
-                            style={{ background:'#fff', border:'1px solid #e5e7eb', color:'#374151', borderRadius:6, padding:'5px 11px', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:"'DM Sans', sans-serif" }}
-                          >
-                            {t('pay')}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            )}
-
-            {/* ── PAYMENTS ── */}
-            {activeTab === 'payments' && (
-              <div style={S.card}>
-                {fines.filter(f=>f.status==='paid').length === 0
-                  ? <div style={S.emptyMsg}>{t('no_payments_registered')}</div>
-                  : fines.filter(f=>f.status==='paid').map(f => (
-                    <div key={f.id} style={S.tableRow}>
-                      <div>
-                        <div style={S.tableRowTitle}>{f.type}</div>
-                        <div style={S.tableRowSub}>{f.amount} MKD</div>
-                      </div>
-                      <StatusBadge status="paid"/>
-                    </div>
-                  ))}
-              </div>
-            )}
-
-            {/* ── PROFILE ── */}
-            {activeTab === 'profile' && (
-              <div style={{ maxWidth:560, display:'flex', flexDirection:'column', gap:16 }}>
-
-                {/* Hero */}
-                <div className="profile-hero">
-                  <div className="profile-avatar-wrap">
-                    <div className="profile-avatar-circle">{initials}</div>
-                    <div className="profile-hero-info">
-                      <div className="profile-hero-name">{user?.first_name} {user?.last_name}</div>
-                      <div className="profile-hero-sub">
-                        <span>{t('profile_registered_citizen')}</span>
-                        <span style={{ opacity:0.3 }}>·</span>
-                        <span className="profile-status-pill">
-                          <span className="profile-status-dot"/>
-                          {t('profile_active')}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="profile-info-grid">
-                    {[
-                      { icon: Mail,       label: t('email'),       value: user?.email,              mono: false },
-                      { icon: Hash,       label: t('personal_id'), value: user?.personal_id,        mono: true  },
-                      { icon: BadgeCheck, label: t('profile_role'),value: user?.role || 'user',     mono: false },
-                      { icon: Shield,     label: t('status'),      value: user?.verification_status,mono: false },
-                    ].map(({ icon: Icon, label, value, mono }) => (
-                      <div key={label} className="profile-info-card">
-                        <div className="profile-info-icon"><Icon size={14}/></div>
-                        <div>
-                          <span className="profile-info-label">{label}</span>
-                          <span className={`profile-info-value ${mono ? 'mono' : ''}`}>{value || '—'}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <div style={{ padding:'14px 0 18px', display:'flex', alignItems:'center', gap:6, position:'relative', zIndex:2 }}>
-                    <Clock size={12} color="rgba(255,255,255,0.3)"/>
-                    <span style={{ fontSize:11, color:'rgba(255,255,255,0.35)' }}>
-                      {t('profile_registered_on')}:{' '}
-                      {user?.created_at
-                        ? new Date(user.created_at).toLocaleDateString('sq-AL', { day:'2-digit', month:'long', year:'numeric' })
-                        : '—'}
+          {/* Recent appointments */}
+          <p className="dsh-sec">Terminet e fundit</p>
+          {loading ? (
+            <div className="dsh-spinner"><div className="spinner"/></div>
+          ) : recent.length === 0 ? (
+            <div className="dsh-empty">
+              <span className="dsh-empty-icon">📭</span>
+              <p className="dsh-empty-title">Nuk keni termine ende</p>
+              <p className="dsh-empty-sub">Rezervoni terminin tuaj të parë</p>
+              <Link to="/book-appointment" className="dsh-empty-btn">+ Rezervo Termin</Link>
+            </div>
+          ) : (
+            <div className="dsh-appts">
+              {recent.map(a => (
+                <div key={a.id} className="dsh-appt">
+                  <div className="dsh-appt-icon">{getIcon(a.institution)}</div>
+                  <div className="dsh-appt-info">
+                    <span className="dsh-appt-inst">{a.institution}</span>
+                    <span className="dsh-appt-reason">{a.reason}</span>
+                    <span className="dsh-appt-date">
+                      {a.appointment_date
+                        ? new Date(a.appointment_date).toLocaleDateString('sq-MK',{day:'numeric',month:'short',year:'numeric'})
+                        : 'Data pritet'}
                     </span>
                   </div>
-                </div>
-
-                {/* Password Change */}
-                <div className="pw-section">
-                  <div className="pw-section-header">
-                    <div className="pw-section-icon"><KeyRound size={15}/></div>
-                    <div>
-                      <div className="pw-section-title">{t('password_change_title')}</div>
-                      <div className="pw-section-sub">{t('password_change_subtitle')}</div>
-                    </div>
-                  </div>
-
-                  <div className="pw-section-body">
-                    {pwError && (
-                      <div className="pw-error">
-                        <AlertCircle size={13}/>
-                        <span>{pwError}</span>
-                      </div>
-                    )}
-                    {pwSuccess && (
-                      <div className="pw-success">
-                        <CheckCircle size={13}/>
-                        <span>{t('password_success')}</span>
-                      </div>
-                    )}
-
-                    {/* Current */}
-                    <div className="pw-group">
-                      <label className="pw-label">{t('password_current')}</label>
-                      <div className="pw-input-wrap">
-                        <input
-                          type={pwShow.current ? 'text' : 'password'}
-                          className="pw-input"
-                          placeholder={t('password_current_placeholder')}
-                          value={pwForm.current}
-                          onChange={e => { setPwError(''); setPwForm(p => ({...p, current: e.target.value})) }}
-                        />
-                        <button type="button" className="pw-eye" onClick={() => setPwShow(s => ({...s, current: !s.current}))}>
-                          {pwShow.current ? <EyeOff size={14}/> : <Eye size={14}/>}
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* New */}
-                    <div className="pw-group">
-                      <label className="pw-label">{t('password_new')}</label>
-                      <div className="pw-input-wrap">
-                        <input
-                          type={pwShow.next ? 'text' : 'password'}
-                          className="pw-input"
-                          placeholder={t('password_new_placeholder')}
-                          value={pwForm.next}
-                          onChange={e => { setPwError(''); setPwForm(p => ({...p, next: e.target.value})) }}
-                        />
-                        <button type="button" className="pw-eye" onClick={() => setPwShow(s => ({...s, next: !s.next}))}>
-                          {pwShow.next ? <EyeOff size={14}/> : <Eye size={14}/>}
-                        </button>
-                      </div>
-                      {pwForm.next && (
-                        <div className="pw-strength">
-                          {[1,2,3,4].map(i => {
-                            const len      = pwForm.next.length
-                            const hasUpper = /[A-Z]/.test(pwForm.next)
-                            const hasNum   = /[0-9]/.test(pwForm.next)
-                            const hasSpec  = /[^A-Za-z0-9]/.test(pwForm.next)
-                            const score    = (len >= 8 ? 1 : 0) + (hasUpper ? 1 : 0) + (hasNum ? 1 : 0) + (hasSpec ? 1 : 0)
-                            const color    = score >= i
-                              ? score <= 1 ? '#ef4444' : score === 2 ? '#f59e0b' : score === 3 ? '#3b82f6' : '#22c55e'
-                              : '#e5e7eb'
-                            return <div key={i} className="pw-strength-bar" style={{ background: color }}/>
-                          })}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Confirm */}
-                    <div className="pw-group">
-                      <label className="pw-label">{t('password_confirm_new')}</label>
-                      <div className="pw-input-wrap">
-                        <input
-                          type={pwShow.confirm ? 'text' : 'password'}
-                          className="pw-input"
-                          placeholder={t('password_confirm_placeholder')}
-                          value={pwForm.confirm}
-                          onChange={e => { setPwError(''); setPwForm(p => ({...p, confirm: e.target.value})) }}
-                          style={pwForm.confirm && pwForm.confirm !== pwForm.next ? { borderColor:'#fca5a5' } : {}}
-                        />
-                        <button type="button" className="pw-eye" onClick={() => setPwShow(s => ({...s, confirm: !s.confirm}))}>
-                          {pwShow.confirm ? <EyeOff size={14}/> : <Eye size={14}/>}
-                        </button>
-                      </div>
-                      {pwForm.confirm && pwForm.confirm !== pwForm.next && (
-                        <span style={{ fontSize:11, color:'#ef4444', marginTop:3 }}>{t('password_mismatch')}</span>
-                      )}
-                    </div>
-
-                    <button
-                      className="pw-btn"
-                      onClick={changePassword}
-                      disabled={pwLoading || !pwForm.current || !pwForm.next || !pwForm.confirm}
-                    >
-                      {pwLoading
-                        ? <><div className="pw-spinner"/> {t('password_changing')}</>
-                        : <><Lock size={13}/> {t('password_change_btn')}</>
-                      }
-                    </button>
-                  </div>
-                </div>
-
-              </div>
-            )}
-          </div>
-        </main>
-
-        {/* ── APPOINTMENT BOOKING MODAL ── */}
-        {showApptModal && (
-          <div style={S.overlay} onClick={() => setShowApptModal(false)}>
-            <div style={S.modal} onClick={e => e.stopPropagation()}>
-              <div style={S.modalHeader}>
-                <div>
-                  <div style={S.modalTitle}>{t('appt_wizard_title')}</div>
-                  <div style={{ fontSize:11, color:'#8a929e', marginTop:2 }}>{t('step')} {step} / 4</div>
-                </div>
-                <button style={S.modalClose} onClick={() => setShowApptModal(false)}><X size={15}/></button>
-              </div>
-              <div style={S.modalBody}>
-                <div style={S.wzSteps}>
-                  {[1,2,3,4].map((n,i) => (
-                    <React.Fragment key={n}>
-                      <div style={S.wzDot(step > n ? 'done' : step === n ? 'active' : 'pending')}>
-                        {step > n ? <Check size={10}/> : n}
-                      </div>
-                      {i < 3 && <div style={S.wzLine(step > n)}/>}
-                    </React.Fragment>
-                  ))}
-                </div>
-                {step === 1 && (
-                  <div style={S.instGrid}>
-                    {[
-                      { id:'MVR',    emoji:'🏛', name: t('appt_institution_mvr'),    sub: t('appt_institution_mvr_sub')    },
-                      { id:'Komuna', emoji:'🏢', name: t('appt_institution_komuna'), sub: t('appt_institution_komuna_sub') },
-                    ].map(inst => {
-                      const sel = apptInstitution === inst.id
-                      return (
-                        <div key={inst.id} style={S.instCard(sel)} onClick={() => { setApptInstitution(inst.id); setApptService('') }}>
-                          <span style={S.instIcon}>{inst.emoji}</span>
-                          <div style={S.instName(sel)}>{inst.name}</div>
-                          <div style={S.instSub(sel)}>{inst.sub}</div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-                {step === 2 && (
-                  <div style={S.svcList}>
-                    {SERVICES[apptInstitution].map(svc => {
-                      const sel = apptService === svc
-                      return (
-                        <div key={svc} style={S.svcItem(sel)} onClick={() => setApptService(svc)}>
-                          <div style={S.svcRadio(sel)}>
-                            {sel && <div style={{ width:6, height:6, borderRadius:'50%', background:'#1e3a8a' }}/>}
-                          </div>
-                          {svc}
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-                {step === 3 && (
-                  <div style={S.dateGrid}>
-                    {workDays.map((d, i) => {
-                      const sel = apptDate && d.toDateString() === apptDate.toDateString()
-                      return (
-                        <div key={i} style={S.dateCard(sel)} onClick={() => setApptDate(d)}>
-                          <div style={S.dateDW(sel)}>{d.toLocaleDateString('sq-AL',{weekday:'short'})}</div>
-                          <div style={S.dateNum(sel)}>{d.getDate()}</div>
-                          <div style={S.dateMo(sel)}>{d.toLocaleDateString('sq-AL',{month:'short'})}</div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-                {step === 4 && (
-                  <>
-                    <div style={S.summary}>
-                      <div style={{ fontSize:10, fontWeight:700, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'.07em', marginBottom:8 }}>{t('appt_summary')}</div>
-                      {[
-                        [t('appt_institution_label'), apptInstitution],
-                        [t('appt_service_label'),     apptService],
-                        [t('appt_date_label'),        apptDate?.toLocaleDateString('sq-AL',{weekday:'long',day:'2-digit',month:'long'})],
-                      ].map(([k,v]) => (
-                        <div key={k} style={S.sumRow}>
-                          <span style={S.sumKey}>{k}</span>
-                          <span style={S.sumVal}>{v}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <div style={S.timeGrid}>
-                      {TIME_SLOTS.map(ts => (
-                        <button key={ts} style={S.timeBtn(apptTime === ts)} onClick={() => setApptTime(ts)}>{ts}</button>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-              <div style={S.modalFooter}>
-                <button
-                  style={{ flex:1, padding:10, background:'#fff', border:'1px solid #e5e7eb', color:'#6b7280', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:"'DM Sans', sans-serif" }}
-                  onClick={() => step > 1 ? setStep(s=>s-1) : setShowApptModal(false)}
-                >
-                  {step > 1 ? `← ${t('back')}` : t('cancel')}
-                </button>
-                {step < 4 ? (
-                  <button
-                    style={{ flex:2, padding:10, background: canNext()?'#1e3a8a':'#f5f6f8', border:'none', color: canNext()?'#fff':'#9ca3af', borderRadius:8, fontSize:13, fontWeight:600, cursor: canNext()?'pointer':'not-allowed', fontFamily:"'DM Sans', sans-serif" }}
-                    onClick={() => canNext() && setStep(s=>s+1)}
-                  >
-                    {t('next')} →
-                  </button>
-                ) : (
-                  <button
-                    style={{ flex:2, padding:10, background: canNext()?'#15803d':'#f5f6f8', border:'none', color: canNext()?'#fff':'#9ca3af', borderRadius:8, fontSize:13, fontWeight:600, cursor: canNext()?'pointer':'not-allowed', fontFamily:"'DM Sans', sans-serif" }}
-                    onClick={() => canNext() && bookAppointment()}
-                  >
-                    {t('appt_confirm')}
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── CANCEL APPOINTMENT MODAL ── */}
-        {selectedToCancel && (
-          <div style={S.overlay} onClick={() => setSelectedToCancel(null)}>
-            <div style={S.modal} onClick={(e) => e.stopPropagation()}>
-              <div style={S.modalHeader}>
-                <div style={S.modalTitle}>Anulo termin?</div>
-                <button style={S.modalClose} onClick={() => setSelectedToCancel(null)}><X size={15}/></button>
-              </div>
-              <div style={S.modalBody}>
-                <div style={{ background:'#f9fafb', border:'1px solid #f3f4f6', borderRadius:8, padding:'12px 14px', display:'flex', flexDirection:'column', gap:'8px', marginBottom:14 }}>
-                  <span style={{ fontSize:13, color:'#1e3a8a', fontWeight:500 }}>
-                    <strong>Shërbimi:</strong> {selectedToCancel.reason || selectedToCancel.service_type}
+                  <span className={`dsh-badge ${statusClass[a.status]||'badge-pend'}`}>
+                    {statusLabel[a.status]||a.status}
                   </span>
-                  <span style={{ fontSize:13, color:'#1e3a8a', fontWeight:500 }}>
-                    <strong>Data:</strong> {formatDate(selectedToCancel.appointment_date || selectedToCancel.approved_date)}
-                  </span>
-                  {selectedToCancel.institution && (
-                    <span style={{ fontSize:13, color:'#1e3a8a', fontWeight:500 }}>
-                      <strong>Institucioni:</strong> {selectedToCancel.institution}
-                    </span>
-                  )}
                 </div>
-                <p style={{ fontSize:'13px', color:'#6b7280', lineHeight:'1.6', marginBottom:0 }}>
-                  Nëse anuloni këtë termin, do t'ju duhet të rezervoni një termin të ri më vonë.
-                </p>
-              </div>
-              <div style={S.modalFooter}>
-                <button
-                  style={{ flex:1, padding:10, background:'#fff', border:'1px solid #e5e7eb', color:'#6b7280', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:"'DM Sans', sans-serif" }}
-                  onClick={() => setSelectedToCancel(null)}
+              ))}
+              {appointments.length > 3 && (
+                <Link to="/my-appointments"
+                  style={{ textAlign:'center', fontSize:13, fontWeight:700, color:'#1e3a8a', textDecoration:'none', display:'block', padding:'6px 0' }}
                 >
-                  Provo përsëri
-                </button>
-                <button
-                  style={{ flex:2, padding:10, background:'#dc2626', border:'none', color:'#fff', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:"'DM Sans', sans-serif" }}
-                  onClick={() => handleCancelAppointment(selectedToCancel.id)}
-                >
-                  Po, anullo
-                </button>
-              </div>
+                  Shiko të gjitha ({appointments.length}) →
+                </Link>
+              )}
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
-        {/* ── RESCHEDULE APPOINTMENT MODAL ── */}
-        {selectedToReschedule && (
-          <div style={S.overlay} onClick={() => setSelectedToReschedule(null)}>
-            <div style={S.modal} onClick={(e) => e.stopPropagation()}>
-              <div style={S.modalHeader}>
-                <div style={S.modalTitle}>Riprogramo termin</div>
-                <button style={S.modalClose} onClick={() => setSelectedToReschedule(null)}><X size={15}/></button>
-              </div>
-              <div style={S.modalBody}>
-                <div style={{ background:'#f9fafb', border:'1px solid #f3f4f6', borderRadius:8, padding:'12px 14px', display:'flex', flexDirection:'column', gap:'8px', marginBottom:16 }}>
-                  <span style={{ fontSize:13, color:'#1e3a8a', fontWeight:500 }}>
-                    <strong>Shërbimi:</strong> {selectedToReschedule.reason || selectedToReschedule.service_type}
-                  </span>
-                  <span style={{ fontSize:13, color:'#1e3a8a', fontWeight:500 }}>
-                    <strong>Data aktuale:</strong> {formatDate(selectedToReschedule.appointment_date || selectedToReschedule.approved_date)}
-                  </span>
-                  {selectedToReschedule.institution && (
-                    <span style={{ fontSize:13, color:'#1e3a8a', fontWeight:500 }}>
-                      <strong>Institucioni:</strong> {selectedToReschedule.institution}
-                    </span>
-                  )}
-                </div>
-
-                <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
-                  <div>
-                    <label style={S.piLabel}>Data e re</label>
-                    <input
-                      type="date"
-                      style={S.piInput}
-                      value={rescheduleForm.new_date}
-                      onChange={(e) => setRescheduleForm({ ...rescheduleForm, new_date: e.target.value })}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={S.piLabel}>Ora (opsionale)</label>
-                    <input
-                      type="time"
-                      style={S.piInput}
-                      value={rescheduleForm.new_time}
-                      onChange={(e) => setRescheduleForm({ ...rescheduleForm, new_time: e.target.value })}
-                    />
-                  </div>
-                </div>
-              </div>
-              <div style={S.modalFooter}>
-                <button
-                  style={{ flex:1, padding:10, background:'#fff', border:'1px solid #e5e7eb', color:'#6b7280', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:"'DM Sans', sans-serif" }}
-                  onClick={() => setSelectedToReschedule(null)}
-                >
-                  Anulo
-                </button>
-                <button
-                  style={{ flex:2, padding:10, background:'#1e3a8a', border:'none', color:'#fff', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:"'DM Sans', sans-serif" }}
-                  onClick={handleRescheduleAppointment}
-                >
-                  Riprogramo
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── PAY MODAL ── */}
-        {showPayModal && (
-          <div style={S.overlay} onClick={() => setShowPayModal(null)}>
-            <div style={S.modal} onClick={e => e.stopPropagation()}>
-              <div style={S.modalHeader}>
-                <div style={S.modalTitle}>{t('pay_fine_title')}</div>
-                <button style={S.modalClose} onClick={() => setShowPayModal(null)}><X size={15}/></button>
-              </div>
-              <div style={S.modalBody}>
-                <div style={{ background:'#f9fafb', border:'1px solid #f3f4f6', borderRadius:8, padding:14, textAlign:'center', marginBottom:16 }}>
-                  <div style={{ fontSize:11, color:'#9ca3af', marginBottom:4 }}>{t('pay_total')}</div>
-                  <div style={{ fontSize:'1.5rem', fontWeight:800, color:'#1e3a8a', letterSpacing:'-0.03em' }}>
-                    {fines.find(f=>f.id===showPayModal)?.amount} MKD
-                  </div>
-                </div>
-                <label style={S.piLabel}>{t('card_number')}</label>
-                <input style={S.piInput} value={payForm.card_number} placeholder="1234 5678 9012 3456" maxLength={19} onChange={e=>setPayForm({...payForm,card_number:e.target.value})}/>
-                <label style={S.piLabel}>{t('card_holder')}</label>
-                <input style={S.piInput} value={payForm.card_holder} placeholder="EMRI MBIEMRI" onChange={e=>setPayForm({...payForm,card_holder:e.target.value.toUpperCase()})}/>
-                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-                  <div>
-                    <label style={S.piLabel}>{t('expiry')}</label>
-                    <input style={{...S.piInput, marginBottom:0}} value={payForm.expiry} placeholder="MM/YY" maxLength={5} onChange={e=>setPayForm({...payForm,expiry:e.target.value})}/>
-                  </div>
-                  <div>
-                    <label style={S.piLabel}>{t('cvv')}</label>
-                    <input style={{...S.piInput, marginBottom:0}} value={payForm.cvv} placeholder="123" maxLength={3} type="password" onChange={e=>setPayForm({...payForm,cvv:e.target.value})}/>
-                  </div>
-                </div>
-              </div>
-              <div style={S.modalFooter}>
-                <button style={{ flex:1, padding:10, background:'#fff', border:'1px solid #e5e7eb', color:'#6b7280', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:"'DM Sans', sans-serif" }} onClick={() => setShowPayModal(null)}>{t('cancel')}</button>
-                <button style={{ flex:2, padding:10, background:'#15803d', border:'none', color:'#fff', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:"'DM Sans', sans-serif" }} onClick={payFine}>{t('pay_now')}</button>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Bottom nav */}
+        <nav className="dsh-nav">
+          {[
+            { icon:'🏠', label:'Kryesorja', to:'/' },
+            { icon:'📅', label:'Terminet', to:'/my-appointments' },
+            { icon:'💳', label:'Gjobat', to:'/fines' },
+            { icon:'👤', label:'Profili', to:'/profile' },
+          ].map(n => (
+            <Link key={n.to} to={n.to} className={`dsh-nav-item${location.pathname===n.to?' active':''}`}>
+              <span className="dsh-nav-icon">{n.icon}</span>
+              <span className="dsh-nav-label">{n.label}</span>
+              <div className="dsh-nav-dot"/>
+            </Link>
+          ))}
+        </nav>
       </div>
     </>
   )
 }
-
-export default Dashboard
