@@ -1,7 +1,11 @@
 const router = require('express').Router()
 const {
-  getMyAppointments, getAllAppointments,
-  bookAppointment, updateAppointment, cancelAppointment, rescheduleAppointment,
+  getMyAppointments,
+  getAllAppointments,
+  bookAppointment,
+  updateAppointment,
+  cancelAppointment,
+  rescheduleAppointment,
   sendReminder
 } = require('../controllers/appointments.controller')
 const { protect } = require('../middleware/auth.middleware')
@@ -9,28 +13,39 @@ const { requireRole } = require('../middleware/role.middleware')
 
 router.use(protect)
 
-// Qytetari — rezervo, shiko, anullo, riprogramo terminet e veta
+// ── Qytetari ──────────────────────────────────────────────────
+// Shiko terminet e veta
 router.get('/my', getMyAppointments)
-router.post('/', bookAppointment)
-router.delete('/:id', cancelAppointment)                    // ✅ NEW
-router.put('/:id/reschedule', rescheduleAppointment)        // ✅ NEW
 
-// Admin — shiko termine (filtrohet sipas rolit)
-router.get('/',
+// Rezervo termin të ri
+router.post('/', bookAppointment)
+
+// Anullo termin (DELETE me body opsional për arsyen)
+router.delete('/:id', cancelAppointment)
+
+// Riprogramo termin
+router.put('/:id/reschedule', rescheduleAppointment)
+
+// ── Admin ─────────────────────────────────────────────────────
+// Shiko të gjitha terminet (filtrohet sipas rolit)
+router.get(
+  '/',
   requireRole('super_admin', 'admin_mvr', 'admin_komuna'),
   enforceInstitutionFilter,
   getAllAppointments
 )
 
-// Admin — përditëso termin (kontrollo institucionin)
-router.put('/:id',
+// Përditëso termin (kontrollo institucionin)
+router.put(
+  '/:id',
   requireRole('super_admin', 'admin_mvr', 'admin_komuna'),
   enforceInstitutionUpdate,
   updateAppointment
 )
 
-// Admin — dërgo kujtesë
-router.post('/:id/reminder',
+// Dërgo kujtesë
+router.post(
+  '/:id/reminder',
   requireRole('super_admin', 'admin_mvr', 'admin_komuna'),
   sendReminder
 )

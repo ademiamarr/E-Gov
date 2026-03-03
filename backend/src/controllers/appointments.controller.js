@@ -46,14 +46,25 @@ const updateAppointment = async (req, res) => {
 // ✅ CANCEL APPOINTMENT
 const cancelAppointment = async (req, res) => {
   try {
-    const { reason } = req.body
+    const appointmentId = req.params.id
+    const userId = req.user.id
+    const { reason } = req.body || {}
+
+    console.log(`🗑 Cancel request: appointment=${appointmentId}, user=${userId}`)
+
+    if (!appointmentId) {
+      return error(res, 'ID i terminit mungon', 400)
+    }
+
     const appt = await appointmentsService.cancelAppointment(
-      req.params.id,
-      req.user.id,
+      appointmentId,
+      userId,
       reason || null
     )
+
     return success(res, appt, 'Termini u anulua')
   } catch (err) {
+    console.error('❌ Cancel error:', err)
     return error(res, err.message, err.status || 500)
   }
 }
@@ -61,18 +72,30 @@ const cancelAppointment = async (req, res) => {
 // ✅ RESCHEDULE APPOINTMENT
 const rescheduleAppointment = async (req, res) => {
   try {
-    const { new_date, new_time } = req.body
+    const appointmentId = req.params.id
+    const userId = req.user.id
+    const { new_date, new_time } = req.body || {}
+
+    console.log(`📅 Reschedule request: appointment=${appointmentId}, user=${userId}, date=${new_date}`)
+
+    if (!appointmentId) {
+      return error(res, 'ID i terminit mungon', 400)
+    }
+
     if (!new_date) {
       return error(res, 'Data e re është e detyrueshme', 400)
     }
+
     const appt = await appointmentsService.rescheduleAppointment(
-      req.params.id,
-      req.user.id,
+      appointmentId,
+      userId,
       new_date,
       new_time || null
     )
+
     return success(res, appt, 'Termini u riprogramua')
   } catch (err) {
+    console.error('❌ Reschedule error:', err)
     return error(res, err.message, err.status || 500)
   }
 }
@@ -86,12 +109,12 @@ const sendReminder = async (req, res) => {
   }
 }
 
-module.exports = { 
-  getMyAppointments, 
-  getAllAppointments, 
-  bookAppointment, 
-  updateAppointment, 
-  cancelAppointment,       // ✅ NEW
-  rescheduleAppointment,   // ✅ NEW
-  sendReminder 
+module.exports = {
+  getMyAppointments,
+  getAllAppointments,
+  bookAppointment,
+  updateAppointment,
+  cancelAppointment,
+  rescheduleAppointment,
+  sendReminder
 }
