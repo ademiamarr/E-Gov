@@ -57,14 +57,14 @@ const LanguageSwitcher = () => {
           background: rgba(255, 255, 255, 0.08);
           border: 1px solid rgba(255, 255, 255, 0.15);
           border-radius: 8px;
-          color: #ffffff;
+          color: #00000000;
           font-size: 13px;
           font-weight: 500;
           cursor: pointer;
           transition: all 0.2s ease;
           font-family: inherit;
           white-space: nowrap;
-          border: 1px solid black;
+          border: 1px solid red;
         }
 
         .lang-switcher-btn:hover {
@@ -75,7 +75,7 @@ const LanguageSwitcher = () => {
         .lang-switcher-btn.active {
           background: rgba(59, 130, 246, 0.15);
           border-color: rgba(59, 130, 246, 0.3);
-          color: #60a5fa;
+          color: black;
         }
 
         .lang-chevron {

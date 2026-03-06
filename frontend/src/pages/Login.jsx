@@ -18,8 +18,13 @@ const Login = () => {
     setLoading(true)
     setError('')
     try {
-      const result = await signIn.create({ identifier: form.email, password: form.password })
-      if (result.status === 'complete') await setActive({ session: result.createdSessionId })
+      const result = await signIn.create({ 
+        identifier: form.email, 
+        password: form.password 
+      })
+      if (result.status === 'complete') {
+        await setActive({ session: result.createdSessionId })
+      }
     } catch (err) {
       setError(err.errors?.[0]?.message || t('fill_required'))
     } finally {
@@ -30,194 +35,670 @@ const Login = () => {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:'Plus Jakarta Sans',sans-serif; background:#f4f6fb; }
-
-        .lg { min-height:100dvh; display:flex; flex-direction:column; background:#f4f6fb; }
-
-        .lg-top {
-          display:flex; align-items:center; justify-content:space-between;
-          padding:16px 20px; background:#fff; border-bottom:1px solid #eaecf0;
-        }
-        .lg-brand { display:flex; align-items:center; gap:9px; }
-        .lg-brand-icon {
-          width:34px; height:34px; background:#1e3a8a; border-radius:9px;
-          display:flex; align-items:center; justify-content:center;
-        }
-        .lg-brand-name { font-size:14px; font-weight:800; color:#1e3a8a; letter-spacing:-0.02em; }
-
-        .lg-hero {
-          background:linear-gradient(135deg,#1e3a8a 0%,#2563eb 100%);
-          padding:32px 20px 52px;
-        }
-        .lg-hero-flag {
-          display:inline-flex; align-items:center; gap:6px;
-          background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.2);
-          border-radius:20px; padding:5px 12px;
-          font-size:11px; font-weight:600; color:rgba(255,255,255,0.85);
-          letter-spacing:0.02em; margin-bottom:16px;
-        }
-        .lg-hero-title {
-          font-size:30px; font-weight:800; color:#fff;
-          letter-spacing:-0.03em; line-height:1.15; margin-bottom:6px;
-        }
-        .lg-hero-sub { font-size:13px; color:rgba(255,255,255,0.6); font-weight:500; }
-
-        .lg-card {
-          background:#fff; margin:-20px 16px 0;
-          border-radius:20px; padding:24px 20px 28px;
-          box-shadow:0 4px 24px rgba(0,0,0,0.09);
-          position:relative; z-index:2;
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
         }
 
-        .lg-error {
-          display:flex; align-items:center; gap:8px;
-          padding:11px 13px; background:#fef2f2; border:1.5px solid #fecaca;
-          border-radius:10px; color:#dc2626; font-size:13px; font-weight:600;
-          margin-bottom:16px;
+        :root {
+          --primary: #d84315;
+          --dark: #1a1a18;
+          --light-bg: #fafaf8;
+          --white: #ffffff;
+          --border: #e8e8e5;
+          --text-gray: #666666;
         }
 
-        .lg-form { display:flex; flex-direction:column; gap:14px; }
-        .lg-group { display:flex; flex-direction:column; gap:5px; }
-        .lg-label { font-size:11px; font-weight:700; color:#1e3a8a; letter-spacing:0.04em; text-transform:uppercase; }
-
-        .lg-input-wrap { position:relative; }
-        .lg-input {
-          width:100%; padding:13px 14px;
-          font-size:15px; font-family:'Plus Jakarta Sans',sans-serif;
-          color:#0f1728; background:#f7f9fc;
-          border:1.5px solid #e5e7eb; border-radius:12px;
-          outline:none; transition:border-color 0.15s, background 0.15s;
-          -webkit-appearance:none;
-        }
-        .lg-input::placeholder { color:#c4c9d4; }
-        .lg-input:focus { border-color:#1e3a8a; background:#fff; }
-        .lg-input-pr { padding-right:46px; }
-
-        .lg-eye {
-          position:absolute; right:14px; top:50%; transform:translateY(-50%);
-          background:none; border:none; color:#9ca3af; cursor:pointer;
-          padding:4px; display:flex; align-items:center; font-size:17px;
-          -webkit-tap-highlight-color:transparent;
+        html {
+          scroll-behavior: smooth;
         }
 
-        .lg-submit {
-          width:100%; padding:14px; background:#1e3a8a; color:#fff;
-          border:none; border-radius:12px; font-size:15px; font-weight:700;
-          font-family:'Plus Jakarta Sans',sans-serif; cursor:pointer;
-          display:flex; align-items:center; justify-content:center; gap:8px;
-          transition:transform 0.1s; -webkit-appearance:none; margin-top:4px;
-          letter-spacing:-0.01em;
+        body {
+          font-family: 'Inter', sans-serif;
+          background: var(--light-bg);
+          color: var(--dark);
+          min-height: 100vh;
+          overflow-x: hidden;
         }
-        .lg-submit:active { transform:scale(0.98); }
-        .lg-submit:disabled { opacity:0.55; cursor:not-allowed; }
 
-        .lg-spinner {
-          width:16px; height:16px;
-          border:2px solid rgba(255,255,255,0.3); border-top-color:#fff;
-          border-radius:50%; animation:lgspin 0.6s linear infinite;
+        .login-container {
+          display: flex;
+          min-height: 100vh;
+          width: 100%;
         }
-        @keyframes lgspin { to { transform:rotate(360deg); } }
 
-        .lg-divider { display:flex; align-items:center; gap:10px; margin:20px 0; }
-        .lg-divider-line { flex:1; height:1px; background:#e5e7eb; }
-        .lg-divider-text { font-size:11px; color:#9ca3af; font-weight:600; }
-
-        .lg-footer { text-align:center; font-size:14px; color:#6b7280; }
-        .lg-footer a { color:#1e3a8a; font-weight:700; text-decoration:none; }
-
-        .lg-trust {
-          display:flex; justify-content:center; gap:28px;
-          padding:20px 20px 16px;
+        .login-left {
+          flex: 1;
+          background: linear-gradient(135deg, #d84315 0%, #f4511e 100%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 40px;
+          position: relative;
+          overflow: hidden;
         }
-        .lg-trust-item { display:flex; flex-direction:column; align-items:center; gap:4px; }
-        .lg-trust-icon { font-size:20px; }
-        .lg-trust-label { font-size:10px; font-weight:600; color:#94a3b8; letter-spacing:0.02em; }
+
+        .login-left::before {
+          content: '';
+          position: absolute;
+          width: 300px;
+          height: 300px;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.1);
+          top: -100px;
+          right: -100px;
+          z-index: 1;
+        }
+
+        .login-left::after {
+          content: '';
+          position: absolute;
+          width: 200px;
+          height: 200px;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.08);
+          bottom: -50px;
+          left: -50px;
+          z-index: 1;
+        }
+
+        .login-decoration {
+          position: relative;
+          z-index: 2;
+          text-align: center;
+          color: white;
+          max-width: 400px;
+        }
+
+        .login-icon {
+          font-size: 48px;
+          margin-bottom: 32px;
+          opacity: 0.95;
+        }
+
+        .login-title {
+          font-family: 'Playfair Display', serif;
+          font-size: 48px;
+          font-weight: 700;
+          margin-bottom: 20px;
+          line-height: 1.2;
+        }
+
+        .login-subtitle {
+          font-size: 15px;
+          line-height: 1.6;
+          opacity: 0.95;
+          font-weight: 400;
+        }
+
+        .login-features {
+          margin-top: 48px;
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+
+        .login-feature {
+          display: flex;
+          align-items: flex-start;
+          gap: 16px;
+        }
+
+        .login-feature-icon {
+          font-size: 20px;
+          flex-shrink: 0;
+          opacity: 0.9;
+        }
+
+        .login-feature-text {
+          text-align: left;
+          font-size: 13px;
+          line-height: 1.5;
+        }
+
+        .login-right {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 40px;
+          background: var(--white);
+          position: relative;
+        }
+
+        .login-header {
+          position: absolute;
+          top: 24px;
+          right: 40px;
+        }
+
+        .login-form-wrapper {
+          width: 100%;
+          max-width: 380px;
+        }
+
+        .login-branding {
+          margin-bottom: 40px;
+        }
+
+        .login-logo {
+          font-family: 'Playfair Display', serif;
+          font-size: 28px;
+          font-weight: 700;
+          color: var(--dark);
+          margin-bottom: 8px;
+        }
+
+        .login-form-subtitle {
+          font-size: 13px;
+          color: var(--text-gray);
+          font-weight: 400;
+        }
+
+        .login-form {
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+        }
+
+        .form-group {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        label {
+          font-size: 12px;
+          font-weight: 600;
+          color: var(--dark);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .input-container {
+          position: relative;
+        }
+
+        input[type="email"],
+        input[type="password"] {
+          padding: 12px 14px;
+          border: 1px solid var(--border);
+          border-radius: 6px;
+          font-size: 14px;
+          font-family: 'Inter', sans-serif;
+          background: var(--white);
+          color: var(--dark);
+          transition: border-color 0.2s ease, box-shadow 0.2s ease;
+          width: 100%;
+        }
+
+        input[type="email"]:focus,
+        input[type="password"]:focus {
+          outline: none;
+          border-color: var(--primary);
+          box-shadow: 0 0 0 3px rgba(216, 67, 21, 0.08);
+        }
+
+        input::placeholder {
+          color: #aaa;
+        }
+
+        .toggle-password {
+          position: absolute;
+          right: 12px;
+          top: 50%;
+          transform: translateY(-50%);
+          background: none;
+          border: none;
+          color: var(--text-gray);
+          cursor: pointer;
+          padding: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 24px;
+          height: 24px;
+          font-size: 18px;
+        }
+
+        .form-footer {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .checkbox-group {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          cursor: pointer;
+        }
+
+        input[type="checkbox"] {
+          width: 16px;
+          height: 16px;
+          cursor: pointer;
+          accent-color: var(--primary);
+        }
+
+        .checkbox-label {
+          font-size: 12px;
+          color: var(--text-gray);
+          cursor: pointer;
+          margin: 0;
+          font-weight: 400;
+        }
+
+        .forgot-link {
+          font-size: 12px;
+          color: var(--primary);
+          text-decoration: none;
+          font-weight: 500;
+          transition: color 0.2s ease;
+          cursor: pointer;
+          border: none;
+          background: none;
+          padding: 0;
+        }
+
+        .forgot-link:hover {
+          color: #c23d0f;
+        }
+
+        .btn-login {
+          padding: 13px 24px;
+          background: var(--primary);
+          color: white;
+          border: none;
+          border-radius: 6px;
+          font-size: 14px;
+          font-weight: 600;
+          letter-spacing: 0.5px;
+          cursor: pointer;
+          transition: background-color 0.2s ease;
+          text-transform: uppercase;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+        }
+
+        .btn-login:hover:not(:disabled) {
+          background-color: #c23d0f;
+        }
+
+        .btn-login:disabled {
+          opacity: 0.65;
+          cursor: not-allowed;
+        }
+
+        .spinner {
+          width: 14px;
+          height: 14px;
+          border: 2px solid rgba(255, 255, 255, 0.3);
+          border-top-color: white;
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+
+        .error-message {
+          background: #fef2f2;
+          color: #ef4444;
+          padding: 12px 14px;
+          border-radius: 6px;
+          border: 1px solid #fecaca;
+          font-size: 13px;
+          margin-bottom: 16px;
+        }
+
+        .register-section {
+          margin-top: 28px;
+          padding-top: 24px;
+          border-top: 1px solid var(--border);
+          text-align: center;
+          font-size: 13px;
+          color: var(--text-gray);
+        }
+
+        .register-link {
+          color: var(--primary);
+          text-decoration: none;
+          font-weight: 600;
+          transition: color 0.2s ease;
+          cursor: pointer;
+        }
+
+        .register-link:hover {
+          color: #c23d0f;
+        }
+
+        @media (max-width: 1024px) {
+          .login-container {
+            flex-direction: column;
+          }
+
+          .login-left {
+            padding: 40px;
+            min-height: 40vh;
+          }
+
+          .login-right {
+            padding: 40px;
+            min-height: 60vh;
+          }
+
+          .login-header {
+            position: relative;
+            top: 0;
+            right: 0;
+            margin-bottom: 24px;
+          }
+
+          .login-title {
+            font-size: 36px;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .login-left {
+            padding: 30px 20px;
+            min-height: 40vh;
+          }
+
+          .login-right {
+            padding: 25px 20px;
+            min-height: 60vh;
+          }
+
+          .login-title {
+            font-size: 32px;
+            margin-bottom: 16px;
+          }
+
+          .login-subtitle {
+            font-size: 14px;
+          }
+
+          .login-logo {
+            font-size: 24px;
+            margin-bottom: 6px;
+          }
+
+          .login-form-subtitle {
+            font-size: 12px;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .login-left {
+            padding: 25px 16px;
+            min-height: 35vh;
+          }
+
+          .login-right {
+            padding: 20px 16px;
+            min-height: 65vh;
+          }
+
+          .login-icon {
+            font-size: 36px;
+            margin-bottom: 16px;
+          }
+
+          .login-title {
+            font-size: 26px;
+            margin-bottom: 12px;
+            line-height: 1.3;
+          }
+
+          .login-subtitle {
+            font-size: 13px;
+            line-height: 1.5;
+          }
+
+          .login-features {
+            margin-top: 24px;
+            gap: 14px;
+          }
+
+          .login-feature {
+            gap: 12px;
+          }
+
+          .login-feature-icon {
+            font-size: 16px;
+          }
+
+          .login-feature-text {
+            font-size: 11px;
+          }
+
+          .login-form-wrapper {
+            max-width: 100%;
+          }
+
+          .login-branding {
+            margin-bottom: 24px;
+          }
+
+          .login-logo {
+            font-size: 22px;
+            margin-bottom: 6px;
+          }
+
+          .login-form {
+            gap: 16px;
+          }
+
+          .form-group {
+            gap: 6px;
+          }
+
+          label {
+            font-size: 11px;
+          }
+
+          input[type="email"],
+          input[type="password"] {
+            padding: 10px 12px;
+            font-size: 13px;
+          }
+
+          .form-footer {
+            flex-direction: column;
+            gap: 10px;
+          }
+
+          .checkbox-label {
+            font-size: 11px;
+          }
+
+          .forgot-link {
+            font-size: 11px;
+          }
+
+          .btn-login {
+            padding: 12px 20px;
+            font-size: 13px;
+          }
+
+          .register-section {
+            margin-top: 20px;
+            padding-top: 16px;
+            font-size: 12px;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .login-left {
+            padding: 20px 12px;
+            min-height: 30vh;
+          }
+
+          .login-right {
+            padding: 16px 12px;
+          }
+
+          .login-icon {
+            font-size: 28px;
+            margin-bottom: 12px;
+          }
+
+          .login-title {
+            font-size: 22px;
+            margin-bottom: 10px;
+          }
+
+          .login-subtitle {
+            font-size: 12px;
+          }
+
+          .login-features {
+            margin-top: 20px;
+            gap: 12px;
+          }
+
+          .login-feature {
+            gap: 10px;
+          }
+
+          .login-feature-icon {
+            font-size: 14px;
+          }
+
+          .login-feature-text {
+            font-size: 10px;
+          }
+
+          .login-logo {
+            font-size: 20px;
+          }
+
+          input[type="email"],
+          input[type="password"] {
+            padding: 9px 10px;
+            font-size: 14px;
+          }
+
+          .btn-login {
+            padding: 10px 16px;
+            font-size: 12px;
+          }
+
+          .register-section {
+            font-size: 11px;
+          }
+        }
       `}</style>
 
-      <div className="lg">
-        <div className="lg-top">
-          <div className="lg-brand">
-            <div className="lg-brand-icon">
-              <svg viewBox="0 0 24 24" fill="none" width={18} height={18}>
-                <path d="M3 22V10L12 3L21 10V22H15V16H9V22H3Z" fill="#fff"/>
-              </svg>
+      <div className="login-container">
+        <div className="login-left">
+          <div className="login-decoration">
+            <div className="login-icon">📄</div>
+            <h1 className="login-title">Управувајте со документите лесно</h1>
+            <p className="login-subtitle">
+              Безбедна платформа за онлајн термине и управување со вашите официјални документи.
+            </p>
+
+            <div className="login-features">
+              <div className="login-feature">
+                <div className="login-feature-icon">📅</div>
+                <div className="login-feature-text">Направи термин кога сакаш</div>
+              </div>
+              <div className="login-feature">
+                <div className="login-feature-icon">🔒</div>
+                <div className="login-feature-text">Целосна безбедност на твои податоци</div>
+              </div>
+              <div className="login-feature">
+                <div className="login-feature-icon">✓</div>
+                <div className="login-feature-text">Брз и лесен процес</div>
+              </div>
             </div>
-            <span className="lg-brand-name">eGov Portal</span>
           </div>
-          <LanguageSwitcher />
         </div>
 
-        <div className="lg-hero">
-          <div className="lg-hero-flag">🇲🇰 Republika e Maqedonisë së Veriut</div>
-          <h1 className="lg-hero-title">Mirë se<br/>erdhët</h1>
-          <p className="lg-hero-sub">Kyçuni në llogarinë tuaj qeveritare</p>
-        </div>
+        <div className="login-right">
+          <div className="login-header">
+            <LanguageSwitcher />
+          </div>
 
-        <div className="lg-card">
-          {error && (
-            <div className="lg-error">
-              <span>⚠</span><span>{error}</span>
+          <div className="login-form-wrapper">
+            <div className="login-branding">
+              <div className="login-logo">e-Gov</div>
+              <p className="login-form-subtitle">Приватен портал за граѓани</p>
             </div>
-          )}
-          <form className="lg-form" onSubmit={handleSubmit}>
-            <div className="lg-group">
-              <label className="lg-label">Email</label>
-              <div className="lg-input-wrap">
+
+            {error && <div className="error-message">{error}</div>}
+
+            <form className="login-form" onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label htmlFor="email">Е-пошта</label>
                 <input
-                  type="email" className="lg-input"
-                  placeholder="emri@shembull.mk"
+                  id="email"
+                  type="email"
+                  placeholder="вашата.пошта@пример.mk"
                   value={form.email}
                   onChange={e => setForm({ ...form, email: e.target.value })}
-                  required autoComplete="email"
+                  required
+                  autoComplete="email"
+                  autoFocus
                 />
               </div>
-            </div>
-            <div className="lg-group">
-              <label className="lg-label">Fjalëkalim</label>
-              <div className="lg-input-wrap">
-                <input
-                  type={showPass ? 'text' : 'password'}
-                  className="lg-input lg-input-pr"
-                  placeholder="••••••••"
-                  value={form.password}
-                  onChange={e => setForm({ ...form, password: e.target.value })}
-                  required autoComplete="current-password"
-                />
-                <button type="button" className="lg-eye" onClick={() => setShowPass(!showPass)}>
-                  {showPass ? '🙈' : '👁'}
-                </button>
+
+              <div className="form-group">
+                <label htmlFor="password">Лозинка</label>
+                <div className="input-container">
+                  <input
+                    id="password"
+                    type={showPass ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={form.password}
+                    onChange={e => setForm({ ...form, password: e.target.value })}
+                    required
+                    autoComplete="current-password"
+                  />
+                  <button
+                    type="button"
+                    className="toggle-password"
+                    onClick={() => setShowPass(!showPass)}
+                    aria-label="Toggle password visibility"
+                  >
+                    {showPass ? '🙈' : '👁'}
+                  </button>
+                </div>
               </div>
-            </div>
-            <button type="submit" className="lg-submit" disabled={loading || !isLoaded}>
-              {loading ? <><div className="lg-spinner"/>Duke u kyçur...</> : 'Kyçu →'}
-            </button>
-          </form>
 
-          <div className="lg-divider">
-            <div className="lg-divider-line"/>
-            <span className="lg-divider-text">ose</span>
-            <div className="lg-divider-line"/>
-          </div>
+              <div className="form-footer">
+                <div className="checkbox-group">
+                  <input type="checkbox" id="remember" name="remember" />
+                  <label htmlFor="remember" className="checkbox-label">Запомни ме</label>
+                </div>
+                <button type="button" className="forgot-link">Заборави лозинка?</button>
+              </div>
 
-          <p className="lg-footer">
-            Nuk keni llogari? <Link to="/register">Regjistrohuni falas</Link>
-          </p>
-        </div>
+              <button type="submit" className="btn-login" disabled={loading || !isLoaded}>
+                {loading ? (
+                  <>
+                    <span className="spinner" />
+                    Се логира...
+                  </>
+                ) : (
+                  'Влез'
+                )}
+              </button>
+            </form>
 
-        <div className="lg-trust">
-          <div className="lg-trust-item">
-            <span className="lg-trust-icon">🔒</span>
-            <span className="lg-trust-label">SSL 256-bit</span>
-          </div>
-          <div className="lg-trust-item">
-            <span className="lg-trust-icon">🏛️</span>
-            <span className="lg-trust-label">Zyrtar</span>
-          </div>
-          <div className="lg-trust-item">
-            <span className="lg-trust-icon">⚡</span>
-            <span className="lg-trust-label">24/7</span>
+            <p className="register-section">
+              Немаш профил? <Link to="/register" className="register-link">Регистрирај се</Link>
+            </p>
           </div>
         </div>
       </div>
