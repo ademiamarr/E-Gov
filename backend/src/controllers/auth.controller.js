@@ -6,20 +6,33 @@ const register = async (req, res) => {
     const { clerk_id, first_name, last_name, personal_id, email } = req.body
     const file = req.file
 
+    if (!clerk_id || !email) {
+      return error(res, 'Missing required fields', 400)
+    }
+
     const user = await authService.register({
-      clerk_id, first_name, last_name, personal_id, email, file
+      clerk_id, 
+      first_name, 
+      last_name, 
+      personal_id, 
+      email, 
+      file
     })
 
     return success(res, user, 'Regjistrimi u krye', 201)
   } catch (err) {
+    console.error('❌ Register error:', err.message)
     return error(res, err.message, err.status || 500)
   }
 }
 
 const getMe = async (req, res) => {
   try {
-    // req.user është i kompletë nga attachRole middleware
-    // përfshin role, verification_status, etj. nga Supabase
+    // req.user është i vendosur në middleware attachRole
+    if (!req.user) {
+      return error(res, 'User not found', 404)
+    }
+
     return success(res, {
       id: req.user.id,
       clerk_id: req.user.clerk_id,
@@ -31,8 +44,9 @@ const getMe = async (req, res) => {
       verification_status: req.user.verification_status,
       id_photo_url: req.user.id_photo_url,
       created_at: req.user.created_at,
-    })
+    }, 'User info')
   } catch (err) {
+    console.error('❌ getMe error:', err.message)
     return error(res, err.message, 500)
   }
 }
@@ -43,65 +57,71 @@ const changePassword = async (req, res) => {
     const clerkUserId = req.auth?.userId
 
     if (!clerkUserId) {
-      return res.status(401).json({ success: false, message: 'Nuk jeni të autorizuar' })
+      return error(res, 'Nuk jeni të autorizuar', 401)
     }
 
     if (!currentPassword || !newPassword) {
-      return res.status(400).json({ success: false, message: 'Të dhënat janë të pakompletuesa' })
+      return error(res, 'Të dhënat janë të pakompletuesa', 400)
     }
 
     if (newPassword.length < 8) {
-      return res.status(400).json({ success: false, message: 'Fjalëkalimi duhet të ketë min. 8 karaktere' })
+      return error(res, 'Fjalëkalimi duhet të ketë min. 8 karaktere', 400)
     }
 
-    // Clerk SDK për ndryshimin e passwordit
-    const Clerk = require('@clerk/clerk-sdk-node')
-    
     try {
+      const Clerk = require('@clerk/clerk-sdk-node')
+      
       await Clerk.users.updateUser(clerkUserId, {
         password: newPassword,
       })
 
-      return res.status(200).json({ 
-        success: true, 
-        message: 'Fjalëkalimi u ndryshua me sukses' 
-      })
+      return success(res, {}, 'Fjalëkalimi u ndryshua me sukses')
     } catch (clerkErr) {
-      // Kontrollo nëse fjalëkalimi aktual nuk është i saktë
-      if (clerkErr.errors?.[0]?.code === 'resource_conflict') {
-        return res.status(401).json({ 
-          success: false, 
-          message: 'Fjalëkalimi aktual nuk është i saktë' 
-        })
-      }
-      throw clerkErr
+      console.error('❌ Clerk error:', clerkErr.message)
+      return error(res, 'Gabim në ndryshimin e fjalëkalimit', 500)
     }
   } catch (err) {
-    console.error('❌ Password change error:', err.message)
-    return res.status(500).json({ 
-      success: false, 
-      message: 'Gabim gjatë ndryshimit të fjalëkalimit' 
-    })
+    console.error('❌ changePassword error:', err.message)
+    return error(res, err.message, 500)
   }
 }
 
 const approveUser = async (req, res) => {
   try {
-    const user = await authService.approveUser(req.params.id)
+    const userId = req.params.id
+    if (!userId) {
+      return error(res, 'User ID required', 400)
+    }
+
+    const user = await authService.approveUser(userId)
     return success(res, user, 'Useri u aprovua')
   } catch (err) {
+    console.error('❌ approveUser error:', err.message)
     return error(res, err.message, err.status || 500)
   }
 }
 
 const rejectUser = async (req, res) => {
   try {
+    const userId = req.params.id
     const { reason } = req.body
-    const user = await authService.rejectUser(req.params.id, reason)
+
+    if (!userId) {
+      return error(res, 'User ID required', 400)
+    }
+
+    const user = await authService.rejectUser(userId, reason)
     return success(res, user, 'Useri u refuzua')
   } catch (err) {
+    console.error('❌ rejectUser error:', err.message)
     return error(res, err.message, err.status || 500)
   }
 }
 
-module.exports = { register, getMe, changePassword, approveUser, rejectUser }
+module.exports = { 
+  register, 
+  getMe, 
+  changePassword, 
+  approveUser, 
+  rejectUser 
+}

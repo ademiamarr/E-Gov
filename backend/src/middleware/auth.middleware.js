@@ -1,7 +1,6 @@
 const { ClerkExpressRequireAuth } = require('@clerk/clerk-sdk-node')
 const { supabase } = require('../config/supabase')
 const Clerk = require('@clerk/clerk-sdk-node')
-const { VALID_ROLES, ROLES } = require('../config/clerk')
 
 const requireAuth = ClerkExpressRequireAuth()
 
@@ -13,63 +12,46 @@ const attachRole = async (req, res, next) => {
 
     const clerkUserId = req.auth.userId
 
-    // Hapi 1: Kërko user në Supabase
-    let { data: dbUser, error } = await supabase
+    // Kërko user në Supabase
+    const { data: dbUser, error } = await supabase
       .from('users')
       .select('*')
       .eq('clerk_id', clerkUserId)
       .single()
 
+    // Nëse ka error në query (përveç "not found")
     if (error && error.code !== 'PGRST116') {
-      return res.status(500).json({ success: false, message: 'Gabim në autentifikim' })
+      console.error('❌ Supabase Error:', error.message)
+      return res.status(500).json({ success: false, message: 'Database error' })
     }
 
-    // Hapi 2: Nëse nuk ka në Supabase, sinkronizo nga Clerk
+    // Nëse user nuk gjendet
     if (!dbUser) {
-      try {
-        const clerkUser = await Clerk.users.getUser(clerkUserId)
-        const userRole  = clerkUser.publicMetadata?.role || ROLES.PENDING
-        const safeRole  = VALID_ROLES.includes(userRole) ? userRole : ROLES.PENDING
-
-        const newUser = {
-          clerk_id:            clerkUserId,
-          first_name:          clerkUser.firstName || 'Unknown',
-          last_name:           clerkUser.lastName  || 'User',
-          email:               clerkUser.emailAddresses[0]?.emailAddress || '',
-          personal_id:         clerkUser.publicMetadata?.personal_id || `TEMP-${clerkUserId.slice(0, 8)}`,
-          role:                safeRole,
-          verification_status: [ROLES.PENDING, ROLES.REJECTED].includes(safeRole) ? safeRole : 'approved',
-        }
-
-        const { data: created, error: createError } = await supabase
-          .from('users')
-          .insert([newUser])
-          .select()
-          .single()
-
-        if (createError) {
-          console.error('❌ Gabim në krijim të user-it:', createError.message)
-          return res.status(500).json({ success: false, message: 'Gabim në autentifikim' })
-        }
-
-        dbUser = created
-      } catch (clerkErr) {
-        console.error('❌ Gabim Clerk:', clerkErr.message)
-        return res.status(401).json({ success: false, message: 'Useri nuk u gjet' })
-      }
+      console.log('⚠️ User not found in database. Clerk ID:', clerkUserId)
+      
+      // Opsional: Mund ta krijon automatikisht
+      // Për tani, i thuaj client të regjistrohemi
+      return res.status(404).json({ 
+        success: false, 
+        message: 'User not found. Please register first.',
+        code: 'USER_NOT_FOUND'
+      })
     }
 
-    if (!dbUser) {
-      return res.status(401).json({ success: false, message: 'Useri nuk u gjet' })
-    }
-
-    req.user     = dbUser
-    req.userId   = dbUser.id
+    // User gjendet - attach to request
+    req.user = dbUser
+    req.userId = dbUser.id
     req.userRole = dbUser.role
+    req.verification_status = dbUser.verification_status
+
     next()
   } catch (err) {
     console.error('❌ attachRole error:', err.message)
-    return res.status(401).json({ success: false, message: 'Gabim në autentifikim' })
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Authentication error',
+      error: err.message 
+    })
   }
 }
 
