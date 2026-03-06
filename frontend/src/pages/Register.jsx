@@ -1,10 +1,13 @@
 import { useState, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useSignUp } from '@clerk/clerk-react'
+import { useTranslation } from 'react-i18next'
 import { Eye, EyeOff } from 'lucide-react'
+import LanguageSwitcher from '../components/LanguageSwitcher'
 
 const Register = () => {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [step, setStep] = useState(1)
   const [form, setForm] = useState({
     firstName: '',
@@ -37,7 +40,7 @@ const Register = () => {
     const file = e.target.files?.[0]
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        setError('Fotografija duhet të jetë më e vogël se 5MB')
+        setError(t('photo_size_error') || 'Fotografija duhet të jetë më e vogël se 5MB')
         return
       }
       const reader = new FileReader()
@@ -52,11 +55,11 @@ const Register = () => {
   const handleStep1Submit = (e) => {
     e.preventDefault()
     if (!form.firstName || !form.lastName || !form.email || !form.embg) {
-      setError('Plotësoni të gjitha fushat')
+      setError(t('fill_required') || 'Plotësoni të gjitha fushat')
       return
     }
     if (form.embg.length !== 13) {
-      setError('EMBG duhet të ketë 13 shifra')
+      setError(t('embg_length_error') || 'EMBG duhet të ketë 13 shifra')
       return
     }
     setError('')
@@ -68,11 +71,11 @@ const Register = () => {
     if (!isLoaded) return
     
     if (!photoPreview) {
-      setError('Duhet të ngarkoni foto të dokumentit')
+      setError(t('photo_required') || 'Duhet të ngarkoni foto të dokumentit')
       return
     }
     if (!allValid) {
-      setError('Plotësoni të gjitha kërkesat për fjalëkalimin')
+      setError(t('password_requirements') || 'Plotësoni të gjitha kërkesat për fjalëkalimin')
       return
     }
 
@@ -93,10 +96,10 @@ const Register = () => {
         await setActive({ session: response.createdSessionId })
         navigate('/dashboard')
       } else if (response.status === 'missing_requirements') {
-        setError('Plotësoni të gjitha kërkesat')
+        setError(t('missing_requirements') || 'Plotësoni të gjitha kërkesat')
       }
     } catch (err) {
-      setError(err.errors?.[0]?.message || 'Gabim në regjistrimin')
+      setError(err.errors?.[0]?.message || t('register_error') || 'Gabim në regjistrimin')
     } finally {
       setLoading(false)
     }
@@ -282,6 +285,7 @@ const Register = () => {
           display: flex;
           align-items: center;
           gap: 16px;
+          z-index: 10;
         }
 
         .register-progress {
@@ -301,21 +305,31 @@ const Register = () => {
           background: var(--primary);
         }
 
-        .language-switcher {
+        .lang-switcher-btn {
+          display: flex;
+          align-items: center;
+          gap: 6px;
           padding: 8px 12px;
-          border: 1px solid var(--border);
-          border-radius: 6px;
+          background: var(--white);
+          border: 1.5px solid var(--border);
+          border-radius: 8px;
+          color: var(--dark);
           font-size: 12px;
           font-weight: 600;
-          color: var(--dark);
-          background: var(--white);
           cursor: pointer;
           transition: all 0.2s ease;
+          font-family: 'Inter', sans-serif;
         }
 
-        .language-switcher:hover {
+        .lang-switcher-btn:hover {
           border-color: var(--primary);
           background: #f9f9f9;
+        }
+
+        .lang-switcher-btn.active {
+          background: #eff6ff;
+          border-color: var(--primary);
+          color: var(--primary);
         }
 
         .register-form-wrapper {
@@ -652,14 +666,20 @@ const Register = () => {
           }
 
           .register-right {
-            padding: 20px 16px;
+            padding: 16px 12px;
             min-height: 100vh;
+            justify-content: flex-start;
+            padding-top: 80px;
           }
 
           .register-header {
-            top: 16px;
-            right: 16px;
-            gap: 12px;
+            position: fixed;
+            top: 12px;
+            right: 12px;
+            left: 12px;
+            display: flex;
+            justify-content: flex-end;
+            z-index: 50;
           }
 
           .register-progress {
@@ -671,9 +691,16 @@ const Register = () => {
             height: 2px;
           }
 
+          .lang-switcher-btn {
+            padding: 6px 10px;
+            font-size: 11px;
+            gap: 4px;
+          }
+
           .register-form-wrapper {
             width: 100%;
             max-width: 100%;
+            margin-top: 20px;
           }
 
           .register-branding {
@@ -778,12 +805,14 @@ const Register = () => {
 
         @media (max-width: 480px) {
           .register-right {
-            padding: 16px 12px;
+            padding: 12px 10px;
+            padding-top: 70px;
           }
 
           .register-header {
-            top: 12px;
-            right: 12px;
+            top: 8px;
+            right: 8px;
+            left: 8px;
           }
 
           .register-progress {
@@ -792,6 +821,11 @@ const Register = () => {
 
           .register-progress-bar {
             width: 30px;
+          }
+
+          .lang-switcher-btn {
+            padding: 5px 8px;
+            font-size: 10px;
           }
 
           .register-logo {
@@ -846,24 +880,24 @@ const Register = () => {
             <div className="register-logo-box">
               <div className="register-logo-box-icon">G</div>
             </div>
-            <h1 className="register-title">Regjistrohuni në eGov</h1>
+            <h1 className="register-title">{t('register_title') || 'Regjistrohuni në eGov'}</h1>
             <p className="register-subtitle">
-              Siguroni qasjen tuaj në shërbimet qeveritare me dy hapa të thjeshtë.
+              {t('register_subtitle') || 'Siguroni qasjen tuaj në shërbimet qeveritare me dy hapa të thjeshtë.'}
             </p>
 
             <div className="register-steps">
               <div className={`register-step ${step >= 1 ? 'active' : ''}`}>
                 <div className="register-step-icon">1</div>
                 <div className="register-step-content">
-                  <h4>Informacioni personal</h4>
-                  <p>Emri, email, EMBG</p>
+                  <h4>{t('personal_info') || 'Informacioni personal'}</h4>
+                  <p>{t('personal_info_desc') || 'Emri, email, EMBG'}</p>
                 </div>
               </div>
               <div className={`register-step ${step >= 2 ? 'active' : ''}`}>
                 <div className="register-step-icon">2</div>
                 <div className="register-step-content">
-                  <h4>Sigurimi dhe dokumenti</h4>
-                  <p>Fjalëkalim dhe fotografi</p>
+                  <h4>{t('security_docs') || 'Sigurimi dhe dokumenti'}</h4>
+                  <p>{t('security_docs_desc') || 'Fjalëkalim dhe fotografi'}</p>
                 </div>
               </div>
             </div>
@@ -876,7 +910,7 @@ const Register = () => {
               <div className={`register-progress-bar ${step >= 1 ? 'active' : ''}`} />
               <div className={`register-progress-bar ${step >= 2 ? 'active' : ''}`} />
             </div>
-            <button className="language-switcher">SQ</button>
+            <LanguageSwitcher />
           </div>
 
           <div className="register-form-wrapper">
@@ -884,7 +918,7 @@ const Register = () => {
               <>
                 <div className="register-branding">
                   <div className="register-logo">e-Gov</div>
-                  <p className="register-form-subtitle">Hapi 1 nga 2: Informacioni personal</p>
+                  <p className="register-form-subtitle">{t('step_1_of_2') || 'Hapi 1 nga 2: Informacioni personal'}</p>
                 </div>
 
                 {error && <div className="error-message">{error}</div>}
@@ -892,11 +926,11 @@ const Register = () => {
                 <form className="register-form" onSubmit={handleStep1Submit}>
                   <div className="form-row">
                     <div className="form-group">
-                      <label htmlFor="firstName">Emri</label>
+                      <label htmlFor="firstName">{t('first_name') || 'Emri'}</label>
                       <input
                         id="firstName"
                         type="text"
-                        placeholder="Emri juaj"
+                        placeholder={t('first_name_placeholder') || 'Emri juaj'}
                         value={form.firstName}
                         onChange={e => {
                           setForm({ ...form, firstName: e.target.value })
@@ -906,11 +940,11 @@ const Register = () => {
                       />
                     </div>
                     <div className="form-group">
-                      <label htmlFor="lastName">Mbiemri</label>
+                      <label htmlFor="lastName">{t('last_name') || 'Mbiemri'}</label>
                       <input
                         id="lastName"
                         type="text"
-                        placeholder="Mbiemri juaj"
+                        placeholder={t('last_name_placeholder') || 'Mbiemri juaj'}
                         value={form.lastName}
                         onChange={e => {
                           setForm({ ...form, lastName: e.target.value })
@@ -922,11 +956,11 @@ const Register = () => {
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="email">Posta elektronike</label>
+                    <label htmlFor="email">{t('email') || 'Posta elektronike'}</label>
                     <input
                       id="email"
                       type="email"
-                      placeholder="emri@shembull.mk"
+                      placeholder={t('email_placeholder') || 'emri@shembull.mk'}
                       value={form.email}
                       onChange={e => {
                         setForm({ ...form, email: e.target.value })
@@ -937,7 +971,7 @@ const Register = () => {
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="embg">Numri personal (EMBG)</label>
+                    <label htmlFor="embg">{t('personal_id') || 'Numri personal (EMBG)'}</label>
                     <input
                       id="embg"
                       type="text"
@@ -955,7 +989,7 @@ const Register = () => {
                     />
                   </div>
 
-                  <button type="submit" className="btn-register">Vazhdo në hapin 2</button>
+                  <button type="submit" className="btn-register">{t('next_step') || 'Vazhdo në hapin 2'}</button>
                 </form>
               </>
             )}
@@ -964,14 +998,14 @@ const Register = () => {
               <>
                 <div className="register-branding">
                   <div className="register-logo">e-Gov</div>
-                  <p className="register-form-subtitle">Hapi 2 nga 2: Fjalëkalim dhe dokumenti</p>
+                  <p className="register-form-subtitle">{t('step_2_of_2') || 'Hapi 2 nga 2: Fjalëkalim dhe dokumenti'}</p>
                 </div>
 
                 {error && <div className="error-message">{error}</div>}
 
                 <form className="register-form" onSubmit={handleRegisterSubmit}>
                   <div className="form-group">
-                    <label htmlFor="password">Fjalëkalim</label>
+                    <label htmlFor="password">{t('password') || 'Fjalëkalim'}</label>
                     <div className="input-container">
                       <input
                         id="password"
@@ -999,7 +1033,7 @@ const Register = () => {
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="confirm">Konfirmoni fjalëkalimin</label>
+                    <label htmlFor="confirm">{t('confirm_password') || 'Konfirmoni fjalëkalimin'}</label>
                     <div className="input-container">
                       <input
                         id="confirm"
@@ -1029,38 +1063,38 @@ const Register = () => {
                   <div className="password-reqs">
                     <div className={`req ${passwordReqs.length ? 'valid' : ''}`}>
                       <div className="req-icon">{passwordReqs.length ? '✓' : '—'}</div>
-                      <span>Të paktën 8 karaktere</span>
+                      <span>{t('min_8_chars') || 'Të paktën 8 karaktere'}</span>
                     </div>
                     <div className={`req ${passwordReqs.uppercase ? 'valid' : ''}`}>
                       <div className="req-icon">{passwordReqs.uppercase ? '✓' : '—'}</div>
-                      <span>Një shkronjë e madhe</span>
+                      <span>{t('one_uppercase') || 'Një shkronjë e madhe'}</span>
                     </div>
                     <div className={`req ${passwordReqs.number ? 'valid' : ''}`}>
                       <div className="req-icon">{passwordReqs.number ? '✓' : '—'}</div>
-                      <span>Një numër</span>
+                      <span>{t('one_number') || 'Një numër'}</span>
                     </div>
                     <div className={`req ${passwordReqs.special ? 'valid' : ''}`}>
                       <div className="req-icon">{passwordReqs.special ? '✓' : '—'}</div>
-                      <span>Karakter special: !@#$%^&*</span>
+                      <span>{t('one_special') || 'Karakter special: !@#$%^&*'}</span>
                     </div>
                     <div className={`req ${passwordReqs.match ? 'valid' : ''}`}>
                       <div className="req-icon">{passwordReqs.match ? '✓' : '—'}</div>
-                      <span>Fjalëkalimet përputhen</span>
+                      <span>{t('passwords_match') || 'Fjalëkalimet përputhen'}</span>
                     </div>
                   </div>
 
                   <div className="form-group">
-                    <label>Fotografia e dokumentit</label>
+                    <label>{t('upload_photo') || 'Fotografia e dokumentit'}</label>
                     <div className="photo-upload" onClick={() => photoInputRef.current?.click()}>
                       {photoPreview ? (
                         <>
                           <img src={photoPreview} alt="Preview" className="photo-preview" />
-                          <p className="photo-text">Klikoni për të ndryshuar</p>
+                          <p className="photo-text">{t('click_to_change') || 'Klikoni për të ndryshuar'}</p>
                         </>
                       ) : (
                         <>
-                          <p className="photo-text">Ngarkoni fotografi të dokumentit</p>
-                          <p className="photo-hint">PNG, JPG deri në 5MB</p>
+                          <p className="photo-text">{t('upload_document_photo') || 'Ngarkoni fotografi të dokumentit'}</p>
+                          <p className="photo-hint">{t('photo_formats') || 'PNG, JPG deri në 5MB'}</p>
                         </>
                       )}
                       <input
@@ -1080,10 +1114,10 @@ const Register = () => {
                     {loading ? (
                       <>
                         <span className="spinner" />
-                        Duke u regjistruar...
+                        {t('registering') || 'Duke u regjistruar...'}
                       </>
                     ) : (
-                      'Përfundoni regjistrimin'
+                      t('complete_registration') || 'Përfundoni regjistrimin'
                     )}
                   </button>
                 </form>
@@ -1099,12 +1133,12 @@ const Register = () => {
                   setError('')
                 }}
               >
-                ← Kthehu mbrapa
+                ← {t('back') || 'Kthehu mbrapa'}
               </button>
             )}
 
             <p className="register-footer">
-              Tashmë keni llogari? <Link to="/login" className="register-link">Kyçuni këtu</Link>
+              {t('have_account') || 'Tashmë keni llogari?'} <Link to="/login" className="register-link">{t('login_here') || 'Kyçuni këtu'}</Link>
             </p>
           </div>
         </div>

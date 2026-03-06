@@ -1,10 +1,13 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useSignIn } from '@clerk/clerk-react'
-import { Eye, EyeOff } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { Eye, EyeOff, Calendar, Lock, Zap, Globe } from 'lucide-react'
+import LanguageSwitcher from '../components/LanguageSwitcher'
 
 const Login = () => {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [form, setForm] = useState({ email: '', password: '' })
   const [showPass, setShowPass] = useState(false)
   const [error, setError] = useState('')
@@ -26,7 +29,7 @@ const Login = () => {
         navigate('/dashboard')
       }
     } catch (err) {
-      setError(err.errors?.[0]?.message || 'Email ose lozinka nuk janë të sakta')
+      setError(err.errors?.[0]?.message || t('login_error') || 'Email ose lozinka nuk janë të sakta')
     } finally {
       setLoading(false)
     }
@@ -166,7 +169,6 @@ const Login = () => {
           justify-content: center;
           flex-shrink: 0;
           border: 1px solid rgba(255, 255, 255, 0.15);
-          font-size: 18px;
           color: white;
         }
 
@@ -197,23 +199,7 @@ const Login = () => {
           position: absolute;
           top: 24px;
           right: 40px;
-        }
-
-        .language-switcher {
-          padding: 8px 12px;
-          border: 1px solid var(--border);
-          border-radius: 6px;
-          font-size: 12px;
-          font-weight: 600;
-          color: var(--dark);
-          background: var(--white);
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-
-        .language-switcher:hover {
-          border-color: var(--primary);
-          background: #f9f9f9;
+          z-index: 10;
         }
 
         .login-form-wrapper {
@@ -423,6 +409,38 @@ const Login = () => {
           color: #c23d0f;
         }
 
+        /* Language Switcher Overrides */
+        .lang-switcher-wrapper {
+          position: relative;
+        }
+
+        .lang-switcher-btn {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 8px 12px;
+          background: var(--white);
+          border: 1.5px solid var(--border);
+          border-radius: 8px;
+          color: var(--dark);
+          font-size: 12px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          font-family: 'Inter', sans-serif;
+        }
+
+        .lang-switcher-btn:hover {
+          border-color: var(--primary);
+          background: #f9f9f9;
+        }
+
+        .lang-switcher-btn.active {
+          background: #eff6ff;
+          border-color: var(--primary);
+          color: var(--primary);
+        }
+
         @media (max-width: 1024px) {
           .login-container {
             flex-direction: column;
@@ -486,51 +504,32 @@ const Login = () => {
           }
 
           .login-right {
-            padding: 20px 16px;
+            padding: 16px 12px;
             min-height: 100vh;
+            justify-content: flex-start;
+            padding-top: 80px;
           }
 
           .login-header {
-            top: 16px;
-            right: 16px;
+            position: fixed;
+            top: 12px;
+            right: 12px;
+            left: 12px;
+            display: flex;
+            justify-content: flex-end;
+            z-index: 50;
           }
 
-          .login-title {
-            font-size: 26px;
-            margin-bottom: 16px;
-            line-height: 1.3;
-          }
-
-          .login-subtitle {
-            font-size: 13px;
-            line-height: 1.5;
-            margin-bottom: 32px;
-          }
-
-          .login-features {
-            gap: 16px;
-          }
-
-          .login-feature {
-            gap: 12px;
-          }
-
-          .login-feature-icon {
-            width: 36px;
-            height: 36px;
-            font-size: 16px;
-          }
-
-          .login-feature-content h4 {
-            font-size: 12px;
-          }
-
-          .login-feature-content p {
+          .lang-switcher-btn {
+            padding: 6px 10px;
             font-size: 11px;
+            gap: 4px;
           }
 
           .login-form-wrapper {
+            width: 100%;
             max-width: 100%;
+            margin-top: 20px;
           }
 
           .login-branding {
@@ -596,11 +595,27 @@ const Login = () => {
             padding-top: 16px;
             font-size: 12px;
           }
+
+          .form-group {
+            gap: 6px;
+          }
         }
 
         @media (max-width: 480px) {
           .login-right {
-            padding: 16px 12px;
+            padding: 12px 12px;
+            padding-top: 70px;
+          }
+
+          .login-header {
+            top: 8px;
+            right: 8px;
+            left: 8px;
+          }
+
+          .lang-switcher-btn {
+            padding: 5px 8px;
+            font-size: 10px;
           }
 
           .login-logo-box {
@@ -631,12 +646,6 @@ const Login = () => {
             gap: 10px;
           }
 
-          .login-feature-icon {
-            width: 32px;
-            height: 32px;
-            font-size: 14px;
-          }
-
           .login-feature-content h4 {
             font-size: 11px;
           }
@@ -662,6 +671,15 @@ const Login = () => {
 
           .register-section {
             font-size: 11px;
+            margin-top: 16px;
+          }
+
+          .form-group {
+            gap: 5px;
+          }
+
+          label {
+            font-size: 10px;
           }
         }
       `}</style>
@@ -711,20 +729,20 @@ const Login = () => {
 
         <div className="login-right">
           <div className="login-header">
-            <button className="language-switcher">SQ</button>
+            <LanguageSwitcher />
           </div>
 
           <div className="login-form-wrapper">
             <div className="login-branding">
               <div className="login-logo">e-Gov</div>
-              <p className="login-form-subtitle">Portali privat për qytetarë</p>
+              <p className="login-form-subtitle">{t('login_subtitle') || 'Portali privat për qytetarë'}</p>
             </div>
 
             {error && <div className="error-message">{error}</div>}
 
             <form className="login-form" onSubmit={handleSubmit}>
               <div className="form-group">
-                <label htmlFor="email">E-Poshta</label>
+                <label htmlFor="email">{t('email') || 'E-Poshta'}</label>
                 <input
                   id="email"
                   type="email"
@@ -741,7 +759,7 @@ const Login = () => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="password">Lozinka</label>
+                <label htmlFor="password">{t('password') || 'Lozinka'}</label>
                 <div className="input-container">
                   <input
                     id="password"
@@ -772,25 +790,25 @@ const Login = () => {
               <div className="form-footer">
                 <div className="checkbox-group">
                   <input type="checkbox" id="remember" name="remember" />
-                  <label htmlFor="remember" className="checkbox-label">Më kujto</label>
+                  <label htmlFor="remember" className="checkbox-label">{t('remember_me') || 'Më kujto'}</label>
                 </div>
-                <button type="button" className="forgot-link">Harrova lozinkën?</button>
+                <button type="button" className="forgot-link">{t('forgot_password') || 'Harrova lozinkën?'}</button>
               </div>
 
               <button type="submit" className="btn-login" disabled={loading || !isLoaded}>
                 {loading ? (
                   <>
                     <span className="spinner" />
-                    Duke u kyçur...
+                    {t('signing_in') || 'Duke u kyçur...'}
                   </>
                 ) : (
-                  'Kyçu'
+                  t('login') || 'Kyçu'
                 )}
               </button>
             </form>
 
             <p className="register-section">
-              Nuk keni llogari? <Link to="/register" className="register-link">Regjistrohuni këtu</Link>
+              {t('no_account') || 'Nuk keni llogari?'} <Link to="/register" className="register-link">{t('register_here') || 'Regjistrohuni këtu'}</Link>
             </p>
           </div>
         </div>
