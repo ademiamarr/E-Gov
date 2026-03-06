@@ -1,76 +1,102 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useSignUp } from '@clerk/clerk-react'
-import { useTranslation } from 'react-i18next'
-import LanguageSwitcher from '../components/LanguageSwitcher'
-import { UserPlus, Lock, Clock, Check, Eye, EyeOff, Upload, X } from 'lucide-react'
-
-const validateEMBG = (embg) => {
-  if (!/^\d{13}$/.test(embg)) return false
-  const d = embg.split('').map(Number)
-  const rr = parseInt(embg.slice(7, 9))
-  if (![41,42,43,44,45,46,47,48,49].includes(rr)) return false
-  const sum = (7*(d[0]+d[6])+6*(d[1]+d[7])+5*(d[2]+d[8])+4*(d[3]+d[9])+3*(d[4]+d[10])+2*(d[5]+d[11])) % 11
-  const k = (sum === 0 || sum === 1) ? 0 : 11 - sum
-  return k === d[12]
-}
+import { Eye, EyeOff } from 'lucide-react'
 
 const Register = () => {
+  const navigate = useNavigate()
   const [step, setStep] = useState(1)
-  const [form, setForm] = useState({ first_name:'', last_name:'', personal_id:'', email:'', password:'', confirm_password:'' })
-  const [photo, setPhoto] = useState(null)
-  const [photoPreview, setPhotoPreview] = useState(null)
+  const [form, setForm] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    embg: '',
+    idPhoto: null,
+  })
   const [showPass, setShowPass] = useState(false)
-  const [showPass2, setShowPass2] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const { signUp, isLoaded } = useSignUp()
-  const { t } = useTranslation()
-  const navigate = useNavigate()
+  const [photoPreview, setPhotoPreview] = useState(null)
+  const photoInputRef = useRef(null)
+  const { signUp, isLoaded, setActive } = useSignUp()
 
-  const isStep1Valid = form.first_name && form.last_name && form.personal_id && form.email && validateEMBG(form.personal_id)
-  const isStep2Valid = form.password && form.confirm_password && form.password === form.confirm_password && form.password.length >= 8 && photoPreview
-
-  const nextStep = () => {
-    setError('')
-    if (!form.first_name || !form.last_name || !form.personal_id || !form.email)
-      return setError(t('fill_required') || 'Пополни ги сите полиња')
-    if (!validateEMBG(form.personal_id))
-      return setError('Број на документ мора да има 15 карактери')
-    setStep(2)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+  const passwordReqs = {
+    length: form.password.length >= 8,
+    uppercase: /[A-Z]/.test(form.password),
+    number: /[0-9]/.test(form.password),
+    special: /[!@#$%^&*]/.test(form.password),
+    match: form.password && form.confirmPassword && form.password === form.confirmPassword,
   }
 
-  const handlePhoto = (e) => {
-    const file = e.target.files[0]
-    if (!file) return
-    if (file.size > 5 * 1024 * 1024) { setError('Фајлот е превелик (макс. 5MB)'); return }
-    setPhoto(file)
-    setPhotoPreview(URL.createObjectURL(file))
-  }
+  const allValid = passwordReqs.length && passwordReqs.uppercase && passwordReqs.number && passwordReqs.special && passwordReqs.match
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError('')
-    if (!form.password || !form.confirm_password) return setError('Пополни ги сите полиња')
-    if (form.password.length < 8) return setError('Лозинката мора да има минимум 8 карактери')
-    if (form.password !== form.confirm_password) return setError('Лозинките не се совпаѓаат')
-    if (!isLoaded) return
-    setLoading(true)
-    try {
-      const su = await signUp.create({
-        emailAddress: form.email, password: form.password,
-        firstName: form.first_name, lastName: form.last_name
-      })
-      window.__pendingRegister = {
-        clerk_id: su.createdUserId, first_name: form.first_name,
-        last_name: form.last_name, personal_id: form.personal_id,
-        email: form.email, id_photo: photo
+  const handlePhotoSelect = (e) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Fotografija duhet të jetë më e vogël se 5MB')
+        return
       }
-      await signUp.prepareEmailAddressVerification({ strategy: 'email_code' })
-      navigate('/verify-email')
+      const reader = new FileReader()
+      reader.onload = (evt) => {
+        setPhotoPreview(evt.target.result)
+        setForm({ ...form, idPhoto: file })
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleStep1Submit = (e) => {
+    e.preventDefault()
+    if (!form.firstName || !form.lastName || !form.email || !form.embg) {
+      setError('Plotësoni të gjitha fushat')
+      return
+    }
+    if (form.embg.length !== 13) {
+      setError('EMBG duhet të ketë 13 shifra')
+      return
+    }
+    setError('')
+    setStep(2)
+  }
+
+  const handleRegisterSubmit = async (e) => {
+    e.preventDefault()
+    if (!isLoaded) return
+    
+    if (!photoPreview) {
+      setError('Duhet të ngarkoni foto të dokumentit')
+      return
+    }
+    if (!allValid) {
+      setError('Plotësoni të gjitha kërkesat për fjalëkalimin')
+      return
+    }
+
+    setLoading(true)
+    setError('')
+    try {
+      const response = await signUp.create({
+        emailAddress: form.email,
+        password: form.password,
+        firstName: form.firstName,
+        lastName: form.lastName,
+        unsafeMetadata: {
+          embg: form.embg,
+        },
+      })
+
+      if (response.status === 'complete') {
+        await setActive({ session: response.createdSessionId })
+        navigate('/dashboard')
+      } else if (response.status === 'missing_requirements') {
+        setError('Plotësoni të gjitha kërkesat')
+      }
     } catch (err) {
-      setError(err.errors?.[0]?.message || 'Грешка при регистрирање')
+      setError(err.errors?.[0]?.message || 'Gabim në regjistrimin')
     } finally {
       setLoading(false)
     }
@@ -79,6 +105,8 @@ const Register = () => {
   return (
     <>
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
         * {
           margin: 0;
           padding: 0;
@@ -92,12 +120,6 @@ const Register = () => {
           --white: #ffffff;
           --border: #e8e8e5;
           --text-gray: #666666;
-          --success: #4caf50;
-          --error: #f44336;
-        }
-
-        html {
-          scroll-behavior: smooth;
         }
 
         body {
@@ -108,106 +130,25 @@ const Register = () => {
           overflow-x: hidden;
         }
 
-        /* Header */
-        header {
-          position: absolute;
-          top: 0;
-          right: 0;
-          padding: 24px 40px;
-          z-index: 100;
-          display: flex;
-          gap: 24px;
-          align-items: center;
-        }
-
-        /* Main Container */
-        .container {
+        .register-container {
           display: flex;
           min-height: 100vh;
           width: 100%;
         }
 
-        /* Left Side - Decoration */
-        .left-side {
+        .register-left {
           flex: 1;
-          background: linear-gradient(135deg, #d84315 0%, #f4511e 100%);
+          background: linear-gradient(135deg, #f4511e 0%, #d84315 100%);
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 40px;
+          padding: 60px 40px;
           position: relative;
           overflow: hidden;
         }
 
-        .decoration-content {
-          position: relative;
-          z-index: 2;
-          text-align: center;
-          color: white;
-          max-width: 400px;
-        }
-
-        .decoration-icon {
-          width: 80px;
-          height: 80px;
-          margin: 0 auto 32px;
-          opacity: 0.95;
-        }
-
-        .decoration-icon svg {
-          width: 100%;
-          height: 100%;
-          color: white;
-        }
-
-        .decoration-title {
-          font-family: 'Playfair Display', serif;
-          font-size: 48px;
-          font-weight: 700;
-          margin-bottom: 20px;
-          line-height: 1.2;
-        }
-
-        .decoration-text {
-          font-size: 15px;
-          line-height: 1.6;
-          opacity: 0.95;
-          font-weight: 400;
-        }
-
-        .decoration-benefits {
-          margin-top: 48px;
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
-        }
-
-        .benefit-item {
-          display: flex;
-          align-items: flex-start;
-          gap: 16px;
-        }
-
-        .benefit-icon {
-          width: 24px;
-          height: 24px;
-          flex-shrink: 0;
-          opacity: 0.9;
-        }
-
-        .benefit-icon svg {
-          width: 100%;
-          height: 100%;
-          color: white;
-        }
-
-        .benefit-text {
-          text-align: left;
-          font-size: 13px;
-          line-height: 1.5;
-        }
-
-        .shape-1 {
+        .register-left::before {
+          content: '';
           position: absolute;
           width: 300px;
           height: 300px;
@@ -218,7 +159,8 @@ const Register = () => {
           z-index: 1;
         }
 
-        .shape-2 {
+        .register-left::after {
+          content: '';
           position: absolute;
           width: 200px;
           height: 200px;
@@ -229,143 +171,192 @@ const Register = () => {
           z-index: 1;
         }
 
-        /* Right Side - Register Form */
-        .right-side {
+        .register-decoration {
+          position: relative;
+          z-index: 2;
+          text-align: center;
+          color: white;
+          max-width: 420px;
+        }
+
+        .register-logo-box {
+          width: 64px;
+          height: 64px;
+          background: rgba(255, 255, 255, 0.15);
+          border-radius: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0 auto 40px;
+          border: 1px solid rgba(255, 255, 255, 0.25);
+        }
+
+        .register-logo-box-icon {
+          font-size: 32px;
+          font-weight: 700;
+          color: white;
+        }
+
+        .register-title {
+          font-size: 44px;
+          font-weight: 700;
+          margin-bottom: 20px;
+          line-height: 1.2;
+          letter-spacing: -0.5px;
+        }
+
+        .register-subtitle {
+          font-size: 15px;
+          line-height: 1.6;
+          opacity: 0.95;
+          font-weight: 400;
+          margin-bottom: 48px;
+        }
+
+        .register-steps {
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+          text-align: left;
+        }
+
+        .register-step {
+          display: flex;
+          gap: 16px;
+          align-items: flex-start;
+        }
+
+        .register-step-icon {
+          width: 40px;
+          height: 40px;
+          background: rgba(255, 255, 255, 0.12);
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          font-size: 18px;
+          font-weight: 700;
+          color: white;
+          opacity: 0.7;
+        }
+
+        .register-step.active .register-step-icon {
+          background: rgba(255, 255, 255, 0.25);
+          opacity: 1;
+        }
+
+        .register-step-content h4 {
+          font-size: 13px;
+          font-weight: 600;
+          margin-bottom: 4px;
+          letter-spacing: 0.3px;
+          opacity: 0.8;
+        }
+
+        .register-step.active .register-step-content h4 {
+          opacity: 1;
+        }
+
+        .register-step-content p {
+          font-size: 12px;
+          opacity: 0.7;
+          line-height: 1.5;
+        }
+
+        .register-right {
           flex: 1;
           display: flex;
           align-items: center;
           justify-content: center;
           padding: 40px;
           background: var(--white);
-          overflow-y: auto;
-          max-height: 100vh;
           position: relative;
         }
 
-        .register-wrapper {
-          width: 100%;
-          max-width: 420px;
-        }
-
-        .register-top {
+        .register-header {
+          position: absolute;
+          top: 24px;
+          right: 40px;
           display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          margin-bottom: 32px;
+          align-items: center;
           gap: 16px;
         }
 
-        .register-header {
-          flex: 1;
+        .register-progress {
+          display: flex;
+          gap: 8px;
+        }
+
+        .register-progress-bar {
+          width: 50px;
+          height: 3px;
+          background: #e8e8e5;
+          border-radius: 2px;
+          transition: background-color 0.3s ease;
+        }
+
+        .register-progress-bar.active {
+          background: var(--primary);
+        }
+
+        .language-switcher {
+          padding: 8px 12px;
+          border: 1px solid var(--border);
+          border-radius: 6px;
+          font-size: 12px;
+          font-weight: 600;
+          color: var(--dark);
+          background: var(--white);
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .language-switcher:hover {
+          border-color: var(--primary);
+          background: #f9f9f9;
+        }
+
+        .register-form-wrapper {
+          width: 100%;
+          max-width: 380px;
+        }
+
+        .register-branding {
+          margin-bottom: 40px;
         }
 
         .register-logo {
-          font-family: 'Playfair Display', serif;
           font-size: 28px;
           font-weight: 700;
           color: var(--dark);
           margin-bottom: 8px;
+          letter-spacing: -0.5px;
         }
 
-        .register-subtitle {
+        .register-form-subtitle {
           font-size: 13px;
           color: var(--text-gray);
           font-weight: 400;
         }
 
-        .lang-switcher-wrapper {
-          flex-shrink: 0;
-        }
-
-        /* Progress Indicator */
-        .progress-container {
-          margin-bottom: 32px;
-        }
-
-        .progress-steps {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          gap: 8px;
-          margin-bottom: 16px;
-        }
-
-        .progress-step {
-          flex: 1;
-          height: 4px;
-          background: var(--border);
-          border-radius: 2px;
-          transition: background-color 0.3s ease;
-        }
-
-        .progress-step.active {
-          background: var(--primary);
-        }
-
-        .progress-step.completed {
-          background: var(--success);
-        }
-
-        .progress-info {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 0 8px;
-          font-size: 12px;
-          font-weight: 600;
-          color: var(--text-gray);
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-
-        .step-indicator.active {
-          color: var(--primary);
-        }
-
-        /* Form */
         .register-form {
           display: flex;
           flex-direction: column;
-          gap: 20px;
-        }
-
-        .form-step {
-          display: none;
-        }
-
-        .form-step.active {
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
-        }
-
-        .form-step h2 {
-          font-size: 18px;
-          font-weight: 800;
-          color: #0f1728;
-          margin-bottom: 4px;
-        }
-
-        .form-step > p {
-          font-size: 13px;
-          color: #6b7280;
-          margin-bottom: 20px;
-        }
-
-        .form-row {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 16px;
-        }
-
-        .form-row.full {
-          grid-template-columns: 1fr;
+          gap: 24px;
         }
 
         .form-group {
           display: flex;
           flex-direction: column;
           gap: 8px;
+        }
+
+        .form-row {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
         }
 
         label {
@@ -376,151 +367,37 @@ const Register = () => {
           letter-spacing: 0.5px;
         }
 
-        input[type="text"],
-        input[type="email"],
-        input[type="password"],
-        input[type="file"] {
-          padding: 16px 16px;
-          border: 1.5px solid var(--border);
-          border-radius: 8px;
-          font-size: 15px;
-          font-family: 'Inter', sans-serif;
-          background: #f9fafb;
-          color: var(--dark);
-          transition: all 0.2s ease;
-          height: 48px;
-          line-height: 1.5;
+        .input-container {
+          position: relative;
         }
 
-        input[type="text"]:focus,
+        input[type="email"],
+        input[type="password"],
+        input[type="text"] {
+          padding: 12px 40px 12px 14px;
+          border: 1px solid var(--border);
+          border-radius: 6px;
+          font-size: 14px;
+          font-family: 'Inter', sans-serif;
+          background: var(--white);
+          color: var(--dark);
+          transition: border-color 0.2s ease, box-shadow 0.2s ease;
+          width: 100%;
+        }
+
         input[type="email"]:focus,
         input[type="password"]:focus,
-        input[type="file"]:focus {
+        input[type="text"]:focus {
           outline: none;
           border-color: var(--primary);
-          box-shadow: 0 0 0 3px rgba(216, 67, 21, 0.1);
-          background: var(--white);
+          box-shadow: 0 0 0 3px rgba(216, 67, 21, 0.08);
         }
 
         input::placeholder {
-          color: #bbb;
-          font-size: 15px;
+          color: #aaa;
         }
 
-        /* File Upload */
-        .file-upload-wrapper {
-          position: relative;
-        }
-
-        .file-upload-label {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          gap: 12px;
-          padding: 40px 20px;
-          border: 2px dashed var(--border);
-          border-radius: 8px;
-          cursor: pointer;
-          background: #f9fafb;
-          transition: all 0.3s ease;
-          text-align: center;
-          min-height: 140px;
-        }
-
-        .file-upload-label:hover {
-          border-color: var(--primary);
-          background-color: rgba(216, 67, 21, 0.03);
-        }
-
-        .file-upload-label.active {
-          border-color: var(--primary);
-          background-color: rgba(216, 67, 21, 0.08);
-          border-style: solid;
-        }
-
-        .file-upload-icon {
-          width: 32px;
-          height: 32px;
-          color: var(--primary);
-        }
-
-        .file-upload-icon svg {
-          width: 100%;
-          height: 100%;
-        }
-
-        .file-upload-text {
-          font-size: 14px;
-          color: var(--dark);
-          font-weight: 600;
-        }
-
-        .file-upload-hint {
-          font-size: 12px;
-          color: var(--text-gray);
-        }
-
-        input[type="file"] {
-          display: none;
-        }
-
-        .file-preview {
-          position: relative;
-          margin-top: 12px;
-          border-radius: 8px;
-          overflow: hidden;
-          background: var(--light-bg);
-        }
-
-        .file-preview img {
-          max-width: 100%;
-          height: auto;
-          display: block;
-          width: 100%;
-          max-height: 200px;
-          object-fit: cover;
-        }
-
-        .file-preview-info {
-          padding: 12px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          background: var(--light-bg);
-          font-size: 12px;
-          font-weight: 600;
-          color: var(--success);
-        }
-
-        .file-remove {
-          cursor: pointer;
-          color: var(--error);
-          background: none;
-          border: none;
-          padding: 4px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 24px;
-          height: 24px;
-        }
-
-        .file-remove svg {
-          width: 18px;
-          height: 18px;
-        }
-
-        .file-remove:hover {
-          color: #d32f2f;
-        }
-
-        /* Password Input Container */
-        .password-input-container {
-          position: relative;
-        }
-
-        .password-toggle-btn {
+        .toggle-password {
           position: absolute;
           right: 12px;
           top: 50%;
@@ -529,170 +406,174 @@ const Register = () => {
           border: none;
           color: var(--text-gray);
           cursor: pointer;
-          padding: 4px;
+          padding: 4px 8px;
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 24px;
-          height: 24px;
+          transition: color 0.2s ease;
         }
 
-        .password-toggle-btn svg {
-          width: 20px;
-          height: 20px;
+        .toggle-password:hover {
+          color: var(--primary);
         }
 
-        /* Password Strength */
-        .password-strength {
-          margin-top: 8px;
-          height: 4px;
-          background: var(--border);
-          border-radius: 2px;
-          overflow: hidden;
+        .photo-upload {
+          border: 2px dashed var(--border);
+          border-radius: 6px;
+          padding: 28px;
+          text-align: center;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          background: #fafaf8;
         }
 
-        .password-strength-bar {
-          height: 100%;
-          width: 0;
-          background: var(--error);
-          transition: width 0.3s ease, background-color 0.3s ease;
+        .photo-upload:hover {
+          border-color: var(--primary);
+          background: #f5f5f3;
         }
 
-        .password-strength-bar.weak {
-          width: 33%;
-          background: var(--error);
+        .photo-upload input {
+          display: none;
         }
 
-        .password-strength-bar.medium {
-          width: 66%;
-          background: #ff9800;
-        }
-
-        .password-strength-bar.strong {
+        .photo-preview {
           width: 100%;
-          background: var(--success);
+          height: 180px;
+          object-fit: cover;
+          border-radius: 6px;
+          margin-bottom: 12px;
         }
 
-        /* Agreement */
-        .agreement-section {
-          display: flex;
-          gap: 10px;
-          padding: 16px;
-          background: #f9fafb;
-          border-radius: 8px;
+        .photo-text {
+          font-size: 13px;
+          color: var(--text-gray);
+          margin-bottom: 6px;
         }
 
-        .checkbox-wrapper {
+        .photo-hint {
+          font-size: 11px;
+          color: #aaa;
+        }
+
+        .password-reqs {
+          background: #fafaf8;
+          border: 1px solid var(--border);
+          border-radius: 6px;
+          padding: 14px;
           display: flex;
-          align-items: flex-start;
+          flex-direction: column;
           gap: 8px;
-          cursor: pointer;
-          flex: 1;
         }
 
-        input[type="checkbox"] {
-          width: 18px;
-          height: 18px;
-          cursor: pointer;
-          accent-color: var(--primary);
-          margin-top: 2px;
-          flex-shrink: 0;
-          border: 1.5px solid var(--border);
-          border-radius: 4px;
-        }
-
-        .checkbox-label {
+        .req {
+          display: flex;
+          align-items: center;
+          gap: 8px;
           font-size: 12px;
           color: var(--text-gray);
-          cursor: pointer;
-          margin: 0;
-          font-weight: 400;
-          line-height: 1.5;
         }
 
-        .checkbox-label a {
-          color: var(--primary);
-          text-decoration: none;
+        .req.valid {
+          color: #22c55e;
+        }
+
+        .req-icon {
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #e8e8e5;
+          color: #999;
+          font-size: 10px;
+          flex-shrink: 0;
           font-weight: 600;
         }
 
-        .checkbox-label a:hover {
-          text-decoration: underline;
+        .req.valid .req-icon {
+          background: #dcfce7;
+          color: #22c55e;
         }
 
-        /* Buttons */
-        .button-group {
-          display: flex;
-          gap: 12px;
-          margin-top: 20px;
-        }
-
-        .btn-back {
-          flex: 1;
-          padding: 16px 24px;
-          background: #f9fafb;
-          color: var(--dark);
-          border: 1.5px solid var(--border);
-          border-radius: 8px;
-          font-size: 14px;
-          font-weight: 700;
-          letter-spacing: 0.5px;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          text-transform: uppercase;
-          height: 48px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .btn-back:hover {
-          border-color: var(--primary);
-          background: rgba(216, 67, 21, 0.03);
-        }
-
-        .btn-continue,
         .btn-register {
-          flex: 1;
-          padding: 16px 24px;
+          padding: 13px 24px;
           background: var(--primary);
           color: white;
           border: none;
-          border-radius: 8px;
+          border-radius: 6px;
           font-size: 14px;
-          font-weight: 700;
+          font-weight: 600;
           letter-spacing: 0.5px;
           cursor: pointer;
           transition: background-color 0.2s ease;
           text-transform: uppercase;
-          height: 48px;
           display: flex;
           align-items: center;
           justify-content: center;
+          gap: 8px;
         }
 
-        .btn-continue:hover:not(:disabled),
         .btn-register:hover:not(:disabled) {
           background-color: #c23d0f;
         }
 
-        .btn-continue:disabled,
         .btn-register:disabled {
-          opacity: 0.5;
+          opacity: 0.65;
           cursor: not-allowed;
         }
 
-        /* Login Link */
-        .login-section {
-          margin-top: 24px;
-          padding-top: 20px;
+        .spinner {
+          width: 14px;
+          height: 14px;
+          border: 2px solid rgba(255, 255, 255, 0.3);
+          border-top-color: white;
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+
+        .error-message {
+          background: #fef2f2;
+          color: #ef4444;
+          padding: 12px 14px;
+          border-radius: 6px;
+          border: 1px solid #fecaca;
+          font-size: 13px;
+          margin-bottom: 16px;
+        }
+
+        .back-btn {
+          margin-top: 16px;
+          width: 100%;
+          padding: 10px;
+          background: none;
+          border: none;
+          color: var(--primary);
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: color 0.2s ease;
+          text-align: center;
+        }
+
+        .back-btn:hover {
+          color: #c23d0f;
+        }
+
+        .register-footer {
+          margin-top: 28px;
+          padding-top: 24px;
           border-top: 1px solid var(--border);
           text-align: center;
           font-size: 13px;
           color: var(--text-gray);
         }
 
-        .login-link {
+        .register-link {
           color: var(--primary);
           text-decoration: none;
           font-weight: 600;
@@ -700,540 +581,531 @@ const Register = () => {
           cursor: pointer;
         }
 
-        .login-link:hover {
+        .register-link:hover {
           color: #c23d0f;
         }
 
-        /* Error Message */
-        .error-msg {
-          background: #fef2f2;
-          color: var(--error);
-          padding: 12px 14px;
-          border-radius: 8px;
-          border: 1.5px solid #fecaca;
-          font-size: 13px;
-          margin-bottom: 16px;
-          font-weight: 500;
-        }
-
-        .back-button-header {
-          position: absolute;
-          top: 24px;
-          left: 24px;
-          background: var(--white);
-          border: 1.5px solid var(--border);
-          width: 40px;
-          height: 40px;
-          border-radius: 8px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          font-size: 20px;
-          z-index: 101;
-        }
-
-        .back-button-header:hover {
-          border-color: var(--primary);
-          background: rgba(216, 67, 21, 0.03);
-        }
-
-        /* Responsive Design */
         @media (max-width: 1024px) {
-          .container {
+          .register-container {
             flex-direction: column;
           }
 
-          .left-side {
+          .register-left {
             padding: 40px;
-            min-height: 35vh;
+            min-height: 40vh;
           }
 
-          .right-side {
+          .register-right {
             padding: 40px;
-            min-height: 65vh;
+            min-height: 60vh;
           }
 
-          header {
+          .register-header {
             position: relative;
-            justify-content: flex-end;
-            padding: 16px 24px;
-            background: var(--white);
+            top: 0;
+            right: 0;
+            margin-bottom: 24px;
+          }
+
+          .register-title {
+            font-size: 36px;
           }
         }
 
         @media (max-width: 768px) {
-          .container {
-            flex-direction: column;
-          }
-
-          .left-side {
+          .register-left {
             padding: 30px 20px;
             min-height: 40vh;
           }
 
-          .right-side {
+          .register-right {
             padding: 25px 20px;
             min-height: 60vh;
           }
 
-          .register-logo {
-            font-size: 24px;
-          }
-
-          .register-subtitle {
-            font-size: 12px;
-          }
-
-          header {
-            padding: 16px 20px;
-          }
-
-          input[type="text"],
-          input[type="email"],
-          input[type="password"] {
-            font-size: 14px;
-          }
-        }
-
-        @media (max-width: 640px) {
-          .container {
-            flex-direction: column;
-            min-height: auto;
-          }
-
-          .left-side {
-            padding: 25px 16px;
-            min-height: 35vh;
-          }
-
-          .right-side {
-            padding: 20px 16px;
-            min-height: 65vh;
-          }
-
-          .decoration-icon {
-            width: 50px;
-            height: 50px;
+          .register-title {
+            font-size: 32px;
             margin-bottom: 16px;
           }
 
-          .decoration-title {
-            font-size: 26px;
-            margin-bottom: 12px;
-            line-height: 1.3;
-          }
-
-          .decoration-text {
-            font-size: 13px;
-          }
-
-          .register-wrapper {
-            max-width: 100%;
-          }
-
-          .register-top {
-            flex-direction: column;
-            gap: 16px;
-          }
-
-          .register-header {
-            flex: none;
-          }
-
-          .lang-switcher-wrapper {
-            width: 100%;
+          .register-subtitle {
+            font-size: 14px;
           }
 
           .register-logo {
-            font-size: 22px;
+            font-size: 24px;
+            margin-bottom: 6px;
           }
 
-          .register-subtitle {
+          .register-form-subtitle {
             font-size: 12px;
-            margin-top: 8px;
           }
 
           .form-row {
             grid-template-columns: 1fr;
           }
+        }
+
+        @media (max-width: 640px) {
+          .register-left {
+            display: none;
+          }
+
+          .register-right {
+            padding: 20px 16px;
+            min-height: 100vh;
+          }
+
+          .register-header {
+            top: 16px;
+            right: 16px;
+            gap: 12px;
+          }
+
+          .register-progress {
+            gap: 6px;
+          }
+
+          .register-progress-bar {
+            width: 40px;
+            height: 2px;
+          }
+
+          .register-form-wrapper {
+            width: 100%;
+            max-width: 100%;
+          }
+
+          .register-branding {
+            margin-bottom: 28px;
+          }
+
+          .register-logo {
+            font-size: 24px;
+            margin-bottom: 6px;
+          }
+
+          .register-form {
+            gap: 18px;
+          }
+
+          .form-group {
+            gap: 6px;
+          }
 
           label {
             font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.6px;
           }
 
-          input[type="text"],
           input[type="email"],
-          input[type="password"] {
-            padding: 14px 16px;
-            font-size: 14px;
-            height: 44px;
+          input[type="password"],
+          input[type="text"] {
+            padding: 13px 40px 13px 14px;
+            border: 1.5px solid #ddd;
+            border-radius: 8px;
+            font-size: 15px;
+            background: #fafafa;
           }
 
-          .progress-container {
-            margin-bottom: 24px;
+          input[type="email"]:focus,
+          input[type="password"]:focus,
+          input[type="text"]:focus {
+            background: #fff;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(216, 67, 21, 0.1);
           }
 
-          .btn-continue,
-          .btn-back,
+          input::placeholder {
+            color: #bbb;
+          }
+
+          .form-row {
+            grid-template-columns: 1fr;
+            gap: 14px;
+          }
+
+          .photo-upload {
+            padding: 24px;
+          }
+
+          .photo-preview {
+            height: 160px;
+            margin-bottom: 10px;
+          }
+
+          .password-reqs {
+            padding: 12px;
+            gap: 6px;
+          }
+
+          .req {
+            font-size: 11px;
+            gap: 6px;
+          }
+
+          .req-icon {
+            width: 14px;
+            height: 14px;
+            font-size: 8px;
+          }
+
           .btn-register {
-            padding: 14px 20px;
+            padding: 13px 16px;
             font-size: 13px;
-            height: 44px;
+            margin-top: 12px;
           }
 
-          .button-group {
-            flex-direction: column;
+          .back-btn {
+            padding: 8px;
+            font-size: 12px;
+            margin-top: 12px;
           }
 
-          .login-section {
-            margin-top: 20px;
+          .register-footer {
+            margin-top: 24px;
             padding-top: 16px;
             font-size: 12px;
           }
 
-          header {
-            padding: 12px 12px;
-            right: 0;
-          }
-
-          .file-upload-label {
-            padding: 30px 16px;
-            min-height: 120px;
-          }
-
-          .agreement-section {
-            padding: 12px;
-          }
-
-          .back-button-header {
-            width: 36px;
-            height: 36px;
-            font-size: 18px;
-            top: 20px;
-            left: 20px;
+          .error-message {
+            font-size: 12px;
+            padding: 10px 12px;
+            margin-bottom: 14px;
           }
         }
 
         @media (max-width: 480px) {
-          .left-side {
-            padding: 20px 12px;
-            min-height: 30vh;
-          }
-
-          .right-side {
+          .register-right {
             padding: 16px 12px;
           }
 
-          .decoration-icon {
-            width: 40px;
-            height: 40px;
-            margin-bottom: 12px;
+          .register-header {
+            top: 12px;
+            right: 12px;
           }
 
-          .decoration-title {
-            font-size: 22px;
-            margin-bottom: 10px;
+          .register-progress {
+            gap: 4px;
+          }
+
+          .register-progress-bar {
+            width: 30px;
           }
 
           .register-logo {
-            font-size: 20px;
+            font-size: 22px;
           }
 
-          .register-subtitle {
-            font-size: 11px;
+          .register-form {
+            gap: 16px;
           }
 
-          input[type="text"],
+          .form-group {
+            gap: 5px;
+          }
+
+          label {
+            font-size: 10px;
+            font-weight: 700;
+          }
+
           input[type="email"],
-          input[type="password"] {
-            padding: 12px 14px;
+          input[type="password"],
+          input[type="text"] {
+            padding: 12px 38px 12px 12px;
+            border: 1.5px solid #ddd;
+            border-radius: 7px;
             font-size: 14px;
-            height: 40px;
           }
 
-          .btn-continue,
-          .btn-back,
+          .photo-upload {
+            padding: 20px;
+          }
+
+          .photo-preview {
+            height: 140px;
+          }
+
           .btn-register {
-            padding: 12px 16px;
+            padding: 12px 14px;
             font-size: 12px;
-            height: 40px;
           }
 
-          .file-upload-label {
-            padding: 25px 12px;
-            gap: 10px;
-            min-height: 100px;
-          }
-
-          .file-upload-icon {
-            width: 28px;
-            height: 28px;
-          }
-
-          .file-upload-text {
-            font-size: 12px;
+          .register-footer {
+            font-size: 11px;
+            margin-top: 20px;
           }
         }
       `}</style>
 
-      <div className="container">
-        {/* Left Side - Decoration */}
-        <div className="left-side">
-          <div className="shape-1"></div>
-          <div className="shape-2"></div>
-
-          <div className="decoration-content">
-            <div className="decoration-icon">
-              <UserPlus />
+      <div className="register-container">
+        <div className="register-left">
+          <div className="register-decoration">
+            <div className="register-logo-box">
+              <div className="register-logo-box-icon">G</div>
             </div>
-            <h1 className="decoration-title">Приклучи се сега</h1>
-            <p className="decoration-text">
-              Направи своја сметка и почни да управуваш со твои документи и термини.
+            <h1 className="register-title">Regjistrohuni në eGov</h1>
+            <p className="register-subtitle">
+              Siguroni qasjen tuaj në shërbimet qeveritare me dy hapa të thjeshtë.
             </p>
 
-            <div className="decoration-benefits">
-              <div className="benefit-item">
-                <div className="benefit-icon">
-                  <Lock />
+            <div className="register-steps">
+              <div className={`register-step ${step >= 1 ? 'active' : ''}`}>
+                <div className="register-step-icon">1</div>
+                <div className="register-step-content">
+                  <h4>Informacioni personal</h4>
+                  <p>Emri, email, EMBG</p>
                 </div>
-                <div className="benefit-text">Безбедна регистрација</div>
               </div>
-              <div className="benefit-item">
-                <div className="benefit-icon">
-                  <Clock />
+              <div className={`register-step ${step >= 2 ? 'active' : ''}`}>
+                <div className="register-step-icon">2</div>
+                <div className="register-step-content">
+                  <h4>Sigurimi dhe dokumenti</h4>
+                  <p>Fjalëkalim dhe fotografi</p>
                 </div>
-                <div className="benefit-text">Брзо верифицирано</div>
-              </div>
-              <div className="benefit-item">
-                <div className="benefit-icon">
-                  <Check />
-                </div>
-                <div className="benefit-text">Веќе активна сметка</div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right Side - Register Form */}
-        <div className="right-side">
-          {step === 2 && (
-            <button 
-              className="back-button-header"
-              onClick={() => setStep(1)}
-              aria-label="Go back"
-            >
-              ←
-            </button>
-          )}
-
-          <div className="register-wrapper">
-            <div className="register-top">
-              <div className="register-header">
-                <div className="register-logo">e-Gov</div>
-                <div className="register-subtitle">Креирај нова сметка</div>
-              </div>
-              <div className="lang-switcher-wrapper">
-                <LanguageSwitcher />
-              </div>
+        <div className="register-right">
+          <div className="register-header">
+            <div className="register-progress">
+              <div className={`register-progress-bar ${step >= 1 ? 'active' : ''}`} />
+              <div className={`register-progress-bar ${step >= 2 ? 'active' : ''}`} />
             </div>
+            <button className="language-switcher">SQ</button>
+          </div>
 
-            {/* Progress Indicator */}
-            <div className="progress-container">
-              <div className="progress-steps">
-                <div className={`progress-step ${step > 1 ? 'completed' : step === 1 ? 'active' : ''}`}></div>
-                <div className={`progress-step ${step === 2 ? 'active' : ''}`}></div>
-              </div>
-              <div className="progress-info">
-                <span className={step === 1 ? 'active' : ''}>Чекор 1</span>
-                <span className={step === 2 ? 'active' : ''}>Чекор 2</span>
-              </div>
-            </div>
+          <div className="register-form-wrapper">
+            {step === 1 && (
+              <>
+                <div className="register-branding">
+                  <div className="register-logo">e-Gov</div>
+                  <p className="register-form-subtitle">Hapi 1 nga 2: Informacioni personal</p>
+                </div>
 
-            {error && <div className="error-msg">{error}</div>}
+                {error && <div className="error-message">{error}</div>}
 
-            <form className="register-form" onSubmit={(e) => { e.preventDefault(); step === 1 ? nextStep() : handleSubmit(e) }}>
-              {/* STEP 1: Personal Information */}
-              <div className={`form-step ${step === 1 ? 'active' : ''}`}>
-                <h2>Лични податоци</h2>
-                <p>Пополни информациите за создавање на твоја сметка</p>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label htmlFor="firstName">Име</label>
-                    <input
-                      id="firstName"
-                      type="text"
-                      placeholder="Марко"
-                      value={form.first_name}
-                      onChange={e => setForm({...form, first_name: e.target.value})}
-                      required
-                      autoComplete="given-name"
-                    />
+                <form className="register-form" onSubmit={handleStep1Submit}>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label htmlFor="firstName">Emri</label>
+                      <input
+                        id="firstName"
+                        type="text"
+                        placeholder="Emri juaj"
+                        value={form.firstName}
+                        onChange={e => {
+                          setForm({ ...form, firstName: e.target.value })
+                          setError('')
+                        }}
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="lastName">Mbiemri</label>
+                      <input
+                        id="lastName"
+                        type="text"
+                        placeholder="Mbiemri juaj"
+                        value={form.lastName}
+                        onChange={e => {
+                          setForm({ ...form, lastName: e.target.value })
+                          setError('')
+                        }}
+                        required
+                      />
+                    </div>
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="lastName">Мбиемер</label>
+                    <label htmlFor="email">Posta elektronike</label>
                     <input
-                      id="lastName"
+                      id="email"
+                      type="email"
+                      placeholder="emri@shembull.mk"
+                      value={form.email}
+                      onChange={e => {
+                        setForm({ ...form, email: e.target.value })
+                        setError('')
+                      }}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="embg">Numri personal (EMBG)</label>
+                    <input
+                      id="embg"
                       type="text"
-                      placeholder="Петровски"
-                      value={form.last_name}
-                      onChange={e => setForm({...form, last_name: e.target.value})}
+                      placeholder="XXXXXXXXXXXXX"
+                      value={form.embg}
+                      onChange={e => {
+                        setForm({
+                          ...form,
+                          embg: e.target.value.replace(/\D/g, '').slice(0, 13),
+                        })
+                        setError('')
+                      }}
+                      maxLength="13"
                       required
-                      autoComplete="family-name"
                     />
                   </div>
+
+                  <button type="submit" className="btn-register">Vazhdo në hapin 2</button>
+                </form>
+              </>
+            )}
+
+            {step === 2 && (
+              <>
+                <div className="register-branding">
+                  <div className="register-logo">e-Gov</div>
+                  <p className="register-form-subtitle">Hapi 2 nga 2: Fjalëkalim dhe dokumenti</p>
                 </div>
 
-                <div className="form-group form-row full">
-                  <label htmlFor="personalNumber">Број на личен документ</label>
-                  <input
-                    id="personalNumber"
-                    type="text"
-                    placeholder="ХХХХХХХХХХХХХХХ"
-                    maxLength={15}
-                    inputMode="numeric"
-                    value={form.personal_id}
-                    onChange={e => setForm({...form, personal_id: e.target.value.replace(/\D/g,'')})}
-                    required
-                  />
-                </div>
+                {error && <div className="error-message">{error}</div>}
 
-                <div className="form-group form-row full">
-                  <label htmlFor="email">Е-пошта</label>
-                  <input
-                    id="email"
-                    type="email"
-                    placeholder="email@пример.mk"
-                    value={form.email}
-                    onChange={e => setForm({...form, email: e.target.value})}
-                    required
-                    autoComplete="email"
-                  />
-                </div>
-
-                <div className="button-group">
-                  <button 
-                    type="button"
-                    className="btn-continue"
-                    onClick={nextStep}
-                    disabled={!isStep1Valid}
-                  >
-                    Продолжи →
-                  </button>
-                </div>
-
-                <p className="login-section">
-                  Веќе имаш сметка? <Link to="/login" className="login-link">Влези</Link>
-                </p>
-              </div>
-
-              {/* STEP 2: Password & Document */}
-              <div className={`form-step ${step === 2 ? 'active' : ''}`}>
-                <h2>Лозинка и документ</h2>
-                <p>Постави лозинка и нагрузи фото од документ</p>
-
-                <div className="form-group form-row full">
-                  <label htmlFor="password">Лозинка</label>
-                  <div className="password-input-container">
-                    <input
-                      id="password"
-                      type={showPass ? 'text' : 'password'}
-                      placeholder="Минимум 8 карактери"
-                      value={form.password}
-                      onChange={e => setForm({...form, password: e.target.value})}
-                      required
-                      autoComplete="new-password"
-                    />
-                    <button
-                      type="button"
-                      className="password-toggle-btn"
-                      onClick={() => setShowPass(!showPass)}
-                      aria-label="Toggle password visibility"
-                    >
-                      {showPass ? <EyeOff /> : <Eye />}
-                    </button>
+                <form className="register-form" onSubmit={handleRegisterSubmit}>
+                  <div className="form-group">
+                    <label htmlFor="password">Fjalëkalim</label>
+                    <div className="input-container">
+                      <input
+                        id="password"
+                        type={showPass ? 'text' : 'password'}
+                        placeholder="••••••••"
+                        value={form.password}
+                        onChange={e => {
+                          setForm({ ...form, password: e.target.value })
+                          setError('')
+                        }}
+                        required
+                      />
+                      <button
+                        type="button"
+                        className="toggle-password"
+                        onClick={(e) => {
+                          e.preventDefault()
+                          setShowPass(!showPass)
+                        }}
+                        title={showPass ? 'Fshih' : 'Shfaq'}
+                      >
+                        {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
                   </div>
-                  <div className="password-strength">
-                    <div className={`password-strength-bar ${form.password.length < 8 ? 'weak' : form.password.length < 12 ? 'medium' : 'strong'}`}></div>
-                  </div>
-                </div>
 
-                <div className="form-group form-row full">
-                  <label htmlFor="confirmPassword">Потврди лозинка</label>
-                  <div className="password-input-container">
-                    <input
-                      id="confirmPassword"
-                      type={showPass2 ? 'text' : 'password'}
-                      placeholder="Повтори лозинка"
-                      value={form.confirm_password}
-                      onChange={e => setForm({...form, confirm_password: e.target.value})}
-                      required
-                      autoComplete="new-password"
-                    />
-                    <button
-                      type="button"
-                      className="password-toggle-btn"
-                      onClick={() => setShowPass2(!showPass2)}
-                      aria-label="Toggle password visibility"
-                    >
-                      {showPass2 ? <EyeOff /> : <Eye />}
-                    </button>
+                  <div className="form-group">
+                    <label htmlFor="confirm">Konfirmoni fjalëkalimin</label>
+                    <div className="input-container">
+                      <input
+                        id="confirm"
+                        type={showConfirm ? 'text' : 'password'}
+                        placeholder="••••••••"
+                        value={form.confirmPassword}
+                        onChange={e => {
+                          setForm({ ...form, confirmPassword: e.target.value })
+                          setError('')
+                        }}
+                        required
+                      />
+                      <button
+                        type="button"
+                        className="toggle-password"
+                        onClick={(e) => {
+                          e.preventDefault()
+                          setShowConfirm(!showConfirm)
+                        }}
+                        title={showConfirm ? 'Fshih' : 'Shfaq'}
+                      >
+                        {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
                   </div>
-                </div>
 
-                <div className="form-group form-row full">
-                  <label>Фото од документ</label>
-                  <div className="file-upload-wrapper">
-                    <label className={`file-upload-label ${photoPreview ? 'active' : ''}`}>
+                  <div className="password-reqs">
+                    <div className={`req ${passwordReqs.length ? 'valid' : ''}`}>
+                      <div className="req-icon">{passwordReqs.length ? '✓' : '—'}</div>
+                      <span>Të paktën 8 karaktere</span>
+                    </div>
+                    <div className={`req ${passwordReqs.uppercase ? 'valid' : ''}`}>
+                      <div className="req-icon">{passwordReqs.uppercase ? '✓' : '—'}</div>
+                      <span>Një shkronjë e madhe</span>
+                    </div>
+                    <div className={`req ${passwordReqs.number ? 'valid' : ''}`}>
+                      <div className="req-icon">{passwordReqs.number ? '✓' : '—'}</div>
+                      <span>Një numër</span>
+                    </div>
+                    <div className={`req ${passwordReqs.special ? 'valid' : ''}`}>
+                      <div className="req-icon">{passwordReqs.special ? '✓' : '—'}</div>
+                      <span>Karakter special: !@#$%^&*</span>
+                    </div>
+                    <div className={`req ${passwordReqs.match ? 'valid' : ''}`}>
+                      <div className="req-icon">{passwordReqs.match ? '✓' : '—'}</div>
+                      <span>Fjalëkalimet përputhen</span>
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Fotografia e dokumentit</label>
+                    <div className="photo-upload" onClick={() => photoInputRef.current?.click()}>
                       {photoPreview ? (
-                        <div className="file-preview">
-                          <img src={photoPreview} alt="Document Preview" />
-                          <div className="file-preview-info">
-                            <span>✓ Документ нагрузен</span>
-                            <button
-                              type="button"
-                              className="file-remove"
-                              onClick={() => { setPhoto(null); setPhotoPreview(null); }}
-                              aria-label="Remove file"
-                            >
-                              <X />
-                            </button>
-                          </div>
-                        </div>
+                        <>
+                          <img src={photoPreview} alt="Preview" className="photo-preview" />
+                          <p className="photo-text">Klikoni për të ndryshuar</p>
+                        </>
                       ) : (
                         <>
-                          <div className="file-upload-icon">
-                            <Upload />
-                          </div>
-                          <div className="file-upload-text">Нагрузи фото од документ</div>
-                          <div className="file-upload-hint">PNG, JPG до 5MB</div>
+                          <p className="photo-text">Ngarkoni fotografi të dokumentit</p>
+                          <p className="photo-hint">PNG, JPG deri në 5MB</p>
                         </>
                       )}
-                      <input type="file" accept="image/*" onChange={handlePhoto} />
-                    </label>
+                      <input
+                        ref={photoInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handlePhotoSelect}
+                      />
+                    </div>
                   </div>
-                </div>
 
-                <div className="agreement-section">
-                  <div className="checkbox-wrapper">
-                    <input type="checkbox" id="agreement" name="agreement" required />
-                    <label htmlFor="agreement" className="checkbox-label">
-                      Се согласувам со <a href="#" onClick={(e) => { e.preventDefault(); }}>условите на користење</a> и <a href="#" onClick={(e) => { e.preventDefault(); }}>политиката за приватност</a>
-                    </label>
-                  </div>
-                </div>
-
-                <div className="button-group">
-                  <button type="button" className="btn-back" onClick={() => setStep(1)}>Назад</button>
-                  <button type="submit" className="btn-register" disabled={!isStep2Valid || loading}>
-                    {loading ? 'Обработка...' : 'Завршиме →'}
+                  <button
+                    type="submit"
+                    className="btn-register"
+                    disabled={loading || !isLoaded || !allValid || !photoPreview}
+                  >
+                    {loading ? (
+                      <>
+                        <span className="spinner" />
+                        Duke u regjistruar...
+                      </>
+                    ) : (
+                      'Përfundoni regjistrimin'
+                    )}
                   </button>
-                </div>
-              </div>
-            </form>
+                </form>
+              </>
+            )}
+
+            {step > 1 && (
+              <button
+                type="button"
+                className="back-btn"
+                onClick={() => {
+                  setStep(step - 1)
+                  setError('')
+                }}
+              >
+                ← Kthehu mbrapa
+              </button>
+            )}
+
+            <p className="register-footer">
+              Tashmë keni llogari? <Link to="/login" className="register-link">Kyçuni këtu</Link>
+            </p>
           </div>
         </div>
       </div>

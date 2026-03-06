@@ -1,16 +1,15 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useSignIn } from '@clerk/clerk-react'
-import { useTranslation } from 'react-i18next'
-import LanguageSwitcher from '../components/LanguageSwitcher'
+import { Eye, EyeOff } from 'lucide-react'
 
 const Login = () => {
+  const navigate = useNavigate()
   const [form, setForm] = useState({ email: '', password: '' })
   const [showPass, setShowPass] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const { signIn, isLoaded, setActive } = useSignIn()
-  const { t } = useTranslation()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -18,15 +17,16 @@ const Login = () => {
     setLoading(true)
     setError('')
     try {
-      const result = await signIn.create({ 
-        identifier: form.email, 
-        password: form.password 
+      const result = await signIn.create({
+        identifier: form.email,
+        password: form.password,
       })
       if (result.status === 'complete') {
         await setActive({ session: result.createdSessionId })
+        navigate('/dashboard')
       }
     } catch (err) {
-      setError(err.errors?.[0]?.message || t('fill_required'))
+      setError(err.errors?.[0]?.message || 'Email ose lozinka nuk janë të sakta')
     } finally {
       setLoading(false)
     }
@@ -52,10 +52,6 @@ const Login = () => {
           --text-gray: #666666;
         }
 
-        html {
-          scroll-behavior: smooth;
-        }
-
         body {
           font-family: 'Inter', sans-serif;
           background: var(--light-bg);
@@ -76,7 +72,7 @@ const Login = () => {
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 40px;
+          padding: 60px 40px;
           position: relative;
           overflow: hidden;
         }
@@ -110,21 +106,33 @@ const Login = () => {
           z-index: 2;
           text-align: center;
           color: white;
-          max-width: 400px;
+          max-width: 420px;
         }
 
-        .login-icon {
-          font-size: 48px;
-          margin-bottom: 32px;
-          opacity: 0.95;
+        .login-logo-box {
+          width: 64px;
+          height: 64px;
+          background: rgba(255, 255, 255, 0.15);
+          border-radius: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0 auto 40px;
+          border: 1px solid rgba(255, 255, 255, 0.25);
+        }
+
+        .login-logo-box-icon {
+          font-size: 32px;
+          font-weight: 700;
+          color: white;
         }
 
         .login-title {
-          font-family: 'Playfair Display', serif;
-          font-size: 48px;
+          font-size: 44px;
           font-weight: 700;
           margin-bottom: 20px;
           line-height: 1.2;
+          letter-spacing: -0.5px;
         }
 
         .login-subtitle {
@@ -132,30 +140,46 @@ const Login = () => {
           line-height: 1.6;
           opacity: 0.95;
           font-weight: 400;
+          margin-bottom: 48px;
         }
 
         .login-features {
-          margin-top: 48px;
           display: flex;
           flex-direction: column;
-          gap: 20px;
+          gap: 24px;
+          text-align: left;
         }
 
         .login-feature {
           display: flex;
-          align-items: flex-start;
           gap: 16px;
+          align-items: flex-start;
         }
 
         .login-feature-icon {
-          font-size: 20px;
+          width: 40px;
+          height: 40px;
+          background: rgba(255, 255, 255, 0.12);
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
           flex-shrink: 0;
-          opacity: 0.9;
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          font-size: 18px;
+          color: white;
         }
 
-        .login-feature-text {
-          text-align: left;
+        .login-feature-content h4 {
           font-size: 13px;
+          font-weight: 600;
+          margin-bottom: 4px;
+          letter-spacing: 0.3px;
+        }
+
+        .login-feature-content p {
+          font-size: 12px;
+          opacity: 0.85;
           line-height: 1.5;
         }
 
@@ -175,6 +199,23 @@ const Login = () => {
           right: 40px;
         }
 
+        .language-switcher {
+          padding: 8px 12px;
+          border: 1px solid var(--border);
+          border-radius: 6px;
+          font-size: 12px;
+          font-weight: 600;
+          color: var(--dark);
+          background: var(--white);
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .language-switcher:hover {
+          border-color: var(--primary);
+          background: #f9f9f9;
+        }
+
         .login-form-wrapper {
           width: 100%;
           max-width: 380px;
@@ -185,11 +226,11 @@ const Login = () => {
         }
 
         .login-logo {
-          font-family: 'Playfair Display', serif;
           font-size: 28px;
           font-weight: 700;
           color: var(--dark);
           margin-bottom: 8px;
+          letter-spacing: -0.5px;
         }
 
         .login-form-subtitle {
@@ -224,7 +265,7 @@ const Login = () => {
 
         input[type="email"],
         input[type="password"] {
-          padding: 12px 14px;
+          padding: 12px 40px 12px 14px;
           border: 1px solid var(--border);
           border-radius: 6px;
           font-size: 14px;
@@ -255,13 +296,15 @@ const Login = () => {
           border: none;
           color: var(--text-gray);
           cursor: pointer;
-          padding: 4px;
+          padding: 4px 8px;
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 24px;
-          height: 24px;
-          font-size: 18px;
+          transition: color 0.2s ease;
+        }
+
+        .toggle-password:hover {
+          color: var(--primary);
         }
 
         .form-footer {
@@ -439,34 +482,33 @@ const Login = () => {
 
         @media (max-width: 640px) {
           .login-left {
-            padding: 25px 16px;
-            min-height: 35vh;
+            display: none;
           }
 
           .login-right {
             padding: 20px 16px;
-            min-height: 65vh;
+            min-height: 100vh;
           }
 
-          .login-icon {
-            font-size: 36px;
-            margin-bottom: 16px;
+          .login-header {
+            top: 16px;
+            right: 16px;
           }
 
           .login-title {
             font-size: 26px;
-            margin-bottom: 12px;
+            margin-bottom: 16px;
             line-height: 1.3;
           }
 
           .login-subtitle {
             font-size: 13px;
             line-height: 1.5;
+            margin-bottom: 32px;
           }
 
           .login-features {
-            margin-top: 24px;
-            gap: 14px;
+            gap: 16px;
           }
 
           .login-feature {
@@ -474,10 +516,16 @@ const Login = () => {
           }
 
           .login-feature-icon {
+            width: 36px;
+            height: 36px;
             font-size: 16px;
           }
 
-          .login-feature-text {
+          .login-feature-content h4 {
+            font-size: 12px;
+          }
+
+          .login-feature-content p {
             font-size: 11px;
           }
 
@@ -495,25 +543,38 @@ const Login = () => {
           }
 
           .login-form {
-            gap: 16px;
-          }
-
-          .form-group {
-            gap: 6px;
+            gap: 18px;
           }
 
           label {
             font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.6px;
           }
 
           input[type="email"],
           input[type="password"] {
-            padding: 10px 12px;
-            font-size: 13px;
+            padding: 13px 40px 13px 14px;
+            border: 1.5px solid #ddd;
+            border-radius: 8px;
+            font-size: 15px;
+            background: #fafafa;
+          }
+
+          input[type="email"]:focus,
+          input[type="password"]:focus {
+            background: #fff;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(216, 67, 21, 0.1);
+          }
+
+          input::placeholder {
+            color: #bbb;
           }
 
           .form-footer {
             flex-direction: column;
+            align-items: flex-start;
             gap: 10px;
           }
 
@@ -538,31 +599,31 @@ const Login = () => {
         }
 
         @media (max-width: 480px) {
-          .login-left {
-            padding: 20px 12px;
-            min-height: 30vh;
-          }
-
           .login-right {
             padding: 16px 12px;
           }
 
-          .login-icon {
+          .login-logo-box {
+            width: 56px;
+            height: 56px;
+            margin-bottom: 24px;
+          }
+
+          .login-logo-box-icon {
             font-size: 28px;
-            margin-bottom: 12px;
           }
 
           .login-title {
             font-size: 22px;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
           }
 
           .login-subtitle {
             font-size: 12px;
+            margin-bottom: 24px;
           }
 
           .login-features {
-            margin-top: 20px;
             gap: 12px;
           }
 
@@ -571,10 +632,16 @@ const Login = () => {
           }
 
           .login-feature-icon {
+            width: 32px;
+            height: 32px;
             font-size: 14px;
           }
 
-          .login-feature-text {
+          .login-feature-content h4 {
+            font-size: 11px;
+          }
+
+          .login-feature-content p {
             font-size: 10px;
           }
 
@@ -584,12 +651,12 @@ const Login = () => {
 
           input[type="email"],
           input[type="password"] {
-            padding: 9px 10px;
+            padding: 12px 38px 12px 12px;
             font-size: 14px;
           }
 
           .btn-login {
-            padding: 10px 16px;
+            padding: 11px 18px;
             font-size: 12px;
           }
 
@@ -602,24 +669,41 @@ const Login = () => {
       <div className="login-container">
         <div className="login-left">
           <div className="login-decoration">
-            <div className="login-icon">📄</div>
-            <h1 className="login-title">Управувајте со документите лесно</h1>
+            <div className="login-logo-box">
+              <div className="login-logo-box-icon">G</div>
+            </div>
+            <h1 className="login-title">Menaxhoni dokumentet lehtë</h1>
             <p className="login-subtitle">
-              Безбедна платформа за онлајн термине и управување со вашите официјални документи.
+              Platformë e sigurt për termina online dhe menaxhimin e dokumenteve zyrtare tuaja.
             </p>
 
             <div className="login-features">
               <div className="login-feature">
-                <div className="login-feature-icon">📅</div>
-                <div className="login-feature-text">Направи термин кога сакаш</div>
+                <div className="login-feature-icon">
+                  <Calendar size={20} color="white" />
+                </div>
+                <div className="login-feature-content">
+                  <h4>Planifiko terminet kur të dosh</h4>
+                  <p>Orar fleksibel sipas kërkesave tuaja</p>
+                </div>
               </div>
               <div className="login-feature">
-                <div className="login-feature-icon">🔒</div>
-                <div className="login-feature-text">Целосна безбедност на твои податоци</div>
+                <div className="login-feature-icon">
+                  <Lock size={20} color="white" />
+                </div>
+                <div className="login-feature-content">
+                  <h4>Sigurimi i plotë i të dhënave</h4>
+                  <p>I enkriptuar me teknologjinë më të avancuar</p>
+                </div>
               </div>
               <div className="login-feature">
-                <div className="login-feature-icon">✓</div>
-                <div className="login-feature-text">Брз и лесен процес</div>
+                <div className="login-feature-icon">
+                  <Zap size={20} color="white" />
+                </div>
+                <div className="login-feature-content">
+                  <h4>Proces i shpejtë dhe i thjeshtë</h4>
+                  <p>Përfundoni në disa klikime</p>
+                </div>
               </div>
             </div>
           </div>
@@ -627,26 +711,29 @@ const Login = () => {
 
         <div className="login-right">
           <div className="login-header">
-            <LanguageSwitcher />
+            <button className="language-switcher">SQ</button>
           </div>
 
           <div className="login-form-wrapper">
             <div className="login-branding">
               <div className="login-logo">e-Gov</div>
-              <p className="login-form-subtitle">Приватен портал за граѓани</p>
+              <p className="login-form-subtitle">Portali privat për qytetarë</p>
             </div>
 
             {error && <div className="error-message">{error}</div>}
 
             <form className="login-form" onSubmit={handleSubmit}>
               <div className="form-group">
-                <label htmlFor="email">Е-пошта</label>
+                <label htmlFor="email">E-Poshta</label>
                 <input
                   id="email"
                   type="email"
-                  placeholder="вашата.пошта@пример.mk"
+                  placeholder="juaji@shembull.mk"
                   value={form.email}
-                  onChange={e => setForm({ ...form, email: e.target.value })}
+                  onChange={e => {
+                    setForm({ ...form, email: e.target.value })
+                    setError('')
+                  }}
                   required
                   autoComplete="email"
                   autoFocus
@@ -654,24 +741,30 @@ const Login = () => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="password">Лозинка</label>
+                <label htmlFor="password">Lozinka</label>
                 <div className="input-container">
                   <input
                     id="password"
                     type={showPass ? 'text' : 'password'}
                     placeholder="••••••••"
                     value={form.password}
-                    onChange={e => setForm({ ...form, password: e.target.value })}
+                    onChange={e => {
+                      setForm({ ...form, password: e.target.value })
+                      setError('')
+                    }}
                     required
                     autoComplete="current-password"
                   />
                   <button
                     type="button"
                     className="toggle-password"
-                    onClick={() => setShowPass(!showPass)}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      setShowPass(!showPass)
+                    }}
                     aria-label="Toggle password visibility"
                   >
-                    {showPass ? '🙈' : '👁'}
+                    {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
               </div>
@@ -679,25 +772,25 @@ const Login = () => {
               <div className="form-footer">
                 <div className="checkbox-group">
                   <input type="checkbox" id="remember" name="remember" />
-                  <label htmlFor="remember" className="checkbox-label">Запомни ме</label>
+                  <label htmlFor="remember" className="checkbox-label">Më kujto</label>
                 </div>
-                <button type="button" className="forgot-link">Заборави лозинка?</button>
+                <button type="button" className="forgot-link">Harrova lozinkën?</button>
               </div>
 
               <button type="submit" className="btn-login" disabled={loading || !isLoaded}>
                 {loading ? (
                   <>
                     <span className="spinner" />
-                    Се логира...
+                    Duke u kyçur...
                   </>
                 ) : (
-                  'Влез'
+                  'Kyçu'
                 )}
               </button>
             </form>
 
             <p className="register-section">
-              Немаш профил? <Link to="/register" className="register-link">Регистрирај се</Link>
+              Nuk keni llogari? <Link to="/register" className="register-link">Regjistrohuni këtu</Link>
             </p>
           </div>
         </div>
