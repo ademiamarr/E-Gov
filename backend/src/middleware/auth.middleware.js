@@ -1,16 +1,25 @@
 const { ClerkExpressRequireAuth } = require('@clerk/clerk-sdk-node')
 const { supabase } = require('../config/supabase')
-const Clerk = require('@clerk/clerk-sdk-node')
 
 const requireAuth = ClerkExpressRequireAuth()
 
 const attachRole = async (req, res, next) => {
   try {
+    console.log('🔍 [AUTH CHECK] Starting authentication check...')
+    console.log('📌 req.auth:', req.auth)
+    console.log('📌 req.auth?.userId:', req.auth?.userId)
+
     if (!req.auth?.userId) {
-      return res.status(401).json({ success: false, message: 'Nuk jeni të autorizuar' })
+      console.log('❌ [AUTH] No auth userId found!')
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Nuk jeni të autorizuar' 
+      })
     }
 
     const clerkUserId = req.auth.userId
+    console.log('✅ [AUTH] Found userId:', clerkUserId)
+    console.log('🔎 [DB] Searching for user in Supabase...')
 
     // Kërko user në Supabase
     const { data: dbUser, error } = await supabase
@@ -19,42 +28,70 @@ const attachRole = async (req, res, next) => {
       .eq('clerk_id', clerkUserId)
       .single()
 
+    console.log('📊 [DB RESPONSE]', {
+      hasData: !!dbUser,
+      hasError: !!error,
+      errorCode: error?.code,
+      errorMessage: error?.message,
+      userData: dbUser ? {
+        id: dbUser.id,
+        email: dbUser.email,
+        role: dbUser.role,
+        verification_status: dbUser.verification_status
+      } : null
+    })
+
     // Nëse ka error në query (përveç "not found")
     if (error && error.code !== 'PGRST116') {
-      console.error('❌ Supabase Error:', error.message)
-      return res.status(500).json({ success: false, message: 'Database error' })
+      console.error('❌ [DB ERROR] Database query failed:', error.message)
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Gabim në database',
+        error: error.message
+      })
     }
 
     // Nëse user nuk gjendet
     if (!dbUser) {
-      console.log('⚠️ User not found in database. Clerk ID:', clerkUserId)
+      console.log('⚠️ [DB] User not found for clerk_id:', clerkUserId)
+      console.log('💡 [INFO] User needs to register first')
       
-      // Opsional: Mund ta krijon automatikisht
-      // Për tani, i thuaj client të regjistrohemi
       return res.status(404).json({ 
         success: false, 
-        message: 'User not found. Please register first.',
+        message: 'Useri nuk u gjet. Duhet të regjistroheni fillimisht.',
         code: 'USER_NOT_FOUND'
       })
     }
 
     // User gjendet - attach to request
+    console.log('✅ [AUTH SUCCESS] User authenticated:', {
+      id: dbUser.id,
+      email: dbUser.email,
+      role: dbUser.role
+    })
+
     req.user = dbUser
     req.userId = dbUser.id
     req.userRole = dbUser.role
     req.verification_status = dbUser.verification_status
 
+    console.log('✅ [MIDDLEWARE] User attached to request, proceeding to next middleware...')
     next()
   } catch (err) {
-    console.error('❌ attachRole error:', err.message)
+    console.error('❌ [EXCEPTION] Unexpected error in attachRole:', {
+      message: err.message,
+      stack: err.stack
+    })
     return res.status(500).json({ 
       success: false, 
-      message: 'Authentication error',
+      message: 'Gabim në autentifikim',
       error: err.message 
     })
   }
 }
 
 const protect = [requireAuth, attachRole]
+
+console.log('✅ [INIT] Auth middleware loaded')
 
 module.exports = { requireAuth, attachRole, protect }
