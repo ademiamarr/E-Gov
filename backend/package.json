@@ -9,7 +9,7 @@
     "dev": "nodemon server.js"
   },
   "dependencies": {
-    "@clerk/clerk-sdk-node": "^4.13.23",
+    "@clerk/clerk-sdk-node": "^5.1.6",
     "@supabase/supabase-js": "^2.98.0",
     "axios": "^1.6.2",
     "cors": "^2.8.6",

@@ -25,7 +25,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           'vendor': ['react', 'react-dom', 'react-router-dom'],
-          'clerk': ['@clerk/clerk-react'],
+          'clerk': ['@clerk/react'],
           'i18n': ['i18next', 'react-i18next'],
         }
       }
