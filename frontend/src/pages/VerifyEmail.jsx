@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useSignUp } from '@clerk/clerk-react'
+import { useSignUp } from '@clerk/react'
 
 const VerifyEmail = () => {
   const [code, setCode]       = useState('')

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useSignIn } from '@clerk/clerk-react'
+import { useSignIn } from '@clerk/react'
 import { useTranslation } from 'react-i18next'
 import { Eye, EyeOff, Calendar, Lock, Zap, Globe } from 'lucide-react'
 import LanguageSwitcher from '../components/LanguageSwitcher'
