@@ -1,11 +1,23 @@
 {
   "name": "e-gov-root",
   "version": "1.0.0",
+  "description": "eGov Portal - Government Services Platform for North Macedonia",
+  "private": true,
   "scripts": {
+    "dev": "concurrently \"cd backend && npm run dev\" \"cd frontend && npm run dev\"",
     "start": "cd backend && node server.js",
-    "build": "cd backend && npm install"
+    "build": "npm run build:frontend && npm run build:backend",
+    "build:frontend": "cd frontend && npm install && npm run build",
+    "build:backend": "cd backend && npm install",
+    "install": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "preview": "cd frontend && npm run preview",
+    "test": "cd backend && npm test"
   },
   "engines": {
-    "node": "18.x"
+    "node": "18.x",
+    "npm": "9.x"
+  },
+  "devDependencies": {
+    "concurrently": "^8.0.0"
   }
 }
