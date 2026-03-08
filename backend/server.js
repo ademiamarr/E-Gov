@@ -24,24 +24,18 @@ app.use('/api', routes)
 
 // 🔹 HEALTH CHECK
 app.get('/health', (req, res) => {
-  res.json({ status: 'OK', message: 'E-Gov Backend running', timestamp: new Date().toISOString() })
+  res.json({
+    status: 'OK',
+    message: 'E-Gov Backend running',
+    timestamp: new Date().toISOString()
+  })
 })
 
-// ✅ SERVE STATIC FRONTEND (production build)
-const frontendPath = path.join(__dirname, '../frontend/dist')
-app.use(express.static(frontendPath))
-
-// ✅ SPA FALLBACK: Për të gjitha GET requests që nuk janë API, shërbej index.html
-app.get('*', (req, res) => {
-  // Nëse kërkesa nuk përputhet me asnjë rout, shërbej index.html për React Router
-  res.sendFile(path.join(frontendPath, 'index.html'))
-})
-
-// 🔹 ERROR HANDLER (middleware i fundit)
+// 🔹 ERROR HANDLER
 app.use(errorHandler)
 
 app.listen(PORT, () => {
-  console.log(`✅ E-Gov Backend running on http://localhost:${PORT}`)
+  console.log(`✅ E-Gov Backend running on port ${PORT}`)
   console.log(`📌 Environment: ${process.env.NODE_ENV || 'development'}`)
-  console.log(`📁 Frontend served from: ${frontendPath}`)
+  console.log(`🌐 CORS allowed: ${process.env.FRONTEND_URL || 'http://localhost:5173'}`)
 })
