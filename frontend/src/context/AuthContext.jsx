@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react'
-import { useAuth as useClerkAuth } from '@clerk/clerk-react'
+import { useAuth as useClerkAuth } from '@clerk/react'
 import { useNavigate } from 'react-router-dom'
 import API, { setTokenGetter } from '../api/axios'
 
