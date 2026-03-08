@@ -7,7 +7,10 @@ import i18n from './i18n/index'
 import App from './App'
 import './index.css'
 
-const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
+// 🔧 Temporary hardcode para testa
+const PUBLISHABLE_KEY = 'pk_test_c3VwZXJiLXB1cC02My5jbGVyay5hY2NvdW50cy5kZXYk'
+
+console.log('🔍 Clerk Key:', PUBLISHABLE_KEY)
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
