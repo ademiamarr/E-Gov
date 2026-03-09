@@ -7,10 +7,18 @@ import i18n from './i18n/index'
 import App from './App'
 import './index.css'
 
-// 🔧 Temporary hardcode para testa
-const PUBLISHABLE_KEY = 'pk_test_c3VwZXJiLXB1cC02My5jbGVyay5hY2NvdW50cy5kZXYk'
+// ✅ GET CLERK KEY FROM .env (NOT HARDCODED!)
+const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 
-console.log('🔍 Clerk Key:', PUBLISHABLE_KEY)
+// ✅ VALIDATE THAT KEY EXISTS
+if (!PUBLISHABLE_KEY) {
+  console.error('❌ ERROR: VITE_CLERK_PUBLISHABLE_KEY is missing in frontend/.env')
+  console.error('Please add: VITE_CLERK_PUBLISHABLE_KEY=pk_test_YOUR_ACTUAL_KEY')
+  console.error('Get your key from: https://dashboard.clerk.com → API Keys → Publishable Key')
+  throw new Error('Clerk publishable key is not configured. Check frontend/.env file.')
+}
+
+console.log('✅ Clerk Key loaded successfully from .env')
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

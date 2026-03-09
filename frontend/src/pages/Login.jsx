@@ -1,38 +1,137 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useSignIn } from '@clerk/react'
+import { useSignIn, useUser } from '@clerk/react'
 import { useTranslation } from 'react-i18next'
-import { Eye, EyeOff, Calendar, Lock, Zap, Globe } from 'lucide-react'
+import { Eye, EyeOff } from 'lucide-react'
 import LanguageSwitcher from '../components/LanguageSwitcher'
 
 const Login = () => {
   const navigate = useNavigate()
   const { t } = useTranslation()
-  const [form, setForm] = useState({ email: '', password: '' })
-  const [showPass, setShowPass] = useState(false)
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const { user } = useUser()
   const { signIn, isLoaded, setActive } = useSignIn()
+
+  // State Management
+  const [form, setForm] = useState({ email: '', password: '' })
+  const [showPassword, setShowPassword] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [clerkReady, setClerkReady] = useState(false)
+
+  // Form Validation
+  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)
+  const isPasswordValid = form.password.length >= 8
+  const isFormValid = isEmailValid && isPasswordValid
+
+  // Debug Logging
+  useEffect(() => {
+    console.log('🔍 Login Component Debug Info:')
+    console.log('  - isLoaded (Clerk):', isLoaded)
+    console.log('  - clerkReady:', clerkReady)
+    console.log('  - user:', user)
+    console.log('  - form.email:', form.email)
+    console.log('  - form.password length:', form.password.length)
+    console.log('  - isFormValid:', isFormValid)
+    console.log('  - loading:', loading)
+    console.log('  - Button should be disabled:', loading || !clerkReady || !isFormValid)
+  }, [isLoaded, clerkReady, form, isFormValid, loading, user])
+
+  // Clerk Ready Check
+  useEffect(() => {
+    if (isLoaded) {
+      console.log('✅ Clerk is loaded and ready')
+      setClerkReady(true)
+    } else {
+      console.log('⏳ Waiting for Clerk to load...')
+      setClerkReady(false)
+    }
+  }, [isLoaded])
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      console.log('👤 User already logged in, redirecting to dashboard...')
+      navigate('/dashboard')
+    }
+  }, [user, navigate])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!isLoaded) return
+    console.log('🔐 Login form submitted')
+
+    // Validation checks
+    if (!isFormValid) {
+      const errorMsg = !isEmailValid ? 'Email nuk është valid' : 'Lozinka duhet të ketë të paktën 8 karaktere'
+      setError(errorMsg)
+      console.error('❌ Form validation failed:', errorMsg)
+      return
+    }
+
+    if (!clerkReady || !isLoaded) {
+      setError('Clerk nuk është gati, prit një moment...')
+      console.error('❌ Clerk not ready')
+      return
+    }
+
     setLoading(true)
     setError('')
+
     try {
-      const result = await signIn.create({
-        identifier: form.email,
+      console.log('📤 Sending login request to Clerk...')
+      console.log('   Email:', form.email)
+
+      const response = await signIn.create({
+        identifier: form.email.trim(),
         password: form.password,
       })
-      if (result.status === 'complete') {
-        await setActive({ session: result.createdSessionId })
+
+      console.log('📥 Clerk response status:', response.status)
+      console.log('📥 Full response:', response)
+
+      if (response.status === 'complete') {
+        console.log('✅ Login successful! Session created')
+        await setActive({ session: response.createdSessionId })
+        console.log('✅ Active session set, redirecting...')
         navigate('/dashboard')
+      } else if (response.status === 'needs_second_factor') {
+        console.log('⚠️ Two-factor authentication required')
+        setError('Duhet autentifikim me dy faktor. Kontrolloni email-in tuaj.')
+        navigate('/login/mfa', { state: { email: form.email } })
+      } else {
+        console.error('⚠️ Unexpected response status:', response.status)
+        setError(`Login status: ${response.status}. Kontaktoni suportin.`)
       }
     } catch (err) {
-      setError(err.errors?.[0]?.message || t('login_error') || 'Email ose lozinka nuk janë të sakta')
+      console.error('❌ Login error caught:', err)
+      console.error('   Error message:', err.message)
+      console.error('   Error errors:', err.errors)
+
+      if (err.errors && err.errors.length > 0) {
+        const errorMessage = err.errors[0].message
+        console.error('   First error:', errorMessage)
+
+        if (errorMessage.includes('Identifier is not valid')) {
+          setError('Email nuk u gjet. Kontrollo se e ke shkruar saktë.')
+        } else if (errorMessage.includes('Password is incorrect')) {
+          setError('Lozinka nuk është e saktë.')
+        } else if (errorMessage.includes('not found')) {
+          setError('Llogaria nuk ekziston. Regjistrohuni këtu.')
+        } else {
+          setError(errorMessage)
+        }
+      } else {
+        setError('Gabim në login. Provo përsëri.')
+      }
     } finally {
       setLoading(false)
+      console.log('🔄 Login process completed')
     }
+  }
+
+  const handleInputChange = (field, value) => {
+    setForm(prev => ({ ...prev, [field]: value }))
+    setError('') // Clear error when user starts typing
+    console.log(`📝 ${field} changed:`, value.substring(0, 5) + (value.length > 5 ? '...' : ''))
   }
 
   return (
@@ -53,6 +152,9 @@ const Login = () => {
           --white: #ffffff;
           --border: #e8e8e5;
           --text-gray: #666666;
+          --error-bg: #fef2f2;
+          --error-border: #fecaca;
+          --error-text: #ef4444;
         }
 
         body {
@@ -170,6 +272,8 @@ const Login = () => {
           flex-shrink: 0;
           border: 1px solid rgba(255, 255, 255, 0.15);
           color: white;
+          font-size: 18px;
+          font-weight: 600;
         }
 
         .login-feature-content h4 {
@@ -258,7 +362,7 @@ const Login = () => {
           font-family: 'Inter', sans-serif;
           background: var(--white);
           color: var(--dark);
-          transition: border-color 0.2s ease, box-shadow 0.2s ease;
+          transition: all 0.2s ease;
           width: 100%;
         }
 
@@ -267,6 +371,7 @@ const Login = () => {
           outline: none;
           border-color: var(--primary);
           box-shadow: 0 0 0 3px rgba(216, 67, 21, 0.08);
+          background: #fafafa;
         }
 
         input::placeholder {
@@ -336,6 +441,7 @@ const Login = () => {
 
         .forgot-link:hover {
           color: #c23d0f;
+          text-decoration: underline;
         }
 
         .btn-login {
@@ -348,21 +454,33 @@ const Login = () => {
           font-weight: 600;
           letter-spacing: 0.5px;
           cursor: pointer;
-          transition: background-color 0.2s ease;
+          transition: all 0.2s ease;
           text-transform: uppercase;
           display: flex;
           align-items: center;
           justify-content: center;
           gap: 8px;
+          min-height: 44px;
         }
 
-        .btn-login:hover:not(:disabled) {
+        .btn-login:not(:disabled):hover {
           background-color: #c23d0f;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(216, 67, 21, 0.25);
+        }
+
+        .btn-login:not(:disabled):active {
+          transform: translateY(0);
         }
 
         .btn-login:disabled {
-          opacity: 0.65;
+          opacity: 0.6;
           cursor: not-allowed;
+          background-color: var(--primary);
+        }
+
+        .btn-login.loading {
+          pointer-events: none;
         }
 
         .spinner {
@@ -379,13 +497,36 @@ const Login = () => {
         }
 
         .error-message {
-          background: #fef2f2;
-          color: #ef4444;
+          background: var(--error-bg);
+          color: var(--error-text);
           padding: 12px 14px;
           border-radius: 6px;
-          border: 1px solid #fecaca;
+          border: 1px solid var(--error-border);
           font-size: 13px;
           margin-bottom: 16px;
+          animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .success-message {
+          background: #f0fdf4;
+          color: #22c55e;
+          padding: 12px 14px;
+          border-radius: 6px;
+          border: 1px solid #bbf7d0;
+          font-size: 13px;
+          margin-bottom: 16px;
+          animation: slideDown 0.3s ease;
         }
 
         .register-section {
@@ -407,11 +548,7 @@ const Login = () => {
 
         .register-link:hover {
           color: #c23d0f;
-        }
-
-        /* Language Switcher Overrides */
-        .lang-switcher-wrapper {
-          position: relative;
+          text-decoration: underline;
         }
 
         .lang-switcher-btn {
@@ -435,10 +572,25 @@ const Login = () => {
           background: #f9f9f9;
         }
 
-        .lang-switcher-btn.active {
-          background: #eff6ff;
-          border-color: var(--primary);
-          color: var(--primary);
+        .debug-info {
+          display: none;
+          position: fixed;
+          bottom: 10px;
+          right: 10px;
+          background: #1a1a1a;
+          color: #0f0;
+          padding: 10px;
+          border-radius: 4px;
+          font-size: 10px;
+          font-family: monospace;
+          z-index: 9999;
+          max-width: 300px;
+          max-height: 200px;
+          overflow: auto;
+        }
+
+        .debug-info.show {
+          display: block;
         }
 
         @media (max-width: 1024px) {
@@ -484,17 +636,14 @@ const Login = () => {
             margin-bottom: 16px;
           }
 
-          .login-subtitle {
-            font-size: 14px;
-          }
-
           .login-logo {
             font-size: 24px;
-            margin-bottom: 6px;
           }
 
-          .login-form-subtitle {
-            font-size: 12px;
+          .form-footer {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
           }
         }
 
@@ -520,84 +669,17 @@ const Login = () => {
             z-index: 50;
           }
 
-          .lang-switcher-btn {
-            padding: 6px 10px;
-            font-size: 11px;
-            gap: 4px;
-          }
-
-          .login-form-wrapper {
-            width: 100%;
-            max-width: 100%;
-            margin-top: 20px;
-          }
-
-          .login-branding {
-            margin-bottom: 24px;
-          }
-
-          .login-logo {
-            font-size: 22px;
-            margin-bottom: 6px;
-          }
-
-          .login-form {
-            gap: 18px;
-          }
-
-          label {
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 0.6px;
-          }
-
           input[type="email"],
           input[type="password"] {
             padding: 13px 40px 13px 14px;
             border: 1.5px solid #ddd;
             border-radius: 8px;
             font-size: 15px;
-            background: #fafafa;
-          }
-
-          input[type="email"]:focus,
-          input[type="password"]:focus {
-            background: #fff;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 4px rgba(216, 67, 21, 0.1);
-          }
-
-          input::placeholder {
-            color: #bbb;
-          }
-
-          .form-footer {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 10px;
-          }
-
-          .checkbox-label {
-            font-size: 11px;
-          }
-
-          .forgot-link {
-            font-size: 11px;
           }
 
           .btn-login {
-            padding: 12px 20px;
+            padding: 13px 20px;
             font-size: 13px;
-          }
-
-          .register-section {
-            margin-top: 20px;
-            padding-top: 16px;
-            font-size: 12px;
-          }
-
-          .form-group {
-            gap: 6px;
           }
         }
 
@@ -607,71 +689,8 @@ const Login = () => {
             padding-top: 70px;
           }
 
-          .login-header {
-            top: 8px;
-            right: 8px;
-            left: 8px;
-          }
-
-          .lang-switcher-btn {
-            padding: 5px 8px;
-            font-size: 10px;
-          }
-
-          .login-logo-box {
-            width: 56px;
-            height: 56px;
-            margin-bottom: 24px;
-          }
-
-          .login-logo-box-icon {
-            font-size: 28px;
-          }
-
-          .login-title {
-            font-size: 22px;
-            margin-bottom: 12px;
-          }
-
-          .login-subtitle {
-            font-size: 12px;
-            margin-bottom: 24px;
-          }
-
-          .login-features {
-            gap: 12px;
-          }
-
-          .login-feature {
-            gap: 10px;
-          }
-
-          .login-feature-content h4 {
-            font-size: 11px;
-          }
-
-          .login-feature-content p {
-            font-size: 10px;
-          }
-
-          .login-logo {
-            font-size: 20px;
-          }
-
-          input[type="email"],
-          input[type="password"] {
-            padding: 12px 38px 12px 12px;
-            font-size: 14px;
-          }
-
-          .btn-login {
-            padding: 11px 18px;
-            font-size: 12px;
-          }
-
-          .register-section {
-            font-size: 11px;
-            margin-top: 16px;
+          .login-form {
+            gap: 16px;
           }
 
           .form-group {
@@ -680,6 +699,12 @@ const Login = () => {
 
           label {
             font-size: 10px;
+          }
+
+          input[type="email"],
+          input[type="password"] {
+            padding: 12px 38px 12px 12px;
+            font-size: 14px;
           }
         }
       `}</style>
@@ -697,27 +722,21 @@ const Login = () => {
 
             <div className="login-features">
               <div className="login-feature">
-                <div className="login-feature-icon">
-                  <Calendar size={20} color="white" />
-                </div>
+                <div className="login-feature-icon">📅</div>
                 <div className="login-feature-content">
                   <h4>Planifiko terminet kur të dosh</h4>
                   <p>Orar fleksibel sipas kërkesave tuaja</p>
                 </div>
               </div>
               <div className="login-feature">
-                <div className="login-feature-icon">
-                  <Lock size={20} color="white" />
-                </div>
+                <div className="login-feature-icon">🔒</div>
                 <div className="login-feature-content">
                   <h4>Sigurimi i plotë i të dhënave</h4>
                   <p>I enkriptuar me teknologjinë më të avancuar</p>
                 </div>
               </div>
               <div className="login-feature">
-                <div className="login-feature-icon">
-                  <Zap size={20} color="white" />
-                </div>
+                <div className="login-feature-icon">⚡</div>
                 <div className="login-feature-content">
                   <h4>Proces i shpejtë dhe i thjeshtë</h4>
                   <p>Përfundoni në disa klikime</p>
@@ -735,80 +754,87 @@ const Login = () => {
           <div className="login-form-wrapper">
             <div className="login-branding">
               <div className="login-logo">e-Gov</div>
-              <p className="login-form-subtitle">{t('login_subtitle') || 'Portali privat për qytetarë'}</p>
+              <p className="login-form-subtitle">Portali privat për qytetarë</p>
             </div>
 
-            {error && <div className="error-message">{error}</div>}
+            {error && <div className="error-message">⚠️ {error}</div>}
 
             <form className="login-form" onSubmit={handleSubmit}>
               <div className="form-group">
-                <label htmlFor="email">{t('email') || 'E-Poshta'}</label>
+                <label htmlFor="email">E-POSTA</label>
                 <input
                   id="email"
                   type="email"
                   placeholder="juaji@shembull.mk"
                   value={form.email}
-                  onChange={e => {
-                    setForm({ ...form, email: e.target.value })
-                    setError('')
-                  }}
-                  required
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  disabled={loading}
                   autoComplete="email"
                   autoFocus
+                  required
                 />
               </div>
 
               <div className="form-group">
-                <label htmlFor="password">{t('password') || 'Lozinka'}</label>
+                <label htmlFor="password">FJALËKALIM</label>
                 <div className="input-container">
                   <input
                     id="password"
-                    type={showPass ? 'text' : 'password'}
+                    type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••"
                     value={form.password}
-                    onChange={e => {
-                      setForm({ ...form, password: e.target.value })
-                      setError('')
-                    }}
-                    required
+                    onChange={(e) => handleInputChange('password', e.target.value)}
+                    disabled={loading}
                     autoComplete="current-password"
+                    required
                   />
                   <button
                     type="button"
                     className="toggle-password"
                     onClick={(e) => {
                       e.preventDefault()
-                      setShowPass(!showPass)
+                      setShowPassword(!showPassword)
                     }}
-                    aria-label="Toggle password visibility"
+                    disabled={loading}
+                    title={showPassword ? 'Fshih fjalëkalimin' : 'Shfaq fjalëkalimin'}
                   >
-                    {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
               </div>
 
               <div className="form-footer">
                 <div className="checkbox-group">
-                  <input type="checkbox" id="remember" name="remember" />
-                  <label htmlFor="remember" className="checkbox-label">{t('remember_me') || 'Më kujto'}</label>
+                  <input type="checkbox" id="remember" name="remember" disabled={loading} />
+                  <label htmlFor="remember" className="checkbox-label">Më kujto</label>
                 </div>
-                <button type="button" className="forgot-link">{t('forgot_password') || 'Harrova lozinkën?'}</button>
+                <Link to="/forgot-password" className="forgot-link">Harrova fjalëkalimin?</Link>
               </div>
 
-              <button type="submit" className="btn-login" disabled={loading || !isLoaded}>
+              <button
+                type="submit"
+                className={`btn-login ${loading ? 'loading' : ''}`}
+                disabled={loading || !clerkReady || !isFormValid}
+                title={
+                  !clerkReady ? 'Clerk nuk është gati...' :
+                  !isFormValid ? 'Plotëso email dhe fjalëkalim' :
+                  loading ? 'Duke u kyçur...' :
+                  'Kyçu në platformë'
+                }
+              >
                 {loading ? (
                   <>
                     <span className="spinner" />
-                    {t('signing_in') || 'Duke u kyçur...'}
+                    Duke u kyçur...
                   </>
                 ) : (
-                  t('login') || 'Kyçu'
+                  'Kyçu'
                 )}
               </button>
             </form>
 
             <p className="register-section">
-              {t('no_account') || 'Nuk keni llogari?'} <Link to="/register" className="register-link">{t('register_here') || 'Regjistrohuni këtu'}</Link>
+              Nuk keni llogari? <Link to="/register" className="register-link">Regjistrohuni këtu</Link>
             </p>
           </div>
         </div>

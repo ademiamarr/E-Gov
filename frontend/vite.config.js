@@ -6,7 +6,7 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: false,
-    open: false,
+    open: 'chrome',
     // ✅ Proxy API calls to backend
     proxy: {
       '/api': {
