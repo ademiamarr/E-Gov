@@ -2,10 +2,6 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider }    from './context/AuthContext'
 import { SocketProvider }  from './context/SocketContext'
 import ProtectedRoute      from './components/ProtectedRoute'
-
-// ========================================
-// AUTH PAGES
-// ========================================
 import Login               from './pages/Login'
 import Register            from './pages/Register'
 import VerifyEmail         from './pages/VerifyEmail'
@@ -13,21 +9,11 @@ import ForgotPassword      from './pages/Forgotpassword'
 import ResetPassword       from './pages/ResetPassword'
 import Pending             from './pages/Pending'
 import Rejected            from './pages/Rejected'
-
-// ========================================
-// USER PAGES
-// ========================================
 import Dashboard           from './pages/dashboard/Dashboard'
 import Profile             from './pages/Profile'
-
-// ========================================
-// ADMIN PAGES
-// ========================================
 import AdminLayout         from './admin/AdminLayout'
 
-// ========================================
-// CONSTANTS
-// ========================================
+
 const ADMIN_ROLES = [
   'super_admin', 
   'admin_users', 
@@ -36,17 +22,11 @@ const ADMIN_ROLES = [
   'admin_fines'
 ]
 
-// ========================================
-// MAIN APP COMPONENT
-// ========================================
 const App = () => {
   return (
     <AuthProvider>
       <SocketProvider>
         <Routes>
-          {/* ==========================================
-              PUBLIC ROUTES - No authentication needed
-              ========================================== */}
           
           {/* Login & Register */}
           <Route path="/login"           element={<Login />} />
@@ -62,10 +42,6 @@ const App = () => {
           {/* Status Pages */}
           <Route path="/pending"         element={<Pending />} />
           <Route path="/rejected"        element={<Rejected />} />
-
-          {/* ==========================================
-              USER ROUTES - Only authenticated users
-              ========================================== */}
           
           {/* Main Dashboard */}
           <Route 
@@ -87,10 +63,6 @@ const App = () => {
             } 
           />
 
-          {/* ==========================================
-              ADMIN ROUTES - Only admin users
-              ========================================== */}
-          
           {/* Admin Panel (with sub-routes) */}
           <Route 
             path="/admin/*" 
@@ -100,10 +72,6 @@ const App = () => {
               </ProtectedRoute>
             } 
           />
-
-          {/* ==========================================
-              DEFAULT ROUTES
-              ========================================== */}
           
           {/* Root path - redirect to login */}
           <Route path="/" element={<Navigate to="/login" replace />} />
